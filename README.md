@@ -1,6 +1,6 @@
 # boot loader
 
-Dependencies: `base-devel`, `clang`, `mtools`, `qemu`, `ovmf`, `xorriso`
+Dependencies: `base-devel`, `clang`, `mtools`, `qemu`, `ovmf`, `xorriso`, `lld`
 
 After every code update:
 1. Run `make` (Make sure it compiles without errors)
