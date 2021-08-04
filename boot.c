@@ -2,6 +2,9 @@
 
 int main(int argc, char** argv)
 {
+    // Disable the Watchdog timer in order to prevent it from restarting the application after 5 minutes
+    ST->BootServices->SetWatchdogTimer(0, 0, 0, NULL);
+
     // Clear the screen
     ST->ConOut->ClearScreen(ST->ConOut);
     printf("Hello world!\nPress any key to continue...\n");
