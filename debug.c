@@ -1,0 +1,121 @@
+#include <debug.h>
+
+void DebugPrint(const char* string)
+{
+    #ifdef DEBUG
+    printf("[DEBUG] %s", string);
+    #endif
+}
+
+void PrintError(const char* moreInfo, efi_status_t status)
+{
+    printf("[ERROR] %s %s (%ld)\n", moreInfo, GetErrorInfo(status), status);
+}
+
+void PrintWarning(const char* moreInfo, efi_status_t status)
+{
+    printf("[WARNING] %s %s (%ld)\n", moreInfo, GetErrorInfo(status), status);
+}
+
+// More informative error messages for each error status
+const char* GetErrorInfo(efi_status_t status)
+{
+    switch(status)
+    {
+        case EFI_LOAD_ERROR:
+        return "The image failed to load.";
+
+        case EFI_INVALID_PARAMETER:
+        return "A parameter was incorrect.";
+
+        case EFI_UNSUPPORTED:
+        return "The operation is not supported.";
+
+        case EFI_BAD_BUFFER_SIZE:
+        return "The buffer was not the proper size for the request.";
+
+        case EFI_BUFFER_TOO_SMALL:
+        return "The buffer is not large enough to hold the requested data.";
+
+        case EFI_NOT_READY:
+        return "There is no data pending upon return.";
+
+        case EFI_DEVICE_ERROR:
+        return "The physical device reported an error while attempting the operation.";
+
+        case EFI_WRITE_PROTECTED:
+        return "The device cannot be written to.";
+
+        case EFI_OUT_OF_RESOURCES:
+        return "A resource has run out.";
+
+        case EFI_VOLUME_CORRUPTED:
+        return "An inconstancy was detected on the file system causing the operating to fail.";
+
+        case EFI_VOLUME_FULL:
+        return "There is no more space on the file system.";
+
+        case EFI_NO_MEDIA:
+        return "The device does not contain any medium to perform the operation.";
+
+        case EFI_MEDIA_CHANGED:
+        return "The medium in the device has changed since the last access.";
+
+        case EFI_NOT_FOUND:
+        return "The item was not found.";
+
+        case EFI_ACCESS_DENIED:
+        return "Access was denied.";
+
+        case EFI_NO_RESPONSE:
+        return "The server was not found or did not respond to the request";
+
+        case EFI_NO_MAPPING:
+        return "A mapping to a device does not exist.";
+
+        case EFI_TIMEOUT:
+        return "The timeout time expired.";
+
+        case EFI_NOT_STARTED:
+        return "The protocol has not been started.";
+
+        case EFI_ALREADY_STARTED:
+        return "The protocol has already been started.";
+
+        case EFI_ABORTED:
+        return "The operation was aborted.";
+
+        case EFI_ICMP_ERROR:
+        return "An ICMP error occurred during the network operation.";
+
+        case EFI_TFTP_ERROR:
+        return "A TFTP error occurred during the network operation.";
+
+        case EFI_PROTOCOL_ERROR:
+        return "A protocol error occurred during the network operation.";
+
+        case EFI_INCOMPATIBLE_VERSION:
+        return "The function encountered an internal version that was incompatible with a version requested by the caller.";
+
+        case EFI_SECURITY_VIOLATION:
+        return "The function was not performed due to a security violation.";
+
+        case EFI_CRC_ERROR:
+        return "A CRC error was detected.";
+
+        case EFI_END_OF_MEDIA:
+        return "Beginning or end of media was reached.";
+
+        case EFI_END_OF_FILE:
+        return "The end of the file was reached";
+
+        case EFI_INVALID_LANGUAGE:
+        return "The language specified was invalid.";
+
+        case EFI_COMPROMISED_DATA:
+        return "The security status of the data is unknown or compromised and the data must be updated or replaced to restore a valid security status.";
+
+        default:
+        return "Unknown error.";
+    }
+}
