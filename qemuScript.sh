@@ -7,7 +7,9 @@ dd if=/dev/zero of=fat.img bs=1k count=1440
 mformat -i fat.img -f 1440 ::
 mmd -i fat.img ::/EFI
 mmd -i fat.img ::/EFI/BOOT
+#mmd -i fat.img ::/EFI/test
 mcopy -i fat.img bootx64.efi ::/EFI/BOOT
+#mcopy -i fat.img test1.efi test2.efi ::/EFI/test
 
 # Create an ISO image with our EFI file and start uefi qemu to test it
 cp fat.img iso
