@@ -25,50 +25,63 @@ int main(int argc, char** argv)
     while ((status = ST->ConIn->ReadKeyStroke(ST->ConIn, &Key)) == EFI_NOT_READY);
     printf("Pressed: %c\n", Key.UnicodeChar);
 
-
-    efi_loaded_image_protocol_t* imgProtocol = NULL;
     efi_file_handle_t* rootDir = NULL;
 
-    status = GetRootVolume(IM, &imgProtocol, &rootDir);
+    status = GetRootVolume(IM, &rootDir);
     if (EFI_ERROR(status)) { sleep(3); return status; }
-
-    /*
-    // Open a test file in read mode
-    efi_file_handle_t* testFile = NULL;
-    uint16_t path[] = u"EFI\\test\\test1.efi";
-    status = rootDir->Open(rootDir, &testFile, path, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
-    if (EFI_ERROR(status)) {
-        PrintError("Couldn't open file 'EFI\\test\\test1.efi'.", status);
-        sleep(3);
-        return status;
-    }
-    DebugPrint("File EFI\\test\\test1.efi open.\n");
-
-    // Get file information
-    efi_guid_t infGuid = EFI_FILE_INFO_GUID; 
-    efi_file_info_t fileInfo;
-    uintn_t size = sizeof(fileInfo);
-    status = testFile->GetInfo(testFile, &infGuid, &size, (void*)&fileInfo);
-    if (EFI_ERROR(status)) {
-        PrintError("Couldn't get file info.", status);
-        sleep(3);
-        return status;
-    }
-
-    printf("Filename: ");
-    // Use OutputString() in order to print wchar_t strings
-    ST->ConOut->OutputString(ST->ConOut, fileInfo.FileName);
-
-    // Use formatting %ld to print uint64_t values
-    printf(", size: %ld bytes.\n", fileInfo.FileSize);
     
-    status = rootDir->Close(testFile);
+    // Open a test file in read mode
+    efi_file_handle_t* winBootMgrHandle = NULL;
+    uint16_t path[] = u"EFI\\Microsoft\\Boot\\bootmgfw.efi";
+    status = rootDir->Open(rootDir, &winBootMgrHandle, path, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
     if (EFI_ERROR(status)) {
-        PrintError("Couldn't close file EFI\\test\\test1.efi", status);
+        PrintError("Couldn't open file 'EFI\\Microsoft\\Boot\\bootmgfw.efi'.", status);
         sleep(3);
         return status;
     }
-    */
+    DebugPrint("File EFI\\Microsoft\\Boot\\bootmgfw.efi open.\n");
+
+
+    efi_guid_t infoGuid = EFI_FILE_INFO_GUID;
+    efi_file_info_t fileInfo;
+    uintn_t infoSize = sizeof(fileInfo);
+    status = winBootMgrHandle->GetInfo(winBootMgrHandle, &infoGuid, &infoSize, &fileInfo);
+    if (EFI_ERROR(status)) {
+        PrintError("Couldn't read the file info.", status);
+        sleep(3);
+        return status;
+    }
+
+    uintn_t winBootMgrSize = fileInfo.FileSize;
+    printf("[DEBUG] File size: %ld\n", winBootMgrSize);
+
+    // (char*)malloc(winBootMgrSize + 1)
+    char* winBootMgrData = (char*)malloc(winBootMgrSize + 1);
+    winBootMgrData[winBootMgrSize] = 0;
+
+    status = winBootMgrHandle->Read(winBootMgrHandle, &winBootMgrSize, winBootMgrData);
+    if (EFI_ERROR(status)) {
+        PrintError("Couldn't read the file.", status);
+        sleep(3);
+        return status;
+    }
+
+    efi_handle_t imgHandle = 0;
+    printf("[DEBUG] image handle %p before LoadImage()\n", imgHandle);
+    status = BS->LoadImage(0, IM, LIP->FilePath, winBootMgrData, winBootMgrSize, &imgHandle);
+    if (EFI_ERROR(status)) {
+        PrintError("Couldn't load image.", status);
+        sleep(3);
+        return status;
+    }
+    printf("[DEBUG] image handle %p after LoadImage()\n", imgHandle);
+
+    status = BS->StartImage(imgHandle, NULL, NULL);
+    if (EFI_ERROR(status)) {
+        PrintError("Couldn't start image.", status);
+        sleep(30);
+        return status;
+    }
 
     sleep(3);
     
