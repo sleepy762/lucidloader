@@ -1,5 +1,4 @@
 #!/bin/sh
-# Check if the directory exists and create it if it doesn't
 ./cleanScript.sh
 make
 
