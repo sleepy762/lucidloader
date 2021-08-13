@@ -1,15 +1,17 @@
 #include <debug.h>
 
-void DebugPrint(const char* string)
+void PrintDebug(const char* string)
 {
     #ifdef DEBUG
     printf("[DEBUG] %s", string);
     #endif
 }
 
-void PrintError(const char* moreInfo, efi_status_t status)
+void ErrorExit(const char* moreInfo, efi_status_t status)
 {
     printf("[ERROR] %s %s (%ld)\n", moreInfo, GetErrorInfo(status), status);
+    sleep(10);
+    BS->Exit(IM, status, 0, NULL);
 }
 
 void PrintWarning(const char* moreInfo, efi_status_t status)
@@ -22,6 +24,9 @@ const char* GetErrorInfo(efi_status_t status)
 {
     switch(status)
     {
+        case EFI_SUCCESS:
+        return "";
+        
         case EFI_LOAD_ERROR:
         return "The image failed to load.";
 
