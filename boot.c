@@ -1,16 +1,6 @@
 #include <uefi.h>
-#include <debug.h>
-#include <chainloader.h>
-
-// Will be moved into a separate file later on
-wchar_t* StringToWideString(const char* str)
-{
-    const size_t size = strlen(str);
-    wchar_t* wpath = (wchar_t*)malloc(size + 1);
-    wpath[size] = 0;
-    mbstowcs(wpath, str, size);
-    return wpath;
-}
+#include "debug.h"
+#include "chainloader.h"
 
 int main(int argc, char** argv)
 {
