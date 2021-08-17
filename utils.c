@@ -1,6 +1,6 @@
 #include "utils.h"
 
-wchar_t* StringToWideString(const char* str)
+wchar_t* StringToWideString(char* str)
 {
     const size_t size = strlen(str);
     wchar_t* wpath = (wchar_t*)malloc(size + 1);
@@ -9,7 +9,7 @@ wchar_t* StringToWideString(const char* str)
     return wpath;
 }
 
-void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handle_t** rootDir, efi_file_handle_t** imgFileHandle)
+void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handle_t** rootDir, efi_file_handle_t** fileHandle)
 {
     // Get all the simple file system protocol handles
     efi_guid_t sfsGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
@@ -60,11 +60,26 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
         if (EFI_ERROR(status))
             continue;
 
-        // Get a handle to the image file
-        status = (*rootDir)->Open((*rootDir), imgFileHandle, path, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
+        // Get a handle to the file
+        status = (*rootDir)->Open((*rootDir), fileHandle, path, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
         if (EFI_ERROR(status))
             PrintDebug("Checking another partition for the file...\n");
     }
-    if((*imgFileHandle) == NULL) 
-        ErrorExit("Failed to find the image on the machine.", EFI_NOT_FOUND);
+    if((*fileHandle) == NULL) 
+        ErrorExit("Failed to find the file on the machine.", EFI_NOT_FOUND);
+}
+
+efi_status_t GetFileInfo(efi_file_handle_t* fileHandle, efi_file_info_t* fileInfo)
+{
+    efi_guid_t infGuid = EFI_FILE_INFO_GUID;
+    uintn_t size = sizeof(efi_file_info_t);
+    return fileHandle->GetInfo(fileHandle, &infGuid, &size, (void*)fileInfo);
+}
+
+efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char** buffer)
+{
+    *buffer = (char*)malloc(fileSize);
+    if(!buffer)
+        ErrorExit("Out of memory.", EFI_OUT_OF_RESOURCES);
+    return fileHandle->Read(fileHandle, &fileSize, (*buffer));
 }
