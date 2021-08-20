@@ -24,7 +24,7 @@ void ChainloadImage(wchar_t* path)
     status = BS->LoadImage(0, IM, devPath, imgData, imgFileSize, &imgHandle);
     if (EFI_ERROR(status))
         ErrorExit("Failed to load the image.", status);
-    free(imgData);
+    BS->FreePool(imgData);
 
     status = BS->StartImage(imgHandle, NULL, NULL);
     if (EFI_ERROR(status))

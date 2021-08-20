@@ -3,7 +3,12 @@
 wchar_t* StringToWideString(char* str)
 {
     const size_t size = strlen(str);
-    wchar_t* wpath = (wchar_t*)malloc(size + 1);
+    wchar_t* wpath = NULL;
+    
+    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, size + 1, (void**)&wpath);
+    if(EFI_ERROR(status))
+        ErrorExit("Failed to allocate memory during string conversion.", status);
+
     wpath[size] = 0;
     mbstowcs(wpath, str, size);
     return wpath;
@@ -78,8 +83,8 @@ efi_status_t GetFileInfo(efi_file_handle_t* fileHandle, efi_file_info_t* fileInf
 
 efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char** buffer)
 {
-    *buffer = (char*)malloc(fileSize);
-    if(!buffer)
-        ErrorExit("Out of memory.", EFI_OUT_OF_RESOURCES);
+    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, fileSize, (void**)buffer);
+    if(EFI_ERROR(status))
+        ErrorExit("Failed to allocate memory to read file.", status);
     return fileHandle->Read(fileHandle, &fileSize, (*buffer));
 }
