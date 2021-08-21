@@ -1,5 +1,7 @@
 #include "config.h"
 
+// Returns a pointer to the head of a linked list of boot entries
+// Every pointer in the linked list was allocated dynamically
 boot_entry_s* ParseConfig(void)
 {
     efi_device_path_t* devPath = NULL;
@@ -28,17 +30,17 @@ boot_entry_s* ParseConfig(void)
         boot_entry_s entry = {0};
         size_t len = configEntry - srcCopy;
 
-        char* strippedEntry = NULL;
+        char* strippedEntry = NULL; // Holds the current entry block
         BS->AllocatePool(LIP->ImageDataType, len + 1, (void**)&strippedEntry);
 
         memcpy(strippedEntry, srcCopy, len);
         strippedEntry[len] = 0;
-        srcCopy += len + 2; // Pass the delimiter
+        srcCopy += len + strlen(cfgEntryDelimiter); // Move the pointer to the next entry block
 
-        char* s = strippedEntry;
+        char* entryCopy = strippedEntry;
         // Gets lines from the blocks of text
-        while((line = strtok_r(s, cfgLineDelimiter, &s)))
-            ParseEntry(&entry, line);
+        while((line = strtok_r(entryCopy, cfgLineDelimiter, &entryCopy)))
+            ParseLine(&entry, line);
 
         BS->FreePool(strippedEntry);
         ValidateEntry(entry, &head);
@@ -47,7 +49,7 @@ boot_entry_s* ParseConfig(void)
     // Handle the last entry
     boot_entry_s entry = {0};
     while ((line = strtok_r(srcCopy, cfgLineDelimiter, &srcCopy)))
-        ParseEntry(&entry, line);
+        ParseLine(&entry, line);
     ValidateEntry(entry, &head);
 
     BS->FreePool(configData);
@@ -67,6 +69,7 @@ int GetValueOffset(char* line, size_t* valueOffset)
     return 0;
 }
 
+// If the entry is valid then it is added to the entry linked list
 void ValidateEntry(boot_entry_s newEntry, boot_entry_s** head)
 {
     if(!strlen(newEntry.name))
@@ -94,7 +97,7 @@ void ValidateEntry(boot_entry_s newEntry, boot_entry_s** head)
         AppendEntry(*head, entry);
 }
 
-void AddToEntry(const char* key, char* value, boot_entry_s* entry)
+void AssignValueToEntry(const char* key, char* value, boot_entry_s* entry)
 {
     if (!strcmp(key, "name")) 
         entry->name = value;
@@ -113,7 +116,8 @@ void AddToEntry(const char* key, char* value, boot_entry_s* entry)
         printf("[WARNING] Unknown key value (%s) in config file.\n", key);
 }
 
-void ParseEntry(boot_entry_s* entry, char* token)
+// Stores the key and value in separate strings
+void ParseLine(boot_entry_s* entry, char* token)
 {
     size_t valueOffset = 0;
     size_t tokenLen = strlen(token);
@@ -132,10 +136,11 @@ void ParseEntry(boot_entry_s* entry, char* token)
     memcpy(value, token + valueOffset, valueLength);
     value[valueLength] = 0;
 
-    AddToEntry(key, value, entry);
+    AssignValueToEntry(key, value, entry);
     BS->FreePool(key);
 }
 
+// Creates a new entry pointer
 boot_entry_s* InitializeEntry(void)
 {
     boot_entry_s* entry = NULL;
@@ -151,6 +156,7 @@ boot_entry_s* InitializeEntry(void)
     return entry;
 }
 
+// Adds an entry to the end of the entry linked list
 void AppendEntry(boot_entry_s* head, boot_entry_s* entry)
 {
     boot_entry_s* copy = head;
