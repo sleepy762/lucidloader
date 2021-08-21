@@ -1,6 +1,7 @@
 #include <uefi.h>
 #include "debug.h"
 #include "chainloader.h"
+#include "config.h"
 
 int main(int argc, char** argv)
 {
@@ -24,7 +25,23 @@ int main(int argc, char** argv)
     while ((status = ST->ConIn->ReadKeyStroke(ST->ConIn, &Key)) == EFI_NOT_READY);
     printf("Pressed: %c\n", Key.UnicodeChar);
 
-    // Chainload windows
+    boot_entry_s* entries = ParseConfig();
+    printf("---successs----\n");
+    boot_entry_s* copy = entries;
+    while(copy != NULL)
+    {
+        printf("name:%s\n", copy->name);
+        printf("type:%d\n", copy->type);
+        printf("path:%s\n", copy->mainPath);
+        if(copy->type == Linux)
+        {
+            printf("initrd:%s\n", copy->linuxValues.initrdPath);
+            printf("args:%s\n", copy->linuxValues.kernelArgs);
+        }
+        copy = copy->next;
+        printf("\n");
+    }
+    sleep(5);
     ChainloadImage(StringToWideString("EFI\\apps\\bootmgfw.efi"));
     
     // This should never be reached
