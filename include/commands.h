@@ -1,5 +1,4 @@
-#ifndef COMMANDS_H
-#define COMMANDS_H
+#pragma once
 #include <uefi.h>
 #include "bootutils.h"
 #include "cmds/echo.h"
@@ -26,4 +25,3 @@ static shell_cmd_s commands[] = {
 { "echo", &EchoCmd, &EchoBrief, &EchoLong },
 { "", NULL, NULL, NULL } // Has to be here in order to terminate the command counter
 };
-#endif

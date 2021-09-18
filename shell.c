@@ -78,6 +78,11 @@ void ProcessCommand(char buffer[])
         if (strcmp(cmd, commands[i].commandName) == 0)
         {
             commands[i].CommandFunction(args);
+            break;
+        }
+        else if (i + 1 == totalCmds)
+        {
+            printf("\nCommand '%s' not found.", cmd);
         }
     }
     // Cleanup

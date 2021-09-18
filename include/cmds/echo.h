@@ -1,5 +1,4 @@
-#ifndef ECHO_H
-#define ECHO_H
+#pragma once
 #include <uefi.h>
 
 inline void EchoCmd(char args[])
@@ -16,4 +15,3 @@ inline const char* EchoLong(void)
 {
     return "Usage: echo <string>";
 }
-#endif

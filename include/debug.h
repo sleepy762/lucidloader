@@ -1,5 +1,4 @@
-#ifndef DEBUG_H
-#define DEBUG_H
+#pragma once
 #include <uefi.h>
 
 // Comment out this line in order to disable debug info.
@@ -9,4 +8,3 @@ void PrintDebug(const char* string);
 void ErrorExit(const char* moreInfo, efi_status_t status);
 void PrintWarning(const char* moreInfo, efi_status_t status);
 const char* GetErrorInfo(efi_status_t status);
-#endif

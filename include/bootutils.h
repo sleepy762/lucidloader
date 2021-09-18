@@ -1,5 +1,4 @@
-#ifndef BOOTUTILS_H
-#define BOOTUTILS_H
+#pragma once
 #include <uefi.h>
 #include "debug.h"
 
@@ -11,4 +10,3 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
 efi_status_t GetFileInfo(efi_file_handle_t* fileHandle, efi_file_info_t* fileInfo);
 efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char** buffer);
 int GetValueOffset(char* line, size_t* valueOffset, const char delimiter);
-#endif

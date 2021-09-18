@@ -1,5 +1,4 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#pragma once
 #include <uefi.h>
 #include "debug.h"
 #include "bootutils.h"
@@ -38,4 +37,3 @@ void ParseLine(boot_entry_s* entry, char* token);
 
 boot_entry_s* InitializeEntry(void);
 void AppendEntry(boot_entry_s* head, boot_entry_s* entry);
-#endif

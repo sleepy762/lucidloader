@@ -19,18 +19,26 @@ void HelpCmd(char args[])
         {
             if(strcmp(args, commands[i].commandName) == 0)
             {
-                printf("\n%s\n", commands[i].LongHelp());
+                if (commands[i].LongHelp != NULL)
+                    printf("\n%s\n", commands[i].LongHelp());
+                else
+                    printf("\nNo long help available.\n");
                 return; // The command was found
             }
         }
-        printf("\nCommand '%s' not found.", args);
+        printf("\nhelp: Command '%s' not found.", args);
     }
     else
     {
         // List all commands with their brief help
         for(short i = 0; i < totalCmds; i++)
         {
-            printf("\n%s -- %s\n", commands[i].commandName, commands[i].BriefHelp());
+            printf("\n%s -- ", commands[i].commandName);
+
+            if(commands[i].BriefHelp != NULL)
+                printf("%s\n", commands[i].BriefHelp());
+            else
+                printf("No brief help available.\n");
         }
     }
 }
