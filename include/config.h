@@ -1,6 +1,8 @@
+#ifndef CONFIG_H
+#define CONFIG_H
 #include <uefi.h>
 #include "debug.h"
-#include "utils.h"
+#include "bootutils.h"
 
 // Temporary path
 static wchar_t* cfgPath = u"EFI\\apps\\config.cfg";
@@ -31,9 +33,9 @@ typedef struct boot_entry_s
 
 boot_entry_s* ParseConfig(void);
 void ValidateEntry(boot_entry_s newEntry, boot_entry_s** head);
-int GetValueOffset(char* line, size_t* valueOffset);
 void AssignValueToEntry(const char* key, char* value, boot_entry_s* entry);
 void ParseLine(boot_entry_s* entry, char* token);
 
 boot_entry_s* InitializeEntry(void);
 void AppendEntry(boot_entry_s* head, boot_entry_s* entry);
+#endif

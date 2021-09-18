@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "bootutils.h"
 
 wchar_t* StringToWideString(char* str)
 {
@@ -37,7 +37,7 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
     efi_simple_file_system_protocol_t* sfsProt = NULL;
     efi_guid_t devGuid = EFI_DEVICE_PATH_PROTOCOL_GUID;
 
-    for (int i = 0; i < numHandles; i++)
+    for (uintn_t i = 0; i < numHandles; i++)
     {
         efi_handle_t handle = handles[i];
         status = BS->HandleProtocol(handle, &sfsGuid, (void**)&sfsProt);
@@ -87,4 +87,17 @@ efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char** bu
     if(EFI_ERROR(status))
         ErrorExit("Failed to allocate memory to read file.", status);
     return fileHandle->Read(fileHandle, &fileSize, (*buffer));
+}
+
+int GetValueOffset(char* line, size_t* valueOffset, const char delimiter)
+{
+    char* curr = line;
+
+    for(; *curr != delimiter; curr++)
+        if(*curr == '\0') return 1; // Delimiter not found
+
+    curr++; // Pass the delimiter
+    *valueOffset = curr - line;
+
+    return 0;
 }

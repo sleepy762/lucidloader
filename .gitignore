@@ -4,3 +4,5 @@
 *.efi
 ovmf/
 iso/
+config.cfg
+.vscode

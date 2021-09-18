@@ -11,7 +11,7 @@ endif
 TMP = $(SRCS:.c=.o)
 OBJS = $(TMP:.S=.o)
 CFLAGS += -fshort-wchar -fno-strict-aliasing -ffreestanding -fno-stack-protector -fno-stack-check -I. -I./uefi \
-  -I/usr/include -I/usr/include/efi -I/usr/include/efi/protocol -I/usr/include/efi/$(ARCH) -D__$(ARCH)__
+  -I/usr/include -Iinclude -I/usr/include/efi -I/usr/include/efi/protocol -I/usr/include/efi/$(ARCH) -D__$(ARCH)__
 ifeq ($(ARCH),x86_64)
 CFLAGS += -DHAVE_USE_MS_ABI -mno-red-zone
 endif

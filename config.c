@@ -56,19 +56,6 @@ boot_entry_s* ParseConfig(void)
     return head;
 }
 
-int GetValueOffset(char* line, size_t* valueOffset)
-{
-    char* curr = line;
-
-    for(; *curr != keyValueDelimiter; curr++)
-        if(*curr == '\0') return 1; // Delimiter not found
-
-    curr++; // Pass the delimiter
-    *valueOffset = curr - line;
-
-    return 0;
-}
-
 // If the entry is valid then it is added to the entry linked list
 void ValidateEntry(boot_entry_s newEntry, boot_entry_s** head)
 {
@@ -121,7 +108,7 @@ void ParseLine(boot_entry_s* entry, char* token)
 {
     size_t valueOffset = 0;
     size_t tokenLen = strlen(token);
-    if(GetValueOffset(token, &valueOffset)) return;
+    if(GetValueOffset(token, &valueOffset, keyValueDelimiter)) return;
 
     size_t valueLength = tokenLen - valueOffset;
 

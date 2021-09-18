@@ -65,5 +65,52 @@ boolean_t GetInputString(void)
 
 void ProcessCommand(char buffer[])
 {
-    
+    char* cmd = NULL;
+    char* args = NULL;
+    ParseInput(buffer, &cmd, &args);
+
+    short totalCmds = CommandCount();
+    for(short i = 0; i < totalCmds; i++)
+    {   
+        if(cmd == NULL) break;
+
+        // Find the right command and execute the command function
+        if (strcmp(cmd, commands[i].commandName) == 0)
+        {
+            commands[i].CommandFunction(args);
+        }
+    }
+    // Cleanup
+    if (cmd)  BS->FreePool(cmd);
+    if (args) BS->FreePool(args);
+}
+
+void ParseInput(char buffer[], char** cmd, char** args)
+{
+    size_t bufferLen = strlen(buffer);
+    if(!bufferLen) return;
+
+    size_t argsOffset = 0;
+    GetValueOffset(buffer, &argsOffset, SPACE);
+
+    // Use the argsOffset if there are args present
+    size_t cmdSize;
+    if(argsOffset != 0)
+        cmdSize = argsOffset - 1;
+    else
+        cmdSize = bufferLen + 1;
+
+    BS->AllocatePool(LIP->ImageDataType, cmdSize, (void**)cmd);
+    memcpy(*cmd, buffer, cmdSize);
+    (*cmd)[cmdSize] = 0; // Terminate the string
+
+    // If there are arguments present...
+    if(argsOffset != 0)
+    {
+        size_t argsLen = bufferLen - argsOffset;
+
+        BS->AllocatePool(LIP->ImageDataType, argsLen + 1, (void**)args);
+        memcpy(*args, buffer + argsOffset, argsLen);
+        (*args)[argsLen] = 0; // Terminate the string
+    }
 }
