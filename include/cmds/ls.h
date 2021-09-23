@@ -12,8 +12,22 @@ inline void LsCmd(char args[], char** currPathPtr)
     boolean_t dynMemFlag = FALSE;
     if (args)
     {
+        size_t argsLen = strlen(args);
+        char* originalArgs = args;
+
+        // remove leading whitespace
+        while(isspace(*args)) args++;
+
+        // remove trailing whitespace
+        char* end = originalArgs + argsLen - 1;
+        while(end > originalArgs && isspace(*end)) end--;
+        end[1] = 0;
+
+        // Remove duplicate backslashes from the command
+        RemoveRepeatedChars(args, DIRECTORY_DELIM);
+
         // Check if the path starts from the root dir
-        if (args[0] == '\\')
+        if (args[0] == DIRECTORY_DELIM)
         {
             dirToList = args;
         }
@@ -23,6 +37,7 @@ inline void LsCmd(char args[], char** currPathPtr)
             dirToList = ConcatPaths(*currPathPtr, args);
             dynMemFlag = TRUE;
         }
+        NormalizePath(&dirToList);
     }
     else // if the user didn't pass arguments
     {

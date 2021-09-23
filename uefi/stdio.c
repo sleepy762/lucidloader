@@ -120,7 +120,7 @@ int fclose (FILE *__stream)
         if(__stream == (FILE*)__blk_devs[i].bio)
             return 1;
     status = __stream->Close(__stream);
-    free(__stream);
+    BS->FreePool(__stream);
     return !EFI_ERROR(status);
 }
 
@@ -258,9 +258,9 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
         return NULL;
     }
     errno = 0;
-    //ret = (FILE*)malloc(sizeof(FILE));
-    BS->AllocatePool(LIP->ImageDataType, sizeof(FILE), (void**)&ret);
-    //if(!ret) return NULL;
+    status = BS->AllocatePool(LIP->ImageDataType, sizeof(FILE), (void**)&ret);
+    if (EFI_ERROR(status))
+        return NULL;
 #if USE_UTF8
     mbstowcs((wchar_t*)&wcname, __filename, BUFSIZ - 1);
     status = __root_dir->Open(__root_dir, &ret, (wchar_t*)&wcname,

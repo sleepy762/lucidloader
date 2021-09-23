@@ -124,3 +124,97 @@ char* ConcatPaths(char* lhs, char* rhs)
 
     return newPath;
 }
+
+boolean_t isspace(char c)
+{
+    return (c == ' ' || c == '\t');
+}
+
+void RemoveRepeatedChars(char* str, char toRemove)
+{
+    char* dest = str;
+
+    while (*str != '\0')
+    {
+        while (*str == toRemove && *(str + 1) == toRemove)
+            str++;
+        
+        *dest++ = *str++;
+    }
+    *dest = 0;
+}
+
+// Normalizes the path by removing "." and ".." directories from the given path
+void NormalizePath(char** path)
+{
+    // count the amount of tokens
+    char* copy = *path;
+    int tokenAmount = 0;
+    while(*copy != '\0')
+    {
+        if(*copy == DIRECTORY_DELIM)
+            tokenAmount++;
+        copy++;
+    }
+    
+    // Nothing to normalize
+    if (tokenAmount <= 1) return;
+
+    char** tokens = NULL;
+    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, tokenAmount * sizeof(char*), (void**)&tokens);
+    if (EFI_ERROR(status))
+        ErrorExit("Failed to allocate memory while normalizing path.", status);
+    tokens[0] = NULL;
+
+    char* token = NULL;
+    char* src = strdup(*path);
+    char* srcCopy = src + 1;
+    int i = 0;
+    // Evaluate the path
+    while((token = strtok_r(srcCopy, DIRECTORY_DELIM_STR, &srcCopy)))
+    {
+        // Ignore the "." directory
+        if (strcmp(token, CURRENT_DIR) == 0)
+        {
+            tokenAmount--;
+        }
+        // Go backwards in the path
+        else if (strcmp(token, PREVIOUS_DIR) == 0)
+        {
+            if (tokenAmount > 0) 
+                tokenAmount--;
+            else
+                tokenAmount = 0;
+            if (i > 0) i--;
+
+            if (tokens[i])
+            {
+                if (tokenAmount > 0) tokenAmount--;
+                BS->FreePool(tokens[i]);
+                tokens[i] = NULL;
+            }
+        }
+        else
+        {
+            tokens[i] = strdup(token);
+            i++;
+        }
+    }
+    BS->FreePool(src);
+
+    // Rebuild the string
+    (*path)[0] = '\\';
+    (*path)[1] = 0;
+    for(i = 0; i < tokenAmount; i++)
+    {
+        strcat(*path, tokens[i]);
+
+        if (i + 1 != tokenAmount)
+        {
+            strcat(*path, "\\");
+        }
+            
+        BS->FreePool(tokens[i]);
+    }
+    BS->FreePool(tokens);
+}
