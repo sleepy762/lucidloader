@@ -10,8 +10,8 @@
 #define SPACE ' ' // Used as a delimiter between a command and the arguments
 
 void StartShell(void);
-void ShellLoop(void);
+void ShellLoop(char** currPathPtr);
 void ParseInput(char buffer[], char** cmd, char** args);
 
-boolean_t GetInputString(void);
-void ProcessCommand(char buffer[]);
+boolean_t GetInput(char** currPathPtr);
+void ProcessCommand(char buffer[], char** currPathPtr);

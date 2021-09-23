@@ -1,9 +1,10 @@
 #pragma once
 #include <uefi.h>
 
-inline void EchoCmd(char args[])
+inline void EchoCmd(char args[], char** currPathPtr)
 {
-    if (args) printf("\n%s", args);
+    if (args) 
+        printf("\n%s", args);
 }
 
 inline const char* EchoBrief(void)

@@ -24,9 +24,12 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
     if (status != EFI_BUFFER_TOO_SMALL)
         ErrorExit("Initial location of the simple file system protocol handles failed.", status);
 
-    handles = (efi_handle_t*)malloc(bufSize);
-    if(!handles)
-        ErrorExit("Out of memory.", EFI_OUT_OF_RESOURCES);
+    //handles = (efi_handle_t*)malloc(bufSize);
+    status = BS->AllocatePool(LIP->ImageDataType, bufSize, (void**)&handles);
+    if(EFI_ERROR(status))
+        ErrorExit("Failed to allocate buffer for handles.", status);
+    //if(!handles)
+    //    ErrorExit("Out of memory.", EFI_OUT_OF_RESOURCES);
 
     status = BS->LocateHandle(ByProtocol, &sfsGuid, NULL, &bufSize, handles);
     if (EFI_ERROR(status))
@@ -70,6 +73,7 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
         if (EFI_ERROR(status))
             PrintDebug("Checking another partition for the file...\n");
     }
+    BS->FreePool(handles);
     if((*fileHandle) == NULL) 
         ErrorExit("Failed to find the file on the machine.", EFI_NOT_FOUND);
 }
@@ -100,4 +104,23 @@ int GetValueOffset(char* line, size_t* valueOffset, const char delimiter)
     *valueOffset = curr - line;
 
     return 0;
+}
+
+char* ConcatPaths(char* lhs, char* rhs)
+{
+    char* newPath = NULL;
+    size_t lhsLen = strlen(lhs);
+    size_t rhsLen = strlen(rhs);
+
+    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, lhsLen + rhsLen + 2, (void**)&newPath);
+    if (EFI_ERROR(status))
+        ErrorExit("Failed to allocate memory for path concatenation.", status);
+    memcpy(newPath, lhs, lhsLen + 1); // Copy with null terminator
+
+    if (strlen(lhs) > 1) 
+        strcat(newPath, "\\");
+
+    strcat(newPath, rhs);
+
+    return newPath;
 }

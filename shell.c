@@ -5,22 +5,33 @@ void StartShell(void)
     ST->ConOut->ClearScreen(ST->ConOut);
     printf("Welcome to the bootloader shell!\n");
     printf("Type `help` to get a list of commands.\n");
+
+    char* currPath = NULL;
+    // 2 is the initial size for the root dir "\" and null string terminator
+    BS->AllocatePool(LIP->ImageDataType, 2, (void**)&currPath);
+
+    // Initializing the default starting path
+    currPath[0] = '\\';
+    currPath[1] = 0;
+
     ST->ConIn->Reset(ST->ConIn, 0);
-    ShellLoop();
+    ShellLoop(&currPath);
+
+    BS->FreePool(currPath);
 }
 
-void ShellLoop(void)
+void ShellLoop(char** currPathPtr)
 {
     do
     {
         printf("\n> ");
     }
-    while(GetInputString());
+    while(GetInput(currPathPtr));
 
     ST->ConOut->ClearScreen(ST->ConOut);
 }
 
-boolean_t GetInputString(void)
+boolean_t GetInput(char** currPathPtr)
 {
     char buffer[MAX_INPUT] = {0};
     short index = 0;
@@ -58,12 +69,12 @@ boolean_t GetInputString(void)
     // Leave the shell
     if(!strcmp(buffer, "exit")) return 0;
 
-    ProcessCommand(buffer);
+    ProcessCommand(buffer, currPathPtr);
 
     return 1;
 }
 
-void ProcessCommand(char buffer[])
+void ProcessCommand(char buffer[], char** currPathPtr)
 {
     char* cmd = NULL;
     char* args = NULL;
@@ -77,7 +88,7 @@ void ProcessCommand(char buffer[])
         // Find the right command and execute the command function
         if (strcmp(cmd, commands[i].commandName) == 0)
         {
-            commands[i].CommandFunction(args);
+            commands[i].CommandFunction(args, currPathPtr);
             break;
         }
         else if (i + 1 == totalCmds)

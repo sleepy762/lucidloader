@@ -2,6 +2,9 @@
 #include <uefi.h>
 #include "bootutils.h"
 #include "cmds/echo.h"
+#include "cmds/pwd.h"
+#include "cmds/ls.h"
+#include "cmds/cd.h"
 
 // Defines a shell command
 typedef struct shell_cmd_s
@@ -13,7 +16,7 @@ typedef struct shell_cmd_s
 }shell_cmd_s;
 
 // The only command in this file because it has to access the list of all commands
-void HelpCmd(char args[]);
+void HelpCmd(char args[], char** currPathPtr);
 const char* HelpBrief(void);
 const char* HelpLong(void);
 
@@ -23,5 +26,8 @@ short CommandCount(void);
 static shell_cmd_s commands[] = {
 { "help", &HelpCmd, &HelpBrief, &HelpLong },
 { "echo", &EchoCmd, &EchoBrief, &EchoLong },
+{ "pwd", &PwdCmd, &PwdBrief, NULL },
+{ "ls", &LsCmd, &LsBrief, &LsLong },
+{ "cd", &CdCmd, &CdBrief, &CdLong },
 { "", NULL, NULL, NULL } // Has to be here in order to terminate the command counter
 };

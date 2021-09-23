@@ -228,7 +228,7 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
             efi_guid_t bioGuid = EFI_BLOCK_IO_PROTOCOL_GUID;
             efi_handle_t handles[128];
             uintn_t handle_size = sizeof(handles);
-            status = BS->LocateHandle(ByProtocol, &bioGuid, NULL, handle_size, (efi_handle_t*)&handles);
+            status = BS->LocateHandle(ByProtocol, &bioGuid, NULL, &handle_size, (efi_handle_t*)&handles);
             if(!EFI_ERROR(status)) {
                 handle_size /= (uintn_t)sizeof(efi_handle_t);
                 __blk_devs = (block_file_t*)malloc(handle_size * sizeof(block_file_t));
@@ -258,8 +258,9 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
         return NULL;
     }
     errno = 0;
-    ret = (FILE*)malloc(sizeof(FILE));
-    if(!ret) return NULL;
+    //ret = (FILE*)malloc(sizeof(FILE));
+    BS->AllocatePool(LIP->ImageDataType, sizeof(FILE), (void**)&ret);
+    //if(!ret) return NULL;
 #if USE_UTF8
     mbstowcs((wchar_t*)&wcname, __filename, BUFSIZ - 1);
     status = __root_dir->Open(__root_dir, &ret, (wchar_t*)&wcname,

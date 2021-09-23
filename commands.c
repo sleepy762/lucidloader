@@ -4,11 +4,12 @@
 short CommandCount(void)
 {
     short totalCmds = 0;
-    while(commands[totalCmds].CommandFunction) totalCmds++;
+    while(commands[totalCmds].CommandFunction) 
+        totalCmds++;
     return totalCmds;
 }
 
-void HelpCmd(char args[])
+void HelpCmd(char args[], char** currPathPtr)
 {
     short totalCmds = CommandCount();
 
@@ -20,9 +21,9 @@ void HelpCmd(char args[])
             if(strcmp(args, commands[i].commandName) == 0)
             {
                 if (commands[i].LongHelp != NULL)
-                    printf("\n%s\n", commands[i].LongHelp());
+                    printf("\n%s", commands[i].LongHelp());
                 else
-                    printf("\nNo long help available.\n");
+                    printf("\nNo long help available.");
                 return; // The command was found
             }
         }
@@ -36,7 +37,7 @@ void HelpCmd(char args[])
             printf("\n%s -- ", commands[i].commandName);
 
             if(commands[i].BriefHelp != NULL)
-                printf("%s\n", commands[i].BriefHelp());
+                printf("%s", commands[i].BriefHelp());
             else
                 printf("No brief help available.\n");
         }
