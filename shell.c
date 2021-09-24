@@ -3,6 +3,7 @@
 void StartShell(void)
 {
     ST->ConOut->ClearScreen(ST->ConOut);
+    ST->ConOut->EnableCursor(ST->ConOut, TRUE);
     printf("Welcome to the bootloader shell!\n");
     printf("Type `help` to get a list of commands.\n");
 
@@ -18,6 +19,7 @@ void StartShell(void)
     ShellLoop(&currPath);
 
     BS->FreePool(currPath);
+    ST->ConOut->EnableCursor(ST->ConOut, FALSE);
 }
 
 void ShellLoop(char** currPathPtr)
@@ -54,11 +56,11 @@ boolean_t GetInput(char** currPathPtr)
             {
                 index--;
                 buffer[index] = 0;
-                printf("%c", key.UnicodeChar);
+                printf("\b \b"); // Destructive backspace
             }
         }
-        // Add the character to the buffer as long as there is enough space
-        else if (index < MAX_INPUT - 1)
+        // Add the character to the buffer as long as there is enough space and if its a valid character
+        else if (index < MAX_INPUT - 1 && key.UnicodeChar != '\0')
         {
             buffer[index] = key.UnicodeChar;
             index++;
