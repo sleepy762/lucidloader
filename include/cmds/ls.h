@@ -20,6 +20,10 @@ inline void LsCmd(char args[], char** currPathPtr)
             dirToList = args;
         }
         // Check the concatenated path
+        else if (args[0] == 0)
+        {
+            dirToList = *currPathPtr;
+        }
         else
         {
             dirToList = ConcatPaths(*currPathPtr, args);
