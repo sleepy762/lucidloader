@@ -21,3 +21,4 @@ char* ConcatPaths(char* path1, char* path2);
 boolean_t isspace(char c);
 void RemoveRepeatedChars(char* str, char toRemove);
 void NormalizePath(char** path);
+void CleanPath(char** path);

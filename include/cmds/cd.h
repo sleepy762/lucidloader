@@ -17,19 +17,7 @@ inline void CdCmd(char args[], char** currPathPtr)
     size_t argsLen = strlen(args);
     char* originalArgs = args;
 
-    // remove leading whitespace
-    while(isspace(*args)) args++;
-
-    // remove trailing whitespace
-    char* end = originalArgs + argsLen - 1;
-    while(end > originalArgs && isspace(*end)) end--;
-    end[1] = 0;
-
-    // Remove duplicate backslashes from the command
-    RemoveRepeatedChars(args, DIRECTORY_DELIM);
-
-    // Remove a backslash from the end if it exists
-    if (end[0] == DIRECTORY_DELIM && strlen(args) > 1) end[0] = 0;
+    CleanPath(&args);
 
     // Check if the path starts from the root dir
     if (args[0] == DIRECTORY_DELIM)

@@ -218,3 +218,24 @@ void NormalizePath(char** path)
     }
     BS->FreePool(tokens);
 }
+
+void CleanPath(char** path)
+{
+    size_t pathLen = strlen(*path);
+    char* originalPath = *path;
+
+    // remove leading whitespace
+    while(isspace(**path)) (*path)++;
+
+    // remove trailing whitespace
+    char* end = originalPath + pathLen - 1;
+    while(end > originalPath && isspace(*end)) end--;
+    end[1] = 0;
+
+    // Remove duplicate backslashes from the command
+    RemoveRepeatedChars(*path, DIRECTORY_DELIM);
+
+    // Remove a backslash from the end if it exists
+    size_t lastIndex = strlen(*path) - 1;
+    if ((*path)[lastIndex] == DIRECTORY_DELIM && lastIndex + 1 > 1) (*path)[lastIndex] = 0;
+}
