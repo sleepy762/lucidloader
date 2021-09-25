@@ -24,12 +24,9 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
     if (status != EFI_BUFFER_TOO_SMALL)
         ErrorExit("Initial location of the simple file system protocol handles failed.", status);
 
-    //handles = (efi_handle_t*)malloc(bufSize);
     status = BS->AllocatePool(LIP->ImageDataType, bufSize, (void**)&handles);
     if(EFI_ERROR(status))
         ErrorExit("Failed to allocate buffer for handles.", status);
-    //if(!handles)
-    //    ErrorExit("Out of memory.", EFI_OUT_OF_RESOURCES);
 
     status = BS->LocateHandle(ByProtocol, &sfsGuid, NULL, &bufSize, handles);
     if (EFI_ERROR(status))

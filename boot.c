@@ -6,8 +6,6 @@
 
 int main(int argc, char** argv)
 {
-    (void)argc;
-    (void)argv;
     // Global status of the bootloader
     efi_status_t status;
 
@@ -31,22 +29,6 @@ int main(int argc, char** argv)
     if (Key.UnicodeChar == 'c') StartShell();
 
     boot_entry_s* entries = ParseConfig();
-    printf("---successs----\n");
-    boot_entry_s* copy = entries;
-    while(copy != NULL)
-    {
-        printf("name:%s\n", copy->name);
-        printf("type:%d\n", copy->type);
-        printf("path:%s\n", copy->mainPath);
-        if(copy->type == Linux)
-        {
-            printf("initrd:%s\n", copy->linuxValues.initrdPath);
-            printf("args:%s\n", copy->linuxValues.kernelArgs);
-        }
-        copy = copy->next;
-        printf("\n");
-    }
-    sleep(5);
     ChainloadImage(StringToWideString("EFI\\apps\\bootmgfw.efi"));
     
     // This should never be reached
