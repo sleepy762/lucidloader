@@ -1,5 +1,6 @@
 #pragma once
 #include <uefi.h>
+#include "shellutils.h"
 #include "bootutils.h"
 
 inline void CdCmd(char args[], char** currPathPtr)
@@ -14,28 +15,12 @@ inline void CdCmd(char args[], char** currPathPtr)
     char* dirToChangeTo = NULL;
     boolean_t dynMemFlag = FALSE;
 
-    size_t argsLen = strlen(args);
-    char* originalArgs = args;
-
-    CleanPath(&args);
-
-    // Check if the path starts from the root dir
-    if (args[0] == DIRECTORY_DELIM)
-    {
-        dirToChangeTo = args;
-    }
-    // if the args are only whitespace
-    else if(args[0] == 0)
+    dirToChangeTo = MakeFullPath(args, *currPathPtr, &dynMemFlag);
+    if (dirToChangeTo == NULL)
     {
         printf("\ncd: no directory specified");
         return;
     }
-    else // Check the concatenated path
-    {
-        dirToChangeTo = ConcatPaths(*currPathPtr, args);
-        dynMemFlag = TRUE;
-    }
-
     NormalizePath(&dirToChangeTo);
 
     // Try to open the directory to make sure it exists

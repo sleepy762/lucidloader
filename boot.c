@@ -6,6 +6,8 @@
 
 int main(int argc, char** argv)
 {
+    (void)argc;
+    (void)argv;
     // Global status of the bootloader
     efi_status_t status;
 

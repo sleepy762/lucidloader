@@ -1,6 +1,7 @@
 #pragma once
 #include <uefi.h>
 #include "commands.h"
+#include "shellutils.h"
 #include "bootutils.h"
 
 #define MAX_INPUT 128

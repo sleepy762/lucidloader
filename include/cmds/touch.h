@@ -1,5 +1,6 @@
 #pragma once
 #include <uefi.h>
+#include "shellutils.h"
 #include "bootutils.h"
 
 inline void TouchCmd(char args[], char** currPathPtr)
@@ -10,23 +11,14 @@ inline void TouchCmd(char args[], char** currPathPtr)
         return;
     }
 
-    CleanPath(&args);
     char* path = NULL;
     boolean_t dynMemFlag = FALSE;
 
-    if (args[0] == DIRECTORY_DELIM)
-    {
-        path = args;
-    }
-    else if (args[0] == 0)
+    path = MakeFullPath(args, *currPathPtr, &dynMemFlag);
+    if (path == NULL)
     {
         printf("\ntouch: no filename specified");
         return;
-    }
-    else
-    {
-        path = ConcatPaths(*currPathPtr, args);
-        dynMemFlag = TRUE;
     }
 
     FILE* fp = fopen(path, "r");

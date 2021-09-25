@@ -1,6 +1,6 @@
 #pragma once
 #include <uefi.h>
-#include "bootutils.h"
+#include "shellutils.h"
 #include "cmds/echo.h"
 #include "cmds/pwd.h"
 #include "cmds/ls.h"

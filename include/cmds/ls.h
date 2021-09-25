@@ -1,5 +1,6 @@
 #pragma once
 #include <uefi.h>
+#include "shellutils.h"
 #include "bootutils.h"
 
 inline void LsCmd(char args[], char** currPathPtr)
@@ -7,29 +8,19 @@ inline void LsCmd(char args[], char** currPathPtr)
     DIR* dir;
     struct dirent* de;
 
-    DIR* auxDir;
     char* dirToList = NULL;
     boolean_t dynMemFlag = FALSE;
     if (args)
     {
-        CleanPath(&args);
-
-        // Check if the path starts from the root dir
-        if (args[0] == DIRECTORY_DELIM)
+        dirToList = MakeFullPath(args, *currPathPtr, &dynMemFlag);
+        if (dirToList)
         {
-            dirToList = args;
-        }
-        // Check the concatenated path
-        else if (args[0] == 0)
-        {
-            dirToList = *currPathPtr;
+            NormalizePath(&dirToList);
         }
         else
         {
-            dirToList = ConcatPaths(*currPathPtr, args);
-            dynMemFlag = TRUE;
+            dirToList = *currPathPtr;
         }
-        NormalizePath(&dirToList);
     }
     else // if the user didn't pass arguments
     {
