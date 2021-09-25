@@ -11,10 +11,9 @@ inline void TouchCmd(char args[], char** currPathPtr)
         return;
     }
 
-    char* path = NULL;
     boolean_t dynMemFlag = FALSE;
 
-    path = MakeFullPath(args, *currPathPtr, &dynMemFlag);
+    char* path = MakeFullPath(args, *currPathPtr, &dynMemFlag);
     if (path == NULL)
     {
         printf("\ntouch: no filename specified");
@@ -43,7 +42,7 @@ inline void TouchCmd(char args[], char** currPathPtr)
 
 inline const char* TouchBrief(void)
 {
-    return "Create a file if it doesn't exist.";
+    return "Create a file.";
 }
 
 inline const char* TouchLong(void)

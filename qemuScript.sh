@@ -19,4 +19,4 @@ mcopy -i fat.img binaries/* ::/EFI/apps
 # Create an ISO image with our EFI file and start uefi qemu to test it
 cp fat.img iso
 xorriso -as mkisofs -R -f -e fat.img -no-emul-boot -o cdimage.iso iso
-qemu-system-x86_64 -L ovmf/ -pflash ovmf/OVMF.fd -cdrom cdimage.iso
+qemu-system-x86_64 -cpu qemu64 -bios ovmf/OVMF.fd -drive file=cdimage.iso,if=ide

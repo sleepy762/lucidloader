@@ -12,10 +12,9 @@ inline void CdCmd(char args[], char** currPathPtr)
     }
 
     DIR* auxDir;
-    char* dirToChangeTo = NULL;
     boolean_t dynMemFlag = FALSE;
 
-    dirToChangeTo = MakeFullPath(args, *currPathPtr, &dynMemFlag);
+    char* dirToChangeTo = MakeFullPath(args, *currPathPtr, &dynMemFlag);
     if (dirToChangeTo == NULL)
     {
         printf("\ncd: no directory specified");

@@ -1,11 +1,13 @@
 #pragma once
 #include <uefi.h>
 #include "shellutils.h"
+
 #include "cmds/echo.h"
 #include "cmds/pwd.h"
 #include "cmds/ls.h"
 #include "cmds/cd.h"
 #include "cmds/touch.h"
+#include "cmds/mkdir.h"
 
 // Defines a shell command
 typedef struct shell_cmd_s
@@ -31,5 +33,6 @@ static shell_cmd_s commands[] = {
 { "ls", &LsCmd, &LsBrief, &LsLong },
 { "cd", &CdCmd, &CdBrief, &CdLong },
 { "touch", &TouchCmd, &TouchBrief, &TouchLong },
+{ "mkdir", &MkdirCmd, &MkdirBrief, &MkdirLong },
 { "", NULL, NULL, NULL } // Has to be here in order to terminate the command counter
 };
