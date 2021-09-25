@@ -43,6 +43,7 @@ inline void MkdirCmd(char args[], char** currPathPtr)
             }
         }
     }
+    if (dynMemFlag) BS->FreePool(path);
 }
 
 inline const char* MkdirBrief(void)
