@@ -134,7 +134,7 @@ void CleanPath(char** path)
     if ((*path)[lastIndex] == DIRECTORY_DELIM && lastIndex + 1 > 1) (*path)[lastIndex] = 0;
 }
 
-char* MakeFullPath(char* args, char* currPathPtr, boolean_t* dynMemFlag)
+char* MakeFullPath(char* args, char* currPathPtr, boolean_t* isDynamicMemory)
 {
     char* fullPath = NULL;
 
@@ -153,7 +153,7 @@ char* MakeFullPath(char* args, char* currPathPtr, boolean_t* dynMemFlag)
     else // Check the concatenated path
     {
         fullPath = ConcatPaths(currPathPtr, args);
-        *dynMemFlag = TRUE;
+        *isDynamicMemory = TRUE;
     }
     return fullPath;
 }

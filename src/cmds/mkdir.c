@@ -8,8 +8,8 @@ void MkdirCmd(char args[], char** currPathPtr)
         return;
     }
 
-    boolean_t dynMemFlag = FALSE;
-    char* path = MakeFullPath(args, *currPathPtr, &dynMemFlag);
+    boolean_t isDynamicMemory = FALSE;
+    char* path = MakeFullPath(args, *currPathPtr, &isDynamicMemory);
     if (path == NULL)
     {
         printf("\nmkdir: no directory name specified");
@@ -41,7 +41,7 @@ void MkdirCmd(char args[], char** currPathPtr)
             }
         }
     }
-    if (dynMemFlag) BS->FreePool(path);
+    if (isDynamicMemory) BS->FreePool(path);
 }
 
 const char* MkdirBrief(void)

@@ -6,10 +6,10 @@ void LsCmd(char args[], char** currPathPtr)
     struct dirent* de;
 
     char* dirToList = NULL;
-    boolean_t dynMemFlag = FALSE;
+    boolean_t isDynamicMemory = FALSE;
     if (args)
     {
-        dirToList = MakeFullPath(args, *currPathPtr, &dynMemFlag);
+        dirToList = MakeFullPath(args, *currPathPtr, &isDynamicMemory);
         if (dirToList)
         {
             NormalizePath(&dirToList);
@@ -38,7 +38,7 @@ void LsCmd(char args[], char** currPathPtr)
         printf("\nls: unable to read directory");
     }
 
-    if (dynMemFlag) BS->FreePool(dirToList);
+    if (isDynamicMemory) BS->FreePool(dirToList);
 }
 
 const char* LsBrief(void)

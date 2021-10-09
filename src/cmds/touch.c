@@ -8,9 +8,9 @@ void TouchCmd(char args[], char** currPathPtr)
         return;
     }
 
-    boolean_t dynMemFlag = FALSE;
+    boolean_t isDynamicMemory = FALSE;
 
-    char* path = MakeFullPath(args, *currPathPtr, &dynMemFlag);
+    char* path = MakeFullPath(args, *currPathPtr, &isDynamicMemory);
     if (path == NULL)
     {
         printf("\ntouch: no filename specified");
@@ -34,7 +34,7 @@ void TouchCmd(char args[], char** currPathPtr)
         else
             printf("\ntouch: failed to open file");
     }
-    if (dynMemFlag) BS->FreePool(path);
+    if (isDynamicMemory) BS->FreePool(path);
 }
 
 const char* TouchBrief(void)
