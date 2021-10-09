@@ -11,15 +11,15 @@ endif
 TMP = $(SRCS:.c=.o)
 OBJS = $(TMP:.S=.o)
 CFLAGS += -fshort-wchar -fno-strict-aliasing -ffreestanding -fno-stack-protector -fno-stack-check -I. -I./uefi \
-  -I/usr/include -Iinclude -I/usr/include/efi -I/usr/include/efi/protocol -I/usr/include/efi/$(ARCH) -D__$(ARCH)__
+  -I/usr/include -I/usr/include/efi -I/usr/include/efi/protocol -I/usr/include/efi/$(ARCH) -D__$(ARCH)__
 ifeq ($(ARCH),x86_64)
 CFLAGS += -DHAVE_USE_MS_ABI -mno-red-zone
 endif
 
 # for libuefi.a
 LIBSRCS = $(filter-out $(wildcard crt_*.c),$(wildcard *.c)) $(wildcard *.S)
-TMP = $(LIBSRCS:.c=.o)
-LIBOBJS = $(TMP:.S=.o)
+TMP2 = $(LIBSRCS:.c=.o)
+LIBOBJS = $(TMP2:.S=.o)
 
 # detect toolchain
 ifeq ($(wildcard /usr/bin/clang),)
@@ -102,7 +102,7 @@ build:
 	@cp libuefi.a uefi.h ../build/uefi
 
 clean:
-	@rm $(TARGET) *.o *.a *.lib *.elf $(LIBOBJS) 2>/dev/null || true
+	@rm $(TARGET) $(SRCS:.c=.o) *.a *.lib *.elf $(LIBOBJS) 2>/dev/null || true
 
 distclean: clean
 ifeq ($(wildcard uefi/Makefile),)

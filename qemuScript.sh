@@ -1,8 +1,7 @@
 #!/bin/sh
-# This script is used only for testing
+# This script is used for quick testing
 
-./cleanScript.sh
-make
+make -j8
 
 [ -d binaries ] || mkdir binaries
 [ -d iso ] || mkdir iso
@@ -20,3 +19,6 @@ mcopy -i fat.img binaries/* ::/EFI/apps
 cp fat.img iso
 xorriso -as mkisofs -R -f -e fat.img -no-emul-boot -o cdimage.iso iso
 qemu-system-x86_64 -cpu qemu64 -bios ovmf/OVMF.fd -drive file=cdimage.iso,if=ide
+
+# Remove all object files
+make clean
