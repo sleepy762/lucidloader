@@ -2,7 +2,7 @@
 
 void EchoCmd(char args[], char** currPathPtr)
 {
-    if (args) 
+    if (args != NULL) 
         printf("\n%s", args);
 }
 

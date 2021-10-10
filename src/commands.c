@@ -1,10 +1,22 @@
 #include "commands.h"
 
+// List of all the commands
+const shell_cmd_s commands[] = {
+{ "help", &HelpCmd, &HelpBrief, &HelpLong },
+{ "echo", &EchoCmd, &EchoBrief, &EchoLong },
+{ "pwd", &PwdCmd, &PwdBrief, NULL },
+{ "ls", &LsCmd, &LsBrief, &LsLong },
+{ "cd", &CdCmd, &CdBrief, &CdLong },
+{ "touch", &TouchCmd, &TouchBrief, &TouchLong },
+{ "mkdir", &MkdirCmd, &MkdirBrief, &MkdirLong },
+{ "", NULL, NULL, NULL } // Has to be here in order to terminate the command counter
+};
+
 // Count the amount of commands
 short CommandCount(void)
 {
     short totalCmds = 0;
-    while(commands[totalCmds].CommandFunction) 
+    while (commands[totalCmds].CommandFunction != NULL) 
         totalCmds++;
     return totalCmds;
 }
@@ -13,12 +25,12 @@ void HelpCmd(char args[], char** currPathPtr)
 {
     short totalCmds = CommandCount();
 
-    if (strlen(args))
+    if (strlen(args) != 0)
     {
         // If an arg(command name) was passed, find help for it
-        for(short i = 0; i < totalCmds; i++)
+        for (short i = 0; i < totalCmds; i++)
         {
-            if(strcmp(args, commands[i].commandName) == 0)
+            if (strcmp(args, commands[i].commandName) == 0)
             {
                 if (commands[i].LongHelp != NULL)
                     printf("\n%s", commands[i].LongHelp());
@@ -32,11 +44,11 @@ void HelpCmd(char args[], char** currPathPtr)
     else
     {
         // List all commands with their brief help
-        for(short i = 0; i < totalCmds; i++)
+        for (short i = 0; i < totalCmds; i++)
         {
             printf("\n%s -- ", commands[i].commandName);
 
-            if(commands[i].BriefHelp != NULL)
+            if (commands[i].BriefHelp != NULL)
                 printf("%s", commands[i].BriefHelp());
             else
                 printf("No brief help available.\n");

@@ -3,10 +3,10 @@
 #include "debug.h"
 #include "bootutils.h"
 
-#define DIRECTORY_DELIM '\\'
-#define DIRECTORY_DELIM_STR "\\"
-#define CURRENT_DIR "."
-#define PREVIOUS_DIR ".."
+#define DIRECTORY_DELIM ('\\')
+#define DIRECTORY_DELIM_STR ("\\")
+#define CURRENT_DIR (".")
+#define PREVIOUS_DIR ("..")
 
 char* ConcatPaths(char* lhs, char* rhs);
 boolean_t isspace(char c);

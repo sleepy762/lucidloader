@@ -2,15 +2,12 @@
 
 void LsCmd(char args[], char** currPathPtr)
 {
-    DIR* dir;
-    struct dirent* de;
-
     char* dirToList = NULL;
     boolean_t isDynamicMemory = FALSE;
-    if (args)
+    if (args != NULL)
     {
         dirToList = MakeFullPath(args, *currPathPtr, &isDynamicMemory);
-        if (dirToList)
+        if (dirToList != NULL)
         {
             NormalizePath(&dirToList);
         }
@@ -24,8 +21,11 @@ void LsCmd(char args[], char** currPathPtr)
         dirToList = *currPathPtr;
     }
 
-    if ((dir = opendir(dirToList)))
+    DIR* dir = opendir(dirToList);
+    if (dir != NULL)
     {
+        struct dirent* de;
+
         printf("\nReading the directory: %s\n", dirToList);
         while ((de = readdir(dir)) != NULL)
         {

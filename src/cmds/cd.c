@@ -2,13 +2,12 @@
 
 void CdCmd(char args[], char** currPathPtr)
 {
-    if (!args)
+    if (args == NULL)
     {
         printf("\ncd: no directory specified");
         return;
     }
 
-    DIR* auxDir;
     boolean_t isDynamicMemory = FALSE;
 
     char* dirToChangeTo = MakeFullPath(args, *currPathPtr, &isDynamicMemory);
@@ -20,7 +19,8 @@ void CdCmd(char args[], char** currPathPtr)
     NormalizePath(&dirToChangeTo);
 
     // Try to open the directory to make sure it exists
-    if ((auxDir = opendir(dirToChangeTo)))
+    DIR* auxDir = opendir(dirToChangeTo);
+    if (auxDir != NULL)
     {
         closedir(auxDir);
         BS->FreePool(*currPathPtr);

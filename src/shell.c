@@ -28,7 +28,7 @@ void ShellLoop(char** currPathPtr)
     {
         printf("\n> ");
     }
-    while(GetInput(currPathPtr));
+    while (GetInput(currPathPtr));
 
     ST->ConOut->ClearScreen(ST->ConOut);
 }
@@ -41,7 +41,7 @@ boolean_t GetInput(char** currPathPtr)
     efi_status_t status;
     efi_input_key_t key;
 
-    while(1)
+    while (1)
     {
         // Continuously read input
         while ((status = ST->ConIn->ReadKeyStroke(ST->ConIn, &key)) == EFI_NOT_READY);
@@ -52,7 +52,7 @@ boolean_t GetInput(char** currPathPtr)
         // Handling backspace
         if (key.UnicodeChar == BACKSPACE)
         {
-            if(index > 0)
+            if (index > 0)
             {
                 index--;
                 buffer[index] = 0;
@@ -69,7 +69,8 @@ boolean_t GetInput(char** currPathPtr)
     }
 
     // Leave the shell
-    if(!strcmp(buffer, "exit")) return 0;
+    if (!strcmp(buffer, "exit")) 
+        return 0;
 
     ProcessCommand(buffer, currPathPtr);
 
@@ -83,9 +84,9 @@ void ProcessCommand(char buffer[], char** currPathPtr)
     ParseInput(buffer, &cmd, &args);
 
     short totalCmds = CommandCount();
-    for(short i = 0; i < totalCmds; i++)
+    for (short i = 0; i < totalCmds; i++)
     {   
-        if(cmd == NULL) break;
+        if (cmd == NULL) break;
 
         // Find the right command and execute the command function
         if (strcmp(cmd, commands[i].commandName) == 0)
@@ -99,21 +100,24 @@ void ProcessCommand(char buffer[], char** currPathPtr)
         }
     }
     // Cleanup
-    if (cmd)  BS->FreePool(cmd);
-    if (args) BS->FreePool(args);
+    if (cmd != NULL)  
+        BS->FreePool(cmd);
+    if (args != NULL) 
+        BS->FreePool(args);
 }
 
 void ParseInput(char buffer[], char** cmd, char** args)
 {
     size_t bufferLen = strlen(buffer);
-    if(!bufferLen) return;
+    if (bufferLen == 0) 
+        return;
 
     size_t argsOffset = 0;
     GetValueOffset(buffer, &argsOffset, SPACE);
 
     // Use the argsOffset if there are args present
     size_t cmdSize;
-    if(argsOffset != 0)
+    if (argsOffset != 0)
         cmdSize = argsOffset - 1;
     else
         cmdSize = bufferLen + 1;
@@ -123,7 +127,7 @@ void ParseInput(char buffer[], char** cmd, char** args)
     (*cmd)[cmdSize] = 0; // Terminate the string
 
     // If there are arguments present...
-    if(argsOffset != 0)
+    if (argsOffset != 0)
     {
         size_t argsLen = bufferLen - argsOffset;
 

@@ -4,14 +4,14 @@
 #include "bootutils.h"
 
 // Temporary path
-static wchar_t* cfgPath = u"EFI\\apps\\config.cfg";
-static char* cfgLineDelimiter = "\n";
-static char* cfgEntryDelimiter = "\n\n";
-static const char keyValueDelimiter = '=';
+#define CFG_PATH (u"EFI\\apps\\config.cfg")
+#define CFG_LINE_DELIMITER ("\n")
+#define CFG_ENTRY_DELIMITER ("\n\n")
+#define CFG_KEY_VALUE_DELIMITER ('=')
 
 typedef enum {Chainload=1, Linux} boot_type_t;
 
-typedef struct
+typedef struct linux_values_s
 {
     char* initrdPath;
     char* kernelArgs;

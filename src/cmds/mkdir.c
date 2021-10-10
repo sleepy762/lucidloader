@@ -2,7 +2,7 @@
 
 void MkdirCmd(char args[], char** currPathPtr)
 {
-    if (!args)
+    if (args == NULL)
     {
         printf("\nmkdir: no directory name specified");
         return;
@@ -16,16 +16,17 @@ void MkdirCmd(char args[], char** currPathPtr)
         return;
     }
 
-    DIR* dir;
-    if ((dir = opendir(path)))
+    DIR* dir = opendir(path);
+    if (dir != NULL)
     {
         closedir(dir);
         printf("\nmkdir: directory already exists");
     }
     else
     {
+        // Creates a new directory and frees the pointer to it
         FILE* fp = fopen(path, "wd");
-        if (fp)
+        if (fp != NULL)
         {
             fclose(fp);
         }
@@ -51,5 +52,5 @@ const char* MkdirBrief(void)
 
 const char* MkdirLong(void)
 {
-    return "Usage: mkdir <path>";
+    return "Usage: mkdir <path or dirname>";
 }

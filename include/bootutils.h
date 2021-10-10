@@ -2,8 +2,8 @@
 #include <uefi.h>
 #include "debug.h"
 
-#define FALSE (boolean_t)0
-#define TRUE (boolean_t)1
+#define FALSE ((boolean_t)0)
+#define TRUE ((boolean_t)1)
 
 wchar_t* StringToWideString(char* str);
 

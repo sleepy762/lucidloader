@@ -44,9 +44,9 @@ void NormalizePath(char** path)
     // count the amount of tokens
     char* copy = *path;
     int tokenAmount = 0;
-    while(*copy != '\0')
+    while (*copy != '\0')
     {
-        if(*copy == DIRECTORY_DELIM)
+        if (*copy == DIRECTORY_DELIM)
             tokenAmount++;
         copy++;
     }
@@ -65,7 +65,7 @@ void NormalizePath(char** path)
     char* srcCopy = src + 1;
     int i = 0;
     // Evaluate the path
-    while((token = strtok_r(srcCopy, DIRECTORY_DELIM_STR, &srcCopy)))
+    while ((token = strtok_r(srcCopy, DIRECTORY_DELIM_STR, &srcCopy)) != NULL)
     {
         // Ignore the "." directory
         if (strcmp(token, CURRENT_DIR) == 0)
@@ -81,7 +81,7 @@ void NormalizePath(char** path)
                 tokenAmount = 0;
             if (i > 0) i--;
 
-            if (tokens[i])
+            if (tokens[i] != NULL)
             {
                 if (tokenAmount > 0) tokenAmount--;
                 BS->FreePool(tokens[i]);
@@ -99,7 +99,7 @@ void NormalizePath(char** path)
     // Rebuild the string
     (*path)[0] = '\\';
     (*path)[1] = 0;
-    for(i = 0; i < tokenAmount; i++)
+    for (i = 0; i < tokenAmount; i++)
     {
         strcat(*path, tokens[i]);
 
@@ -119,11 +119,12 @@ void CleanPath(char** path)
     char* originalPath = *path;
 
     // remove leading whitespace
-    while(isspace(**path)) (*path)++;
+    while (isspace(**path)) 
+        (*path)++;
 
     // remove trailing whitespace
     char* end = originalPath + pathLen - 1;
-    while(end > originalPath && isspace(*end)) end--;
+    while (end > originalPath && isspace(*end)) end--;
     end[1] = 0;
 
     // Remove duplicate backslashes from the command
@@ -146,7 +147,7 @@ char* MakeFullPath(char* args, char* currPathPtr, boolean_t* isDynamicMemory)
         fullPath = args;
     }
     // if the args are only whitespace
-    else if (args[0] == 0)
+    else if (args[0] == '\0')
     {
         return NULL;
     }

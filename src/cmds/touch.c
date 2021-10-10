@@ -2,7 +2,7 @@
 
 void TouchCmd(char args[], char** currPathPtr)
 {
-    if(!args)
+    if (args == NULL)
     {
         printf("\ntouch: no filename specified");
         return;
@@ -18,18 +18,18 @@ void TouchCmd(char args[], char** currPathPtr)
     }
 
     FILE* fp = fopen(path, "r");
-    if(fp == NULL)
+    if (fp == NULL)
     {
         fp = fopen(path, "w");
     }
 
-    if (fp)
+    if (fp != NULL)
     {
         fclose(fp);
     }
     else
     {
-        if(errno == EROFS)
+        if (errno == EROFS)
             printf("\ntouch: permission denied - readonly filesystem");
         else
             printf("\ntouch: failed to open file");
@@ -44,5 +44,5 @@ const char* TouchBrief(void)
 
 const char* TouchLong(void)
 {
-    return "Usage: touch <filename>";
+    return "Usage: touch <path or filename>";
 }
