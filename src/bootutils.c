@@ -95,7 +95,7 @@ int GetValueOffset(char* line, size_t* valueOffset, const char delimiter)
     char* curr = line;
 
     for (; *curr != delimiter; curr++)
-        if (*curr == 0) return 1; // Delimiter not found
+        if (*curr == '\0') return 1; // Delimiter not found
 
     curr++; // Pass the delimiter
     *valueOffset = curr - line;
