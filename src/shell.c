@@ -82,12 +82,13 @@ void ProcessCommand(char buffer[], char** currPathPtr)
     char* cmd = NULL;
     char* args = NULL;
     ParseInput(buffer, &cmd, &args);
-
-    short totalCmds = CommandCount();
+    
+    if (cmd == NULL)
+        goto cleanup;
+    
+    const short totalCmds = CommandCount();
     for (short i = 0; i < totalCmds; i++)
     {   
-        if (cmd == NULL) break;
-
         // Find the right command and execute the command function
         if (strcmp(cmd, commands[i].commandName) == 0)
         {
@@ -99,7 +100,8 @@ void ProcessCommand(char buffer[], char** currPathPtr)
             printf("\nCommand '%s' not found.", cmd);
         }
     }
-    // Cleanup
+
+cleanup:
     if (cmd != NULL)  
         BS->FreePool(cmd);
     if (args != NULL) 
