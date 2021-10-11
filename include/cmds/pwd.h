@@ -1,5 +1,6 @@
 #pragma once
 #include <uefi.h>
+#include "shellerr.h"
 
-void PwdCmd(char args[], char** currPathPtr);
+int PwdCmd(char args[], char** currPathPtr);
 const char* PwdBrief(void);

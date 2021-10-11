@@ -1,11 +1,10 @@
 #include "cmds/cd.h"
 
-void CdCmd(char args[], char** currPathPtr)
+int CdCmd(char args[], char** currPathPtr)
 {
     if (args == NULL)
     {
-        printf("\ncd: no directory specified");
-        return;
+        return CMD_NO_DIR_SPEFICIED;
     }
 
     boolean_t isDynamicMemory = FALSE;
@@ -13,10 +12,14 @@ void CdCmd(char args[], char** currPathPtr)
     char* dirToChangeTo = MakeFullPath(args, *currPathPtr, &isDynamicMemory);
     if (dirToChangeTo == NULL)
     {
-        printf("\ncd: no directory specified");
-        return;
+        return CMD_NO_DIR_SPEFICIED;
     }
-    NormalizePath(&dirToChangeTo);
+
+    int normalizationResult = NormalizePath(&dirToChangeTo);
+    if (normalizationResult != CMD_SUCCESS)
+    {
+        return normalizationResult;
+    }
 
     // Try to open the directory to make sure it exists
     DIR* auxDir = opendir(dirToChangeTo);
@@ -34,14 +37,16 @@ void CdCmd(char args[], char** currPathPtr)
             size_t newDirLen = strlen(dirToChangeTo);
             efi_status_t status = BS->AllocatePool(LIP->ImageDataType, newDirLen + 1, (void**)currPathPtr);
             if (EFI_ERROR(status))
-                ErrorExit("cd: Failed to allocate memory.", status);
+                return CMD_OUT_OF_MEMORY;
             memcpy(*currPathPtr, dirToChangeTo, newDirLen + 1);
         }
     }
     else
     {
-        printf("\ncd: directory `%s` not found", dirToChangeTo);
+        return CMD_DIR_NOT_FOUND;
     }
+    
+    return CMD_SUCCESS;
 }
 
 const char* CdBrief(void)

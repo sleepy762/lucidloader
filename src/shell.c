@@ -13,7 +13,7 @@ void StartShell(void)
 
     // Initializing the default starting path
     currPath[0] = '\\';
-    currPath[1] = 0;
+    currPath[1] = '\0';
 
     ST->ConIn->Reset(ST->ConIn, 0);
     ShellLoop(&currPath);
@@ -84,15 +84,16 @@ void ProcessCommand(char buffer[], char** currPathPtr)
     ParseInput(buffer, &cmd, &args);
     
     if (cmd == NULL)
-        goto cleanup;
+        return;
     
     const short totalCmds = CommandCount();
+    int commandReturn = 0;
     for (short i = 0; i < totalCmds; i++)
     {   
         // Find the right command and execute the command function
         if (strcmp(cmd, commands[i].commandName) == 0)
         {
-            commands[i].CommandFunction(args, currPathPtr);
+            commandReturn = commands[i].CommandFunction(args, currPathPtr);
             break;
         }
         else if (i + 1 == totalCmds)
@@ -101,7 +102,10 @@ void ProcessCommand(char buffer[], char** currPathPtr)
         }
     }
 
-cleanup:
+    // Let the user know if any error has occurred
+    if (commandReturn != CMD_SUCCESS)
+        PrintCommandError(cmd, commandReturn);
+
     if (cmd != NULL)  
         BS->FreePool(cmd);
     if (args != NULL) 

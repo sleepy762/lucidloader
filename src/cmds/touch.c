@@ -1,11 +1,10 @@
 #include "cmds/touch.h"
 
-void TouchCmd(char args[], char** currPathPtr)
+int TouchCmd(char args[], char** currPathPtr)
 {
     if (args == NULL)
     {
-        printf("\ntouch: no filename specified");
-        return;
+        return CMD_NO_FILE_SPECIFIED;
     }
 
     boolean_t isDynamicMemory = FALSE;
@@ -13,8 +12,7 @@ void TouchCmd(char args[], char** currPathPtr)
     char* path = MakeFullPath(args, *currPathPtr, &isDynamicMemory);
     if (path == NULL)
     {
-        printf("\ntouch: no filename specified");
-        return;
+        return CMD_NO_FILE_SPECIFIED;
     }
 
     FILE* fp = fopen(path, "r");
@@ -30,11 +28,17 @@ void TouchCmd(char args[], char** currPathPtr)
     else
     {
         if (errno == EROFS)
-            printf("\ntouch: permission denied - readonly filesystem");
+        {
+            return CMD_READ_ONLY_FILESYSTEM;
+        }
         else
-            printf("\ntouch: failed to open file");
+        {
+            return CMD_GENERAL_FILE_OPENING_ERROR;
+        }
     }
     if (isDynamicMemory) BS->FreePool(path);
+    
+    return CMD_SUCCESS;
 }
 
 const char* TouchBrief(void)

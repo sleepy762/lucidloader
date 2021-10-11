@@ -2,7 +2,8 @@
 #include <uefi.h>
 #include "shellutils.h"
 #include "bootutils.h"
+#include "shellerr.h"
 
-void CdCmd(char args[], char** currPathPtr);
+int CdCmd(char args[], char** currPathPtr);
 const char* CdBrief(void);
 const char* CdLong(void);

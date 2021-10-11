@@ -1,8 +1,9 @@
 #include "cmds/pwd.h"
 
-void PwdCmd(char args[], char** currPathPtr)
+int PwdCmd(char args[], char** currPathPtr)
 {
     printf("\n%s", *currPathPtr);
+    return CMD_SUCCESS;
 }
 
 const char* PwdBrief(void)

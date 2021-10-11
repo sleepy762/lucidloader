@@ -1,26 +1,24 @@
 #include "cmds/mkdir.h"
 
-void MkdirCmd(char args[], char** currPathPtr)
+int MkdirCmd(char args[], char** currPathPtr)
 {
     if (args == NULL)
     {
-        printf("\nmkdir: no directory name specified");
-        return;
+        return CMD_NO_DIR_SPEFICIED;
     }
 
     boolean_t isDynamicMemory = FALSE;
     char* path = MakeFullPath(args, *currPathPtr, &isDynamicMemory);
     if (path == NULL)
     {
-        printf("\nmkdir: no directory name specified");
-        return;
+        return CMD_NO_DIR_SPEFICIED;
     }
 
     DIR* dir = opendir(path);
     if (dir != NULL)
     {
         closedir(dir);
-        printf("\nmkdir: directory already exists");
+        return CMD_DIR_ALREADY_EXISTS;
     }
     else
     {
@@ -34,15 +32,17 @@ void MkdirCmd(char args[], char** currPathPtr)
         {
             if (errno == EROFS)
             {
-                printf("\nmkdir: permission denied - readonly filesystem");
+                return CMD_READ_ONLY_FILESYSTEM;
             }
             else
             {
-                printf("\nmkdir: failed to create directory");
+                return CMD_GENERAL_DIR_OPENING_ERROR;
             }
         }
     }
     if (isDynamicMemory) BS->FreePool(path);
+
+    return CMD_SUCCESS;
 }
 
 const char* MkdirBrief(void)

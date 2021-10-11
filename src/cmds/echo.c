@@ -1,9 +1,12 @@
 #include "cmds/echo.h"
 
-void EchoCmd(char args[], char** currPathPtr)
+int EchoCmd(char args[], char** currPathPtr)
 {
-    if (args != NULL) 
+    if (args != NULL)
+    {
         printf("\n%s", args);
+    }
+    return CMD_SUCCESS;
 }
 
 const char* EchoBrief(void)

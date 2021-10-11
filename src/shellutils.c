@@ -8,7 +8,8 @@ char* ConcatPaths(char* lhs, char* rhs)
 
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, lhsLen + rhsLen + 2, (void**)&newPath);
     if (EFI_ERROR(status))
-        ErrorExit("Failed to allocate memory for path concatenation.", status);
+        return NULL;
+
     memcpy(newPath, lhs, lhsLen + 1); // Copy with null terminator
 
     if (strlen(lhs) > 1) 
@@ -39,7 +40,7 @@ void RemoveRepeatedChars(char* str, char toRemove)
 }
 
 // Normalizes the path by removing "." and ".." directories from the given path
-void NormalizePath(char** path)
+int NormalizePath(char** path)
 {
     // count the amount of tokens
     char* copy = *path;
@@ -52,12 +53,16 @@ void NormalizePath(char** path)
     }
     
     // Nothing to normalize
-    if (tokenAmount <= 1) return;
+    if (tokenAmount <= 1) 
+    {
+        return CMD_SUCCESS;
+    }
 
     char** tokens = NULL;
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, tokenAmount * sizeof(char*), (void**)&tokens);
     if (EFI_ERROR(status))
-        ErrorExit("Failed to allocate memory while normalizing path.", status);
+        return CMD_OUT_OF_MEMORY;
+        
     tokens[0] = NULL;
 
     char* token = NULL;
@@ -76,14 +81,20 @@ void NormalizePath(char** path)
         else if (strcmp(token, PREVIOUS_DIR) == 0)
         {
             if (tokenAmount > 0) 
+            {
                 tokenAmount--;
+            }
             else
+            {
                 tokenAmount = 0;
+            }
+
             if (i > 0) i--;
 
             if (tokens[i] != NULL)
             {
                 if (tokenAmount > 0) tokenAmount--;
+
                 BS->FreePool(tokens[i]);
                 tokens[i] = NULL;
             }
@@ -98,7 +109,7 @@ void NormalizePath(char** path)
 
     // Rebuild the string
     (*path)[0] = '\\';
-    (*path)[1] = 0;
+    (*path)[1] = '\0';
     for (i = 0; i < tokenAmount; i++)
     {
         strcat(*path, tokens[i]);
@@ -111,6 +122,8 @@ void NormalizePath(char** path)
         BS->FreePool(tokens[i]);
     }
     BS->FreePool(tokens);
+
+    return CMD_SUCCESS;
 }
 
 void CleanPath(char** path)
@@ -154,6 +167,11 @@ char* MakeFullPath(char* args, char* currPathPtr, boolean_t* isDynamicMemory)
     else // Check the concatenated path
     {
         fullPath = ConcatPaths(currPathPtr, args);
+        if (fullPath == NULL)
+        {
+            return NULL;
+        }
+        
         *isDynamicMemory = TRUE;
     }
     return fullPath;

@@ -1,6 +1,7 @@
 #pragma once
 #include <uefi.h>
+#include "shellerr.h"
 
-void EchoCmd(char args[], char** currPathPtr);
+int EchoCmd(char args[], char** currPathPtr);
 const char* EchoBrief(void);
 const char* EchoLong(void);

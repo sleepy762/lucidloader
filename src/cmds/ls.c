@@ -1,15 +1,20 @@
 #include "cmds/ls.h"
 
-void LsCmd(char args[], char** currPathPtr)
+int LsCmd(char args[], char** currPathPtr)
 {
     char* dirToList = NULL;
     boolean_t isDynamicMemory = FALSE;
+    
     if (args != NULL)
     {
         dirToList = MakeFullPath(args, *currPathPtr, &isDynamicMemory);
         if (dirToList != NULL)
         {
-            NormalizePath(&dirToList);
+            int normalizationResult = NormalizePath(&dirToList);
+            if (normalizationResult != CMD_SUCCESS)
+            {
+                return normalizationResult;
+            }
         }
         else
         {
@@ -35,10 +40,11 @@ void LsCmd(char args[], char** currPathPtr)
     }
     else
     {
-        printf("\nls: unable to read directory");
+        return CMD_CANT_READ_DIR;
     }
-
     if (isDynamicMemory) BS->FreePool(dirToList);
+
+    return CMD_SUCCESS;
 }
 
 const char* LsBrief(void)

@@ -2,7 +2,8 @@
 #include <uefi.h>
 #include "shellutils.h"
 #include "bootutils.h"
+#include "shellerr.h"
 
-void LsCmd(char args[], char** currPathPtr);
+int LsCmd(char args[], char** currPathPtr);
 const char* LsBrief(void);
 const char* LsLong(void);

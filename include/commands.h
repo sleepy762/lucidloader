@@ -1,6 +1,7 @@
 #pragma once
 #include <uefi.h>
 #include "shellutils.h"
+#include "shellerr.h"
 
 #include "cmds/echo.h"
 #include "cmds/pwd.h"
@@ -13,13 +14,13 @@
 typedef struct shell_cmd_s
 {
     const char* commandName;
-    void (*CommandFunction)();
+    int (*CommandFunction)();
     const char* (*BriefHelp)();
     const char* (*LongHelp)();
 } shell_cmd_s;
 
 // The only command in this file because it has to access the list of all commands
-void HelpCmd(char args[], char** currPathPtr);
+int HelpCmd(char args[], char** currPathPtr);
 const char* HelpBrief(void);
 const char* HelpLong(void);
 

@@ -3,6 +3,7 @@
 #include "commands.h"
 #include "shellutils.h"
 #include "bootutils.h"
+#include "shellerr.h"
 
 #define MAX_INPUT (128)
 
