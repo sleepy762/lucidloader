@@ -9,6 +9,7 @@ const shell_cmd_s commands[] = {
 { "cd", &CdCmd, &CdBrief, &CdLong },
 { "touch", &TouchCmd, &TouchBrief, &TouchLong },
 { "mkdir", &MkdirCmd, &MkdirBrief, &MkdirLong },
+{ "clear", &ClearCmd, &ClearBrief, NULL },
 { "", NULL, NULL, NULL } // Has to be here in order to terminate the command counter
 };
 
