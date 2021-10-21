@@ -1,16 +1,17 @@
+#pragma once
 #include <uefi.h>
 #include "debug.h"
-#include "utils.h"
+#include "bootutils.h"
 
 // Temporary path
-static wchar_t* cfgPath = u"EFI\\apps\\config.cfg";
-static char* cfgLineDelimiter = "\n";
-static char* cfgEntryDelimiter = "\n\n";
-static const char keyValueDelimiter = '=';
+#define CFG_PATH (u"EFI\\apps\\config.cfg")
+#define CFG_LINE_DELIMITER ("\n")
+#define CFG_ENTRY_DELIMITER ("\n\n")
+#define CFG_KEY_VALUE_DELIMITER ('=')
 
 typedef enum {Chainload=1, Linux} boot_type_t;
 
-typedef struct
+typedef struct linux_values_s
 {
     char* initrdPath;
     char* kernelArgs;
@@ -31,7 +32,6 @@ typedef struct boot_entry_s
 
 boot_entry_s* ParseConfig(void);
 void ValidateEntry(boot_entry_s newEntry, boot_entry_s** head);
-int GetValueOffset(char* line, size_t* valueOffset);
 void AssignValueToEntry(const char* key, char* value, boot_entry_s* entry);
 void ParseLine(boot_entry_s* entry, char* token);
 

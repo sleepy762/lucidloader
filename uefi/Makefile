@@ -18,8 +18,8 @@ endif
 
 # for libuefi.a
 LIBSRCS = $(filter-out $(wildcard crt_*.c),$(wildcard *.c)) $(wildcard *.S)
-TMP = $(LIBSRCS:.c=.o)
-LIBOBJS = $(TMP:.S=.o)
+TMP2 = $(LIBSRCS:.c=.o)
+LIBOBJS = $(TMP2:.S=.o)
 
 # detect toolchain
 ifeq ($(wildcard /usr/bin/clang),)
@@ -53,7 +53,7 @@ CFLAGS += --target=$(ARCH)-pc-win32-coff -Wno-builtin-requires-header -Wno-incom
 LDFLAGS += -subsystem:efi_application -nodefaultlib -dll -entry:uefi_init uefi/*.o
 LIBS = -out:$(TARGET)
 CC = clang
-LD = lld-link
+LD = lld -flavor link
 OBJCOPY = true
 endif
 
@@ -102,7 +102,7 @@ build:
 	@cp libuefi.a uefi.h ../build/uefi
 
 clean:
-	@rm $(TARGET) *.o *.a *.lib *.elf $(LIBOBJS) 2>/dev/null || true
+	@rm $(TARGET) $(SRCS:.c=.o) *.a *.lib *.elf $(LIBOBJS) 2>/dev/null || true
 
 distclean: clean
 ifeq ($(wildcard uefi/Makefile),)

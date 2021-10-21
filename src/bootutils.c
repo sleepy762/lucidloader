@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "bootutils.h"
 
 wchar_t* StringToWideString(char* str)
 {
@@ -6,7 +6,7 @@ wchar_t* StringToWideString(char* str)
     wchar_t* wpath = NULL;
     
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, size + 1, (void**)&wpath);
-    if(EFI_ERROR(status))
+    if (EFI_ERROR(status))
         ErrorExit("Failed to allocate memory during string conversion.", status);
 
     wpath[size] = 0;
@@ -24,9 +24,9 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
     if (status != EFI_BUFFER_TOO_SMALL)
         ErrorExit("Initial location of the simple file system protocol handles failed.", status);
 
-    handles = (efi_handle_t*)malloc(bufSize);
-    if(!handles)
-        ErrorExit("Out of memory.", EFI_OUT_OF_RESOURCES);
+    status = BS->AllocatePool(LIP->ImageDataType, bufSize, (void**)&handles);
+    if (EFI_ERROR(status))
+        ErrorExit("Failed to allocate buffer for handles.", status);
 
     status = BS->LocateHandle(ByProtocol, &sfsGuid, NULL, &bufSize, handles);
     if (EFI_ERROR(status))
@@ -37,7 +37,7 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
     efi_simple_file_system_protocol_t* sfsProt = NULL;
     efi_guid_t devGuid = EFI_DEVICE_PATH_PROTOCOL_GUID;
 
-    for (int i = 0; i < numHandles; i++)
+    for (uintn_t i = 0; i < numHandles; i++)
     {
         efi_handle_t handle = handles[i];
         status = BS->HandleProtocol(handle, &sfsGuid, (void**)&sfsProt);
@@ -70,7 +70,8 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
         if (EFI_ERROR(status))
             PrintDebug("Checking another partition for the file...\n");
     }
-    if((*fileHandle) == NULL) 
+    BS->FreePool(handles);
+    if ((*fileHandle) == NULL) 
         ErrorExit("Failed to find the file on the machine.", EFI_NOT_FOUND);
 }
 
@@ -84,7 +85,20 @@ efi_status_t GetFileInfo(efi_file_handle_t* fileHandle, efi_file_info_t* fileInf
 efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char** buffer)
 {
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, fileSize, (void**)buffer);
-    if(EFI_ERROR(status))
+    if (EFI_ERROR(status))
         ErrorExit("Failed to allocate memory to read file.", status);
     return fileHandle->Read(fileHandle, &fileSize, (*buffer));
+}
+
+int GetValueOffset(char* line, size_t* valueOffset, const char delimiter)
+{
+    char* curr = line;
+
+    for (; *curr != delimiter; curr++)
+        if (*curr == '\0') return 1; // Delimiter not found
+
+    curr++; // Pass the delimiter
+    *valueOffset = curr - line;
+
+    return 0;
 }

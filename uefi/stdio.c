@@ -43,7 +43,7 @@ void __stdio_cleanup()
         BS->FreePool(__argvutf8);
 #endif
     if(__blk_devs) {
-        free(__blk_devs);
+        BS->FreePool(__blk_devs);
         __blk_devs = NULL;
         __blk_ndevs = 0;
     }
@@ -120,7 +120,7 @@ int fclose (FILE *__stream)
         if(__stream == (FILE*)__blk_devs[i].bio)
             return 1;
     status = __stream->Close(__stream);
-    free(__stream);
+    BS->FreePool(__stream);
     return !EFI_ERROR(status);
 }
 
@@ -174,7 +174,7 @@ err:    __stdio_seterrno(status);
         return -1;
     }
     /* no need for fclose(f); */
-    free(f);
+    BS->FreePool(f);
     return 0;
 }
 
@@ -228,10 +228,12 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
             efi_guid_t bioGuid = EFI_BLOCK_IO_PROTOCOL_GUID;
             efi_handle_t handles[128];
             uintn_t handle_size = sizeof(handles);
-            status = BS->LocateHandle(ByProtocol, &bioGuid, NULL, handle_size, (efi_handle_t*)&handles);
+            status = BS->LocateHandle(ByProtocol, &bioGuid, NULL, &handle_size, (efi_handle_t*)&handles);
             if(!EFI_ERROR(status)) {
                 handle_size /= (uintn_t)sizeof(efi_handle_t);
-                __blk_devs = (block_file_t*)malloc(handle_size * sizeof(block_file_t));
+                //__blk_devs = (block_file_t*)malloc(handle_size * sizeof(block_file_t));
+                status = BS->AllocatePool(LIP->ImageDataType, handle_size * sizeof(block_file_t), (void**)&__blk_devs);
+                if (EFI_ERROR(status)) __blk_devs = NULL;
                 if(__blk_devs) {
                     memset(__blk_devs, 0, handle_size * sizeof(block_file_t));
                     for(i = __blk_ndevs = 0; i < handle_size; i++)
@@ -258,8 +260,9 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
         return NULL;
     }
     errno = 0;
-    ret = (FILE*)malloc(sizeof(FILE));
-    if(!ret) return NULL;
+    status = BS->AllocatePool(LIP->ImageDataType, sizeof(FILE), (void**)&ret);
+    if (EFI_ERROR(status))
+        return NULL;
 #if USE_UTF8
     mbstowcs((wchar_t*)&wcname, __filename, BUFSIZ - 1);
     status = __root_dir->Open(__root_dir, &ret, (wchar_t*)&wcname,
@@ -270,15 +273,15 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
         __modes[1] == CL('d') ? EFI_FILE_DIRECTORY : 0);
     if(EFI_ERROR(status)) {
 err:    __stdio_seterrno(status);
-        free(ret); return NULL;
+        BS->FreePool(ret); return NULL;
     }
     status = ret->GetInfo(ret, &infGuid, &fsiz, &info);
     if(EFI_ERROR(status)) goto err;
     if(__modes[1] == CL('d') && !(info.Attribute & EFI_FILE_DIRECTORY)) {
-        free(ret); errno = ENOTDIR; return NULL;
+        BS->FreePool(ret); errno = ENOTDIR; return NULL;
     }
     if(__modes[1] != CL('d') && (info.Attribute & EFI_FILE_DIRECTORY)) {
-        free(ret); errno = EISDIR; return NULL;
+        BS->FreePool(ret); errno = EISDIR; return NULL;
     }
     if(__modes[0] == CL('a')) fseek(ret, 0, SEEK_END);
     return ret;

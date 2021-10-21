@@ -6,7 +6,7 @@ void ChainloadImage(wchar_t* path)
     efi_file_handle_t* rootDir = NULL;
     efi_file_handle_t* imgFileHandle = NULL;
     GetFileProtocols(path, &devPath, &rootDir, &imgFileHandle);
-    free(path);
+    BS->FreePool(path);
 
     // Get file information for the file size
     efi_file_info_t imgInfo;

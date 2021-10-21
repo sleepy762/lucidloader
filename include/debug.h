@@ -1,3 +1,4 @@
+#pragma once
 #include <uefi.h>
 
 // Comment out this line in order to disable debug info.
