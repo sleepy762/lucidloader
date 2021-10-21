@@ -15,27 +15,34 @@ void StartShell(void)
     currPath[0] = '\\';
     currPath[1] = '\0';
 
-    ST->ConIn->Reset(ST->ConIn, 0);
+    ST->ConIn->Reset(ST->ConIn, 0); // Reset the input buffer
     ShellLoop(&currPath);
 
+    // Cleanup
     BS->FreePool(currPath);
     ST->ConOut->EnableCursor(ST->ConOut, FALSE);
+    ST->ConOut->ClearScreen(ST->ConOut);
 }
 
 void ShellLoop(char** currPathPtr)
 {
-    do
+    while (1)
     {
+        char buffer[MAX_INPUT] = {0};
         printf("\n> ");
-    }
-    while (GetInput(currPathPtr));
 
-    ST->ConOut->ClearScreen(ST->ConOut);
+        GetInput(buffer);
+
+        if (!strcmp(buffer, SHELL_EXIT_STR))
+        {
+            break;
+        }
+        ProcessCommand(buffer, currPathPtr);
+    }
 }
 
-boolean_t GetInput(char** currPathPtr)
+void GetInput(char buffer[])
 {
-    char buffer[MAX_INPUT] = {0};
     short index = 0;
 
     efi_status_t status;
@@ -52,7 +59,7 @@ boolean_t GetInput(char** currPathPtr)
         // Handling backspace
         if (key.UnicodeChar == BACKSPACE)
         {
-            if (index > 0)
+            if (index > 0) // Dont delete when the buffer is empty
             {
                 index--;
                 buffer[index] = 0;
@@ -67,24 +74,19 @@ boolean_t GetInput(char** currPathPtr)
             printf("%c", key.UnicodeChar);
         }
     }
-
-    // Leave the shell
-    if (!strcmp(buffer, "exit")) 
-        return 0;
-
-    ProcessCommand(buffer, currPathPtr);
-
-    return 1;
 }
 
 void ProcessCommand(char buffer[], char** currPathPtr)
 {
     char* cmd = NULL;
     char* args = NULL;
+    // Store the command and arguments in separate strings
     ParseInput(buffer, &cmd, &args);
     
     if (cmd == NULL)
+    {
         return;
+    }
     
     const short totalCmds = CommandCount();
     int commandReturn = 0;
@@ -104,19 +106,24 @@ void ProcessCommand(char buffer[], char** currPathPtr)
 
     // Let the user know if any error has occurred
     if (commandReturn != CMD_SUCCESS)
+    {
         PrintCommandError(cmd, commandReturn);
+    }
 
-    if (cmd != NULL)  
-        BS->FreePool(cmd);
-    if (args != NULL) 
+    BS->FreePool(cmd);
+    if (args != NULL)
+    {
         BS->FreePool(args);
+    }
 }
 
 void ParseInput(char buffer[], char** cmd, char** args)
 {
     size_t bufferLen = strlen(buffer);
-    if (bufferLen == 0) 
+    if (bufferLen == 0)
+    {
         return;
+    }
 
     size_t argsOffset = 0;
     GetValueOffset(buffer, &argsOffset, SPACE);
@@ -124,9 +131,13 @@ void ParseInput(char buffer[], char** cmd, char** args)
     // Use the argsOffset if there are args present
     size_t cmdSize;
     if (argsOffset != 0)
+    {
         cmdSize = argsOffset - 1;
+    }
     else
+    {
         cmdSize = bufferLen + 1;
+    }
 
     BS->AllocatePool(LIP->ImageDataType, cmdSize, (void**)cmd);
     memcpy(*cmd, buffer, cmdSize);
