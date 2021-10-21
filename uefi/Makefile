@@ -53,7 +53,7 @@ CFLAGS += --target=$(ARCH)-pc-win32-coff -Wno-builtin-requires-header -Wno-incom
 LDFLAGS += -subsystem:efi_application -nodefaultlib -dll -entry:uefi_init uefi/*.o
 LIBS = -out:$(TARGET)
 CC = clang
-LD = lld-link
+LD = lld -flavor link
 OBJCOPY = true
 endif
 

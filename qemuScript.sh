@@ -8,7 +8,7 @@ make -j8
 
 # Create a FAT type image and add the EFI file into it
 dd if=/dev/zero of=fat.img bs=1k count=14400
-mformat -i fat.img -s 64 -t 225 ::
+mformat -i fat.img -s 64 -t 225 -h 16 ::
 mmd -i fat.img ::/EFI
 mmd -i fat.img ::/EFI/BOOT
 mmd -i fat.img ::/EFI/apps
