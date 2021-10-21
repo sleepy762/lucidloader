@@ -1,3 +1,4 @@
+#pragma once
 #include <uefi.h>
 #include "shellutils.h"
 #include "bootutils.h"
