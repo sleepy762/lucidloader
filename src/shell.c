@@ -28,10 +28,10 @@ void ShellLoop(char** currPathPtr)
 {
     while (1)
     {
-        char buffer[MAX_INPUT] = {0};
+        char buffer[SHELL_MAX_INPUT] = {0};
         printf("\n> ");
 
-        GetInput(buffer);
+        GetInput(buffer, SHELL_MAX_INPUT);
 
         if (!strcmp(buffer, SHELL_EXIT_STR))
         {
@@ -41,7 +41,7 @@ void ShellLoop(char** currPathPtr)
     }
 }
 
-void GetInput(char buffer[])
+void GetInput(char buffer[], const int maxInputSize)
 {
     short index = 0;
 
@@ -67,7 +67,8 @@ void GetInput(char buffer[])
             }
         }
         // Add the character to the buffer as long as there is enough space and if its a valid character
-        else if (index < MAX_INPUT - 1 && key.UnicodeChar != '\0')
+        // The character in the last index must be null to terminate the string
+        else if (index < maxInputSize - 1 && key.UnicodeChar != '\0')
         {
             buffer[index] = key.UnicodeChar;
             index++;

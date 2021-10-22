@@ -5,7 +5,7 @@
 #include "bootutils.h"
 #include "shellerr.h"
 
-#define MAX_INPUT (128)
+#define SHELL_MAX_INPUT (128)
 
 #define CARRIAGE_RETURN ('\r')  // The "character" when you press the enter key
 #define BACKSPACE ('\b')
@@ -17,5 +17,5 @@ void StartShell(void);
 void ShellLoop(char** currPathPtr);
 void ParseInput(char buffer[], char** cmd, char** args);
 
-void GetInput(char buffer[]);
+void GetInput(char buffer[], const int maxInputSize);
 void ProcessCommand(char buffer[], char** currPathPtr);
