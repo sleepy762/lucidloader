@@ -113,6 +113,10 @@ int fclose (FILE *__stream)
 {
     efi_status_t status = EFI_SUCCESS;
     uintn_t i;
+    if(!__stream) {
+        errno = EINVAL;
+        return 0;
+    }
     if(__stream == stdin || __stream == stdout || __stream == stderr || (__ser && __stream == (FILE*)__ser)) {
         return 1;
     }
@@ -128,6 +132,10 @@ int fflush (FILE *__stream)
 {
     efi_status_t status = EFI_SUCCESS;
     uintn_t i;
+    if(!__stream) {
+        errno = EINVAL;
+        return 0;
+    }
     if(__stream == stdin || __stream == stdout || __stream == stderr || (__ser && __stream == (FILE*)__ser)) {
         return 1;
     }
@@ -146,7 +154,7 @@ int __remove (const char_t *__filename, int isdir)
     efi_file_info_t info;
     uintn_t fsiz = (uintn_t)sizeof(efi_file_info_t), i;
     FILE *f = fopen(__filename, CL("r"));
-    if(f == stdin || f == stdout || f == stderr || (__ser && f == (FILE*)__ser)) {
+    if(!f || f == stdin || f == stdout || f == stderr || (__ser && f == (FILE*)__ser)) {
         errno = EBADF;
         return 1;
     }
@@ -269,7 +277,7 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
 #else
     status = __root_dir->Open(__root_dir, &ret, (wchar_t*)__filename,
 #endif
-        __modes[0] == CL('w') ? (EFI_FILE_MODE_WRITE | EFI_FILE_MODE_READ | EFI_FILE_MODE_CREATE) : EFI_FILE_MODE_READ,
+        (__modes[0] == CL('a') ? EFI_FILE_MODE_WRITE : 0) | (__modes[0] == CL('w') ? (EFI_FILE_MODE_WRITE | EFI_FILE_MODE_READ | EFI_FILE_MODE_CREATE) : EFI_FILE_MODE_READ),
         __modes[1] == CL('d') ? EFI_FILE_DIRECTORY : 0);
     if(EFI_ERROR(status)) {
 err:    __stdio_seterrno(status);
@@ -291,6 +299,10 @@ size_t fread (void *__ptr, size_t __size, size_t __n, FILE *__stream)
 {
     uintn_t bs = __size * __n, i, n;
     efi_status_t status;
+    if(!__ptr || __size < 1 || __n < 1 || !__stream) {
+        errno = EINVAL;
+        return 0;
+    }
     if(__stream == stdin || __stream == stdout || __stream == stderr) {
         errno = ESPIPE;
         return 0;
@@ -323,6 +335,10 @@ size_t fwrite (const void *__ptr, size_t __size, size_t __n, FILE *__stream)
 {
     uintn_t bs = __size * __n, n, i;
     efi_status_t status;
+    if(!__ptr || __size < 1 || __n < 1 || !__stream) {
+        errno = EINVAL;
+        return 0;
+    }
     if(__stream == stdin || __stream == stdout || __stream == stderr) {
         errno = ESPIPE;
         return 0;
@@ -358,6 +374,10 @@ int fseek (FILE *__stream, long int __off, int __whence)
     efi_guid_t infoGuid = EFI_FILE_INFO_GUID;
     efi_file_info_t info;
     uintn_t fsiz = sizeof(efi_file_info_t), i;
+    if(!__stream || (__whence != SEEK_SET && __whence != SEEK_CUR && __whence != SEEK_END)) {
+        errno = EINVAL;
+        return -1;
+    }
     if(__stream == stdin || __stream == stdout || __stream == stderr) {
         errno = ESPIPE;
         return -1;
@@ -402,7 +422,7 @@ int fseek (FILE *__stream, long int __off, int __whence)
             }
             break;
         default:
-            status = __stream->SetPosition(__stream, off);
+            status = __stream->SetPosition(__stream, __off);
             break;
     }
     return EFI_ERROR(status) ? -1 : 0;
@@ -413,6 +433,10 @@ long int ftell (FILE *__stream)
     uint64_t off = 0;
     uintn_t i;
     efi_status_t status;
+    if(!__stream) {
+        errno = EINVAL;
+        return -1;
+    }
     if(__stream == stdin || __stream == stdout || __stream == stderr) {
         errno = ESPIPE;
         return -1;
@@ -436,6 +460,10 @@ int feof (FILE *__stream)
     efi_file_info_t info;
     uintn_t fsiz = (uintn_t)sizeof(efi_file_info_t), i;
     efi_status_t status;
+    if(!__stream) {
+        errno = EINVAL;
+        return 0;
+    }
     if(__stream == stdin || __stream == stdout || __stream == stderr) {
         errno = ESPIPE;
         return 0;
@@ -705,7 +733,7 @@ int vfprintf (FILE *__stream, const char_t *__format, __builtin_va_list args)
 #else
     ret = vsnprintf(dst, BUFSIZ, __format, args);
 #endif
-    if(ret < 1 || __stream == stdin) return 0;
+    if(ret < 1 || !__stream || __stream == stdin) return 0;
     for(i = 0; i < __blk_ndevs; i++)
         if(__stream == (FILE*)__blk_devs[i].bio) {
             errno = EBADF;

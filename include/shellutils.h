@@ -13,5 +13,6 @@ char* ConcatPaths(char* lhs, char* rhs);
 boolean_t isspace(char c);
 void RemoveRepeatedChars(char* str, char toRemove);
 int NormalizePath(char** path);
+char* TrimSpaces(char* str);
 void CleanPath(char** path);
 char* MakeFullPath(char* args, char* currPathPtr, boolean_t* dynMemFlag);

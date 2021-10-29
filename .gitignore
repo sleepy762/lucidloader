@@ -4,5 +4,6 @@
 *.efi
 ovmf/
 iso/
+mount/
 config.cfg
 .vscode

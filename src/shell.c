@@ -126,6 +126,7 @@ void ParseInput(char buffer[], char** cmd, char** args)
         return;
     }
 
+    buffer = TrimSpaces(buffer);
     size_t argsOffset = 0;
     GetValueOffset(buffer, &argsOffset, SPACE);
 

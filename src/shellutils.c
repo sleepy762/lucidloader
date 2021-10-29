@@ -25,6 +25,28 @@ boolean_t isspace(char c)
     return (c == ' ' || c == '\t');
 }
 
+char* TrimSpaces(char* str)
+{
+    size_t stringLen = strlen(str);
+    char* originalString = str;
+
+    // remove leading whitespace
+    while (isspace(*str))
+    {
+        str++;
+    }
+
+    // remove trailing whitespace
+    char* end = originalString + stringLen - 1;
+    while (end > originalString && isspace(*end)) 
+    {
+        end--;
+    }
+    end[1] = 0;
+
+    return str;
+}
+
 void RemoveRepeatedChars(char* str, char toRemove)
 {
     char* dest = str;
@@ -128,24 +150,17 @@ int NormalizePath(char** path)
 
 void CleanPath(char** path)
 {
-    size_t pathLen = strlen(*path);
-    char* originalPath = *path;
-
-    // remove leading whitespace
-    while (isspace(**path)) 
-        (*path)++;
-
-    // remove trailing whitespace
-    char* end = originalPath + pathLen - 1;
-    while (end > originalPath && isspace(*end)) end--;
-    end[1] = 0;
+    *path = TrimSpaces(*path);
 
     // Remove duplicate backslashes from the command
     RemoveRepeatedChars(*path, DIRECTORY_DELIM);
 
     // Remove a backslash from the end if it exists
     size_t lastIndex = strlen(*path) - 1;
-    if ((*path)[lastIndex] == DIRECTORY_DELIM && lastIndex + 1 > 1) (*path)[lastIndex] = 0;
+    if ((*path)[lastIndex] == DIRECTORY_DELIM && lastIndex + 1 > 1) 
+    {
+        (*path)[lastIndex] = 0;
+    }
 }
 
 char* MakeFullPath(char* args, char* currPathPtr, boolean_t* isDynamicMemory)
