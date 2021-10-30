@@ -58,9 +58,7 @@ uint8_t NormalizePath(char_t** path)
     tokens[0] = NULL;
 
     char_t* token = NULL;
-    // char* src = *path;
-    char_t* src = strdup(*path);
-    char_t* srcCopy = src + 1;
+    char_t* srcCopy = *path + 1; // Pass the first character (which is always "\")
     uint16_t i = 0;
     // Evaluate the path
     while ((token = strtok_r(srcCopy, DIRECTORY_DELIM_STR, &srcCopy)) != NULL)
@@ -104,7 +102,6 @@ uint8_t NormalizePath(char_t** path)
             i++;
         }
     }
-    BS->FreePool(src);
 
     // Rebuild the string
     (*path)[0] = '\\';
