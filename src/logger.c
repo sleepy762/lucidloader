@@ -2,18 +2,20 @@
 
 efi_time_t timeSinceInit = {0};
 
+// Creates an empty log file and initializes the timeSinceInit variable
 int InitLogger(void)
 {
     FILE* fp = fopen(LOG_PATH, "w");
     if (fp != NULL)
     {
-        ST->RuntimeServices->GetTime(&timeSinceInit, NULL);
         fclose(fp);
+        ST->RuntimeServices->GetTime(&timeSinceInit, NULL);
 
         // Print the date of the log
-        Log(LL_INFO, 0, "Log date: %d/%d/%d %d:%d:%d.", 
+        Log(LL_INFO, 0, "Log date: %02d/%02d/%04d %02d:%02d:%02d.", 
             timeSinceInit.Day, timeSinceInit.Month, timeSinceInit.Year,
             timeSinceInit.Hour, timeSinceInit.Minute, timeSinceInit.Second);
+
         return 1;
     }
     return 0;
@@ -25,7 +27,8 @@ int InitLogger(void)
 void Log(LogLevel loglevel, efi_status_t status, const char* fmtMessage, ...)
 {
     FILE* log = fopen(LOG_PATH, "a");
-    if (log == NULL)
+    // Don't log if the logger hasn't been initialized (or file is not writable)
+    if (log == NULL || timeSinceInit.Day == 0)
     {
         return;
     }
@@ -84,7 +87,7 @@ const char* LogLevelString(LogLevel loglevel)
     }
 }
 
-// More informative error messages for each error status
+// More informative error messages for each UEFI error status
 const char* EfiErrorString(efi_status_t status)
 {
     switch(status)

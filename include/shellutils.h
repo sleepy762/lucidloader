@@ -1,6 +1,6 @@
 #pragma once
 #include <uefi.h>
-#include "debug.h"
+#include "logger.h"
 #include "bootutils.h"
 #include "shellerr.h"
 

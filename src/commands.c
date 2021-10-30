@@ -17,8 +17,10 @@ const shell_cmd_s commands[] = {
 short CommandCount(void)
 {
     short totalCmds = 0;
-    while (commands[totalCmds].CommandFunction != NULL) 
+    while (commands[totalCmds].CommandFunction != NULL)
+    {
         totalCmds++;
+    }
         
     return totalCmds;
 }

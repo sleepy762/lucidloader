@@ -7,13 +7,16 @@ wchar_t* StringToWideString(char* str)
     
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, size + 1, (void**)&wpath);
     if (EFI_ERROR(status))
-        ErrorExit("Failed to allocate memory during string conversion.", status);
+    {
+        Log(LL_ERROR, status, "Failed to allocate memory during string conversion.");
+    }
 
     wpath[size] = 0;
     mbstowcs(wpath, str, size);
     return wpath;
 }
 
+// devPath, rootDir and fileHandle are OUTPUT parameters
 void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handle_t** rootDir, efi_file_handle_t** fileHandle)
 {
     // Get all the simple file system protocol handles
@@ -22,15 +25,21 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
     efi_handle_t* handles= NULL;
     efi_status_t status = BS->LocateHandle(ByProtocol, &sfsGuid, NULL, &bufSize, handles);
     if (status != EFI_BUFFER_TOO_SMALL)
-        ErrorExit("Initial location of the simple file system protocol handles failed.", status);
+    {
+        Log(LL_ERROR, status, "Initial location of the simple file system protocol handles failed.");
+    }
 
     status = BS->AllocatePool(LIP->ImageDataType, bufSize, (void**)&handles);
     if (EFI_ERROR(status))
-        ErrorExit("Failed to allocate buffer for handles.", status);
+    {
+        Log(LL_ERROR, status, "Failed to allocate buffer for handles.");
+    }
 
     status = BS->LocateHandle(ByProtocol, &sfsGuid, NULL, &bufSize, handles);
     if (EFI_ERROR(status))
-        ErrorExit("Unable to locate the simple file system protocol handles.", status);
+    {
+        Log(LL_ERROR, status, "Unable to locate the simple file system protocol handles.");
+    }
 
     // Find the right protocols
     uintn_t numHandles = bufSize / sizeof(efi_handle_t);
@@ -44,7 +53,9 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
         if (EFI_ERROR(status)) 
         {
             if (i + 1 == numHandles) 
-                ErrorExit("Unable to obtain the simple file system protocol.", status);
+            {
+                Log(LL_ERROR, status, "Failed to obtain the simple file system protocol.");
+            }
             continue;
         }
 
@@ -52,7 +63,9 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
         if (EFI_ERROR(status))
         {
             if (i + 1 == numHandles)
-                ErrorExit("Unable to obtain the device path protocol.", status);
+            {
+                Log(LL_ERROR, status, "Failed to obtain the device path protocol.");
+            }
             continue;
         }
 
@@ -63,16 +76,22 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
         // Open the root volume
         status = sfsProt->OpenVolume(sfsProt, rootDir);
         if (EFI_ERROR(status))
+        {
             continue;
+        }
 
         // Get a handle to the file
         status = (*rootDir)->Open((*rootDir), fileHandle, path, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
         if (EFI_ERROR(status))
-            PrintDebug("Checking another partition for the file...\n");
+        {
+            Log(LL_INFO, 0, "Checking another partition for the file...");
+        }
     }
     BS->FreePool(handles);
-    if ((*fileHandle) == NULL) 
-        ErrorExit("Failed to find the file on the machine.", EFI_NOT_FOUND);
+    if ((*fileHandle) == NULL)
+    {
+        Log(LL_ERROR, 0, "Failed to find the file on the machine.");
+    }
 }
 
 efi_status_t GetFileInfo(efi_file_handle_t* fileHandle, efi_file_info_t* fileInfo)
@@ -86,7 +105,9 @@ efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char** bu
 {
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, fileSize, (void**)buffer);
     if (EFI_ERROR(status))
-        ErrorExit("Failed to allocate memory to read file.", status);
+    {
+        Log(LL_ERROR, status, "Failed to allocate memory to read file.");
+    }
     return fileHandle->Read(fileHandle, &fileSize, (*buffer));
 }
 
@@ -95,7 +116,12 @@ int GetValueOffset(char* line, size_t* valueOffset, const char delimiter)
     char* curr = line;
 
     for (; *curr != delimiter; curr++)
-        if (*curr == '\0') return 1; // Delimiter not found
+    {
+        if (*curr == '\0') 
+        {
+            return 1; // Delimiter not found
+        }
+    }
 
     curr++; // Pass the delimiter
     *valueOffset = curr - line;

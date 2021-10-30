@@ -1,6 +1,6 @@
 #pragma once
 #include <uefi.h>
-#include "debug.h"
+#include "logger.h"
 
 #define FALSE ((boolean_t)0)
 #define TRUE ((boolean_t)1)

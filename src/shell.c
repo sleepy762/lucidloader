@@ -2,6 +2,7 @@
 
 void StartShell(void)
 {
+    Log(LL_INFO, 0, "Starting the shell.");
     ST->ConOut->ClearScreen(ST->ConOut);
     ST->ConOut->EnableCursor(ST->ConOut, TRUE);
     printf("Welcome to the bootloader shell!\n");
@@ -9,7 +10,11 @@ void StartShell(void)
 
     char* currPath = NULL;
     // 2 is the initial size for the root dir "\" and null string terminator
-    BS->AllocatePool(LIP->ImageDataType, 2, (void**)&currPath);
+    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, 2, (void**)&currPath);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to allocate memory for the path during shell initialization.");
+    }
 
     // Initializing the default starting path
     currPath[0] = '\\';
@@ -19,6 +24,7 @@ void StartShell(void)
     ShellLoop(&currPath);
 
     // Cleanup
+    Log(LL_INFO, 0, "Closing the shell.");
     BS->FreePool(currPath);
     ST->ConOut->EnableCursor(ST->ConOut, FALSE);
     ST->ConOut->ClearScreen(ST->ConOut);
@@ -54,7 +60,10 @@ void GetInput(char buffer[], const int maxInputSize)
         while ((status = ST->ConIn->ReadKeyStroke(ST->ConIn, &key)) == EFI_NOT_READY);
 
         // When enter is pressed, leave the loop to process the input
-        if (key.UnicodeChar == CARRIAGE_RETURN) break;
+        if (key.UnicodeChar == CARRIAGE_RETURN) 
+        {
+            break;
+        }
 
         // Handling backspace
         if (key.UnicodeChar == BACKSPACE)
@@ -141,7 +150,11 @@ void ParseInput(char buffer[], char** cmd, char** args)
         cmdSize = bufferLen + 1;
     }
 
-    BS->AllocatePool(LIP->ImageDataType, cmdSize, (void**)cmd);
+    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, cmdSize, (void**)cmd);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to allocate memory while parsing shell input.");
+    }
     memcpy(*cmd, buffer, cmdSize);
     (*cmd)[cmdSize] = 0; // Terminate the string
 
@@ -150,7 +163,11 @@ void ParseInput(char buffer[], char** cmd, char** args)
     {
         size_t argsLen = bufferLen - argsOffset;
 
-        BS->AllocatePool(LIP->ImageDataType, argsLen + 1, (void**)args);
+        status = BS->AllocatePool(LIP->ImageDataType, argsLen + 1, (void**)args);
+        if (EFI_ERROR(status))
+        {
+            Log(LL_ERROR, status, "Failed to allocate memory for shell command arguments.");
+        }
         memcpy(*args, buffer + argsOffset, argsLen);
         (*args)[argsLen] = 0; // Terminate the string
     }

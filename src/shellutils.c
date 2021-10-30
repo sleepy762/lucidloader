@@ -8,12 +8,18 @@ char* ConcatPaths(char* lhs, char* rhs)
 
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, lhsLen + rhsLen + 2, (void**)&newPath);
     if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to allocate memory to concatenate two paths.");
         return NULL;
+    }
 
     memcpy(newPath, lhs, lhsLen + 1); // Copy with null terminator
 
-    if (strlen(lhs) > 1) 
+    // Don't add an extra backslash if the lhs path is "\"
+    if (strlen(lhs) > 1)
+    {
         strcat(newPath, "\\");
+    }
 
     strcat(newPath, rhs);
 
@@ -54,8 +60,9 @@ void RemoveRepeatedChars(char* str, char toRemove)
     while (*str != '\0')
     {
         while (*str == toRemove && *(str + 1) == toRemove)
+        {
             str++;
-        
+        }
         *dest++ = *str++;
     }
     *dest = 0;
@@ -70,7 +77,9 @@ int NormalizePath(char** path)
     while (*copy != '\0')
     {
         if (*copy == DIRECTORY_DELIM)
+        {
             tokenAmount++;
+        }
         copy++;
     }
     
@@ -83,11 +92,15 @@ int NormalizePath(char** path)
     char** tokens = NULL;
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, tokenAmount * sizeof(char*), (void**)&tokens);
     if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to allocate memory while normalizing the path.");
         return CMD_OUT_OF_MEMORY;
+    }
         
     tokens[0] = NULL;
 
     char* token = NULL;
+    // char* src = *path;
     char* src = strdup(*path);
     char* srcCopy = src + 1;
     int i = 0;
@@ -111,12 +124,18 @@ int NormalizePath(char** path)
                 tokenAmount = 0;
             }
 
-            if (i > 0) i--;
+            // Don't go backwards past the beginning
+            if (i > 0) 
+            {
+                i--;
+            }
 
             if (tokens[i] != NULL)
             {
-                if (tokenAmount > 0) tokenAmount--;
-
+                if (tokenAmount > 0) 
+                {
+                    tokenAmount--;
+                }
                 BS->FreePool(tokens[i]);
                 tokens[i] = NULL;
             }
