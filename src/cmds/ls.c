@@ -1,8 +1,8 @@
 #include "cmds/ls.h"
 
-int LsCmd(char args[], char** currPathPtr)
+uint8_t LsCmd(char_t args[], char_t** currPathPtr)
 {
-    char* dirToList = NULL;
+    char_t* dirToList = NULL;
     boolean_t isDynamicMemory = FALSE;
     
     if (args != NULL)
@@ -10,7 +10,7 @@ int LsCmd(char args[], char** currPathPtr)
         dirToList = MakeFullPath(args, *currPathPtr, &isDynamicMemory);
         if (dirToList != NULL)
         {
-            int normalizationResult = NormalizePath(&dirToList);
+            uint8_t normalizationResult = NormalizePath(&dirToList);
             if (normalizationResult != CMD_SUCCESS)
             {
                 return normalizationResult;
@@ -47,12 +47,12 @@ int LsCmd(char args[], char** currPathPtr)
     return CMD_SUCCESS;
 }
 
-const char* LsBrief(void)
+const char_t* LsBrief(void)
 {
     return "List files and directories.";
 }
 
-const char* LsLong(void)
+const char_t* LsLong(void)
 {
     return "Usage: ls [path]\n\
 [path] - Optional argument where you can specify a path.\n\

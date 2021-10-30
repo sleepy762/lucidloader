@@ -4,6 +4,6 @@
 #include "bootutils.h"
 #include "shellerr.h"
 
-int LsCmd(char args[], char** currPathPtr);
-const char* LsBrief(void);
-const char* LsLong(void);
+uint8_t LsCmd(char_t args[], char_t** currPathPtr);
+const char_t* LsBrief(void);
+const char_t* LsLong(void);

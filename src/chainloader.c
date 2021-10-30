@@ -24,7 +24,7 @@ efi_status_t ChainloadImage(char_t* path)
 
     // Read the file data into a buffer
     uintn_t imgFileSize = imgInfo.FileSize;
-    char* imgData = NULL;
+    char_t* imgData = NULL;
     status = ReadFile(imgFileHandle, imgFileSize, &imgData);
     if (EFI_ERROR(status))
     {

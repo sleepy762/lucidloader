@@ -9,10 +9,11 @@
 #define CURRENT_DIR (".")
 #define PREVIOUS_DIR ("..")
 
-char* ConcatPaths(char* lhs, char* rhs);
-boolean_t isspace(char c);
-void RemoveRepeatedChars(char* str, char toRemove);
-int NormalizePath(char** path);
-char* TrimSpaces(char* str);
-void CleanPath(char** path);
-char* MakeFullPath(char* args, char* currPathPtr, boolean_t* dynMemFlag);
+char_t* ConcatPaths(char_t* lhs, char_t* rhs);
+uint8_t NormalizePath(char_t** path);
+void CleanPath(char_t** path);
+char_t* MakeFullPath(char_t* args, char_t* currPathPtr, boolean_t* isDynamicMemory);
+
+boolean_t isspace(char_t c);
+char_t* TrimSpaces(char_t* str);
+void RemoveRepeatedChars(char_t* str, char_t toRemove);

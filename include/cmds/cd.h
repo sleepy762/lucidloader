@@ -4,6 +4,6 @@
 #include "bootutils.h"
 #include "shellerr.h"
 
-int CdCmd(char args[], char** currPathPtr);
-const char* CdBrief(void);
-const char* CdLong(void);
+uint8_t CdCmd(char_t args[], char_t** currPathPtr);
+const char_t* CdBrief(void);
+const char_t* CdLong(void);

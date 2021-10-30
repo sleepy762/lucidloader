@@ -14,9 +14,9 @@ const shell_cmd_s commands[] = {
 };
 
 // Count the amount of commands
-short CommandCount(void)
+uint8_t CommandCount(void)
 {
-    short totalCmds = 0;
+    uint8_t totalCmds = 0;
     while (commands[totalCmds].CommandFunction != NULL)
     {
         totalCmds++;
@@ -25,14 +25,14 @@ short CommandCount(void)
     return totalCmds;
 }
 
-int HelpCmd(char args[], char** currPathPtr)
+uint8_t HelpCmd(char_t args[], char_t** currPathPtr)
 {
-    short totalCmds = CommandCount();
+    uint8_t totalCmds = CommandCount();
 
     if (strlen(args) != 0)
     {
         // If an arg(command name) was passed, find help for it
-        for (short i = 0; i < totalCmds; i++)
+        for (uint8_t i = 0; i < totalCmds; i++)
         {
             if (strcmp(args, commands[i].commandName) == 0)
             {
@@ -52,7 +52,7 @@ int HelpCmd(char args[], char** currPathPtr)
     else
     {
         // List all commands with their brief help
-        for (short i = 0; i < totalCmds; i++)
+        for (uint8_t i = 0; i < totalCmds; i++)
         {
             printf("\n%s -- ", commands[i].commandName);
 
@@ -69,12 +69,12 @@ int HelpCmd(char args[], char** currPathPtr)
     return CMD_SUCCESS;
 }
 
-const char* HelpBrief(void)
+const char_t* HelpBrief(void)
 {
     return "Displays all the commands and their description. help [cmd] for info on a command.";
 }
 
-const char* HelpLong(void)
+const char_t* HelpLong(void)
 {
     return "Usage: help [cmd]\n[cmd] - Optional argument. When passed, it will look for the command \
 and print long help information.";

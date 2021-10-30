@@ -1,6 +1,6 @@
 #include "bootutils.h"
 
-wchar_t* StringToWideString(char* str)
+wchar_t* StringToWideString(char_t* str)
 {
     const size_t size = strlen(str);
     wchar_t* wpath = NULL;
@@ -110,7 +110,7 @@ efi_status_t GetFileInfo(efi_file_handle_t* fileHandle, efi_file_info_t* fileInf
     return fileHandle->GetInfo(fileHandle, &infGuid, &size, (void*)fileInfo);
 }
 
-efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char** buffer)
+efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char_t** buffer)
 {
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, fileSize, (void**)buffer);
     if (EFI_ERROR(status))
@@ -120,7 +120,7 @@ efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char** bu
     return fileHandle->Read(fileHandle, &fileSize, (*buffer));
 }
 
-int GetValueOffset(char* line, size_t* valueOffset, const char delimiter)
+int32_t GetValueOffset(char_t* line, const char_t delimiter)
 {
     char* curr = line;
 
@@ -128,12 +128,10 @@ int GetValueOffset(char* line, size_t* valueOffset, const char delimiter)
     {
         if (*curr == '\0') 
         {
-            return 1; // Delimiter not found
+            return -1; // Delimiter not found
         }
     }
 
     curr++; // Pass the delimiter
-    *valueOffset = curr - line;
-
-    return 0;
+    return (curr - line);
 }

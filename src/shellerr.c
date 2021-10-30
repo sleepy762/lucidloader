@@ -1,11 +1,11 @@
 #include "shellerr.h"
 
-void PrintCommandError(const char* cmd, int error)
+void PrintCommandError(const char_t* cmd, uint8_t error)
 {
     printf("\n%s: %s", cmd, GetCommandErrorInfo(error));
 }
 
-const char* GetCommandErrorInfo(int error)
+const char_t* GetCommandErrorInfo(uint8_t error)
 {
     switch (error)
     {

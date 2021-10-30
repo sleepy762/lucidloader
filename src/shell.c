@@ -1,7 +1,7 @@
 #include "shell.h"
 
 // Return value 1 is fatal, otherwise can be ignored
-int StartShell(void)
+int8_t StartShell(void)
 {
     Log(LL_INFO, 0, "Starting the shell.");
     ST->ConOut->ClearScreen(ST->ConOut);
@@ -9,7 +9,7 @@ int StartShell(void)
     printf("Welcome to the bootloader shell!\n");
     printf("Type `help` to get a list of commands.\n");
 
-    char* currPath = NULL;
+    char_t* currPath = NULL;
     // 2 is the initial size for the root dir "\" and null string terminator
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, 2, (void**)&currPath);
     if (EFI_ERROR(status))
@@ -38,16 +38,16 @@ int StartShell(void)
 }
 
 // Return value 1 is fatal, otherwise can be ignored
-int ShellLoop(char** currPathPtr)
+int8_t ShellLoop(char_t** currPathPtr)
 {
-    while (1)
+    while (TRUE)
     {
-        char buffer[SHELL_MAX_INPUT] = {0};
+        char_t buffer[SHELL_MAX_INPUT] = {0};
         printf("\n> ");
 
         GetInput(buffer, SHELL_MAX_INPUT);
 
-        if (!strcmp(buffer, SHELL_EXIT_STR))
+        if (strcmp(buffer, SHELL_EXIT_STR) == 0)
         {
             break;
         }
@@ -59,14 +59,14 @@ int ShellLoop(char** currPathPtr)
     return 0;
 }
 
-void GetInput(char buffer[], const int maxInputSize)
+void GetInput(char_t buffer[], const uint32_t maxInputSize)
 {
-    short index = 0;
+    uint32_t index = 0;
 
     efi_status_t status;
     efi_input_key_t key;
 
-    while (1)
+    while (TRUE)
     {
         // Continuously read input
         while ((status = ST->ConIn->ReadKeyStroke(ST->ConIn, &key)) == EFI_NOT_READY);
@@ -99,10 +99,10 @@ void GetInput(char buffer[], const int maxInputSize)
 }
 
 // Return value 1 is fatal, otherwise can be ignored
-int ProcessCommand(char buffer[], char** currPathPtr)
+int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
 {
-    char* cmd = NULL;
-    char* args = NULL;
+    char_t* cmd = NULL;
+    char_t* args = NULL;
     // Store the command and arguments in separate strings
     if (ParseInput(buffer, &cmd, &args) == 1)
     {
@@ -114,9 +114,9 @@ int ProcessCommand(char buffer[], char** currPathPtr)
         return 0;
     }
     
-    const short totalCmds = CommandCount();
-    int commandReturn = 0;
-    for (short i = 0; i < totalCmds; i++)
+    const uint8_t totalCmds = CommandCount();
+    uint8_t commandReturn = 0;
+    for (uint8_t i = 0; i < totalCmds; i++)
     {   
         // Find the right command and execute the command function
         if (strcmp(cmd, commands[i].commandName) == 0)
@@ -145,7 +145,7 @@ int ProcessCommand(char buffer[], char** currPathPtr)
 }
 
 // Return value 1 is fatal, otherwise it can be ignored
-int ParseInput(char buffer[], char** cmd, char** args)
+int8_t ParseInput(char_t buffer[], char_t** cmd, char_t** args)
 {
     size_t bufferLen = strlen(buffer);
     if (bufferLen == 0)
@@ -154,12 +154,11 @@ int ParseInput(char buffer[], char** cmd, char** args)
     }
 
     buffer = TrimSpaces(buffer);
-    size_t argsOffset = 0;
-    GetValueOffset(buffer, &argsOffset, SPACE);
+    int32_t argsOffset = GetValueOffset(buffer, SPACE);
 
     // Use the argsOffset if there are args present
     size_t cmdSize;
-    if (argsOffset != 0)
+    if (argsOffset != -1)
     {
         cmdSize = argsOffset - 1;
     }
@@ -178,7 +177,7 @@ int ParseInput(char buffer[], char** cmd, char** args)
     (*cmd)[cmdSize] = 0; // Terminate the string
 
     // If there are arguments present...
-    if (argsOffset != 0)
+    if (argsOffset != -1)
     {
         size_t argsLen = bufferLen - argsOffset;
 

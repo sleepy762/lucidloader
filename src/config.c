@@ -17,7 +17,7 @@ boot_entry_s* ParseConfig(void)
         return NULL;
     }
 
-    char* configData = NULL;
+    char_t* configData = NULL;
     uint64_t configSize = configInfo.FileSize;
     status = ReadFile(configFileHandle, configSize + 1, &configData);
     if (EFI_ERROR(status))
@@ -27,9 +27,9 @@ boot_entry_s* ParseConfig(void)
     }
     configData[configSize] = 0;
 
-    char* line;
-    char* configEntry;
-    char* srcCopy = configData;
+    char_t* line;
+    char_t* configEntry;
+    char_t* srcCopy = configData;
     boot_entry_s* head = NULL;
 
     // Gets blocks of text from the config
@@ -38,7 +38,7 @@ boot_entry_s* ParseConfig(void)
         boot_entry_s entry = {0};
         size_t len = configEntry - srcCopy;
 
-        char* strippedEntry = NULL; // Holds the current entry block
+        char_t* strippedEntry = NULL; // Holds the current entry block
         status = BS->AllocatePool(LIP->ImageDataType, len + 1, (void**)&strippedEntry);
         if (EFI_ERROR(status))
         {
@@ -51,13 +51,14 @@ boot_entry_s* ParseConfig(void)
         strippedEntry[len] = 0;
         srcCopy += len + strlen(CFG_ENTRY_DELIMITER); // Move the pointer to the next entry block
 
-        char* entryCopy = strippedEntry;
+        char_t* entryCopy = strippedEntry;
         // Gets lines from the blocks of text
         while ((line = strtok_r(entryCopy, CFG_LINE_DELIMITER, &entryCopy)) != NULL)
         {
             if (ParseLine(&entry, line) == 1)
             {
                 BS->FreePool(configData);
+                BS->FreePool(strippedEntry);
                 return head;
             }
         }
@@ -88,14 +89,14 @@ boot_entry_s* ParseConfig(void)
 
 // If the entry is valid then it is added to the entry linked list
 // Return value 1 is fatal, otherwise it can be ignored.
-int ValidateEntry(boot_entry_s newEntry, boot_entry_s** head)
+int8_t ValidateEntry(boot_entry_s newEntry, boot_entry_s** head)
 {
     if (strlen(newEntry.name) == 0)
     {
         Log(LL_WARNING, 0, "Ignoring config entry with no name.");
         return 0;
     }
-    else if (newEntry.type != Linux && newEntry.type != Chainload)
+    else if (newEntry.type != BT_LINUX && newEntry.type != BT_CHAINLOAD)
     {
         Log(LL_WARNING, 0, "Ignoring config entry with unknown boot type. (entry name: %s)", newEntry.name);
         return 0;
@@ -126,7 +127,7 @@ int ValidateEntry(boot_entry_s newEntry, boot_entry_s** head)
     return 0;
 }
 
-void AssignValueToEntry(const char* key, char* value, boot_entry_s* entry)
+void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry)
 {
     if (strcmp(key, "name") == 0)
     {
@@ -136,11 +137,11 @@ void AssignValueToEntry(const char* key, char* value, boot_entry_s* entry)
     {
         if (strcmp(value, "chainload") == 0)
         {
-            entry->type = Chainload;
+            entry->type = BT_CHAINLOAD;
         }
         else if (strcmp(value, "linux") == 0)
         {
-            entry->type = Linux;
+            entry->type = BT_LINUX;
         }
     }
     else if (strcmp(key, "path") == 0|| strcmp(key, "kernel") == 0) 
@@ -163,20 +164,20 @@ void AssignValueToEntry(const char* key, char* value, boot_entry_s* entry)
 
 // Stores the key and value in separate strings
 // Return value 1 is fatal, otherwise it can be ignored
-int ParseLine(boot_entry_s* entry, char* token)
+int8_t ParseLine(boot_entry_s* entry, char_t* token)
 {
     efi_status_t status;
-    size_t valueOffset = 0;
-    size_t tokenLen = strlen(token);
-    if (GetValueOffset(token, &valueOffset, CFG_KEY_VALUE_DELIMITER) != 0)
+    int32_t valueOffset = GetValueOffset(token, CFG_KEY_VALUE_DELIMITER);
+    if (valueOffset == -1)
     {
         return 0;
     }
 
+    size_t tokenLen = strlen(token);
     size_t valueLength = tokenLen - valueOffset;
 
-    char* key = NULL;
-    char* value = NULL;
+    char_t* key = NULL;
+    char_t* value = NULL;
     status = BS->AllocatePool(LIP->ImageDataType, valueOffset, (void**)&key);
     if (EFI_ERROR(status))
     {
