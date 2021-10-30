@@ -67,7 +67,7 @@ endif
 all: $(ALLTARGETS) $(EXTRA)
 
 uefi/libuefi.a:
-	@make --no-print-directory -C uefi libuefi.a USE_GCC=$(USE_GCC) ARCH=$(ARCH)
+	@+make --no-print-directory -C uefi libuefi.a USE_GCC=$(USE_GCC) ARCH=$(ARCH)
 
 libuefi.lib: $(LIBOBJS)
 
