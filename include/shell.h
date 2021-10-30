@@ -13,9 +13,9 @@
 
 #define SHELL_EXIT_STR ("exit")
 
-void StartShell(void);
-void ShellLoop(char** currPathPtr);
-void ParseInput(char buffer[], char** cmd, char** args);
+int StartShell(void);
+int ShellLoop(char** currPathPtr);
+int ParseInput(char buffer[], char** cmd, char** args);
 
 void GetInput(char buffer[], const int maxInputSize);
-void ProcessCommand(char buffer[], char** currPathPtr);
+int ProcessCommand(char buffer[], char** currPathPtr);

@@ -17,7 +17,7 @@ wchar_t* StringToWideString(char* str)
 }
 
 // devPath, rootDir and fileHandle are OUTPUT parameters
-void GetFileProtocols(char_t* path, efi_device_path_t** devPath, efi_file_handle_t** rootDir, efi_file_handle_t** fileHandle)
+efi_status_t GetFileProtocols(char_t* path, efi_device_path_t** devPath, efi_file_handle_t** rootDir, efi_file_handle_t** fileHandle)
 {
     // Get all the simple file system protocol handles
     efi_guid_t sfsGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
@@ -27,18 +27,21 @@ void GetFileProtocols(char_t* path, efi_device_path_t** devPath, efi_file_handle
     if (status != EFI_BUFFER_TOO_SMALL)
     {
         Log(LL_ERROR, status, "Initial location of the simple file system protocol handles failed.");
+        return status;
     }
 
     status = BS->AllocatePool(LIP->ImageDataType, bufSize, (void**)&handles);
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to allocate buffer for handles.");
+        return status;
     }
 
     status = BS->LocateHandle(ByProtocol, &sfsGuid, NULL, &bufSize, handles);
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Unable to locate the simple file system protocol handles.");
+        return status;
     }
 
     // Find the right protocols
@@ -55,6 +58,7 @@ void GetFileProtocols(char_t* path, efi_device_path_t** devPath, efi_file_handle
             if (i + 1 == numHandles) 
             {
                 Log(LL_ERROR, status, "Failed to obtain the simple file system protocol.");
+                return status;
             }
             continue;
         }
@@ -65,6 +69,7 @@ void GetFileProtocols(char_t* path, efi_device_path_t** devPath, efi_file_handle
             if (i + 1 == numHandles)
             {
                 Log(LL_ERROR, status, "Failed to obtain the device path protocol.");
+                return status;
             }
             continue;
         }
@@ -93,7 +98,9 @@ void GetFileProtocols(char_t* path, efi_device_path_t** devPath, efi_file_handle
     if ((*fileHandle) == NULL)
     {
         Log(LL_ERROR, 0, "Failed to find the file '%s' on the machine.", path);
+        return EFI_NOT_FOUND;
     }
+    return EFI_SUCCESS;
 }
 
 efi_status_t GetFileInfo(efi_file_handle_t* fileHandle, efi_file_info_t* fileInfo)

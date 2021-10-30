@@ -3,6 +3,7 @@
 efi_time_t timeSinceInit = {0};
 
 // Creates an empty log file and initializes the timeSinceInit variable
+// Returns 1 on success and 0 on failure
 int InitLogger(void)
 {
     FILE* fp = fopen(LOG_PATH, "w");

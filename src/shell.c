@@ -1,6 +1,7 @@
 #include "shell.h"
 
-void StartShell(void)
+// Return value 1 is fatal, otherwise can be ignored
+int StartShell(void)
 {
     Log(LL_INFO, 0, "Starting the shell.");
     ST->ConOut->ClearScreen(ST->ConOut);
@@ -14,6 +15,7 @@ void StartShell(void)
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to allocate memory for the path during shell initialization.");
+        return 1;
     }
 
     // Initializing the default starting path
@@ -21,16 +23,22 @@ void StartShell(void)
     currPath[1] = '\0';
 
     ST->ConIn->Reset(ST->ConIn, 0); // Reset the input buffer
-    ShellLoop(&currPath);
+    
+    if (ShellLoop(&currPath) == 1)
+    {
+        return 1;
+    }
 
     // Cleanup
     Log(LL_INFO, 0, "Closing the shell.");
     BS->FreePool(currPath);
     ST->ConOut->EnableCursor(ST->ConOut, FALSE);
     ST->ConOut->ClearScreen(ST->ConOut);
+    return 0;
 }
 
-void ShellLoop(char** currPathPtr)
+// Return value 1 is fatal, otherwise can be ignored
+int ShellLoop(char** currPathPtr)
 {
     while (1)
     {
@@ -43,8 +51,12 @@ void ShellLoop(char** currPathPtr)
         {
             break;
         }
-        ProcessCommand(buffer, currPathPtr);
+        if (ProcessCommand(buffer, currPathPtr) == 1)
+        {
+            return 1;
+        }
     }
+    return 0;
 }
 
 void GetInput(char buffer[], const int maxInputSize)
@@ -86,16 +98,20 @@ void GetInput(char buffer[], const int maxInputSize)
     }
 }
 
-void ProcessCommand(char buffer[], char** currPathPtr)
+// Return value 1 is fatal, otherwise can be ignored
+int ProcessCommand(char buffer[], char** currPathPtr)
 {
     char* cmd = NULL;
     char* args = NULL;
     // Store the command and arguments in separate strings
-    ParseInput(buffer, &cmd, &args);
+    if (ParseInput(buffer, &cmd, &args) == 1)
+    {
+        return 1;
+    }
     
     if (cmd == NULL)
     {
-        return;
+        return 0;
     }
     
     const short totalCmds = CommandCount();
@@ -125,14 +141,16 @@ void ProcessCommand(char buffer[], char** currPathPtr)
     {
         BS->FreePool(args);
     }
+    return 0;
 }
 
-void ParseInput(char buffer[], char** cmd, char** args)
+// Return value 1 is fatal, otherwise it can be ignored
+int ParseInput(char buffer[], char** cmd, char** args)
 {
     size_t bufferLen = strlen(buffer);
     if (bufferLen == 0)
     {
-        return;
+        return 0;
     }
 
     buffer = TrimSpaces(buffer);
@@ -154,6 +172,7 @@ void ParseInput(char buffer[], char** cmd, char** args)
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to allocate memory while parsing shell input.");
+        return 1;
     }
     memcpy(*cmd, buffer, cmdSize);
     (*cmd)[cmdSize] = 0; // Terminate the string
@@ -167,8 +186,10 @@ void ParseInput(char buffer[], char** cmd, char** args)
         if (EFI_ERROR(status))
         {
             Log(LL_ERROR, status, "Failed to allocate memory for shell command arguments.");
+            return 1;
         }
         memcpy(*args, buffer + argsOffset, argsLen);
         (*args)[argsLen] = 0; // Terminate the string
     }
+    return 0;
 }
