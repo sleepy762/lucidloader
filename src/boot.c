@@ -30,7 +30,7 @@ int main(int argc, char** argv)
 
     boot_entry_s* entries = ParseConfig();
     (void)entries; // Suppress the warning
-    ChainloadImage(StringToWideString("EFI\\apps\\bootmgfw.efi"));
+    ChainloadImage("EFI\\apps\\bootmgfw.efi");
     
     // This should never be reached
     return 0;

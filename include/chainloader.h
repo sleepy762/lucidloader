@@ -3,4 +3,4 @@
 #include "logger.h"
 #include "bootutils.h"
 
-int ChainloadImage(wchar_t* path);
+int ChainloadImage(char_t* path);

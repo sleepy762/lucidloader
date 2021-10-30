@@ -4,7 +4,7 @@
 #include "bootutils.h"
 
 // Temporary path
-#define CFG_PATH (u"EFI\\apps\\config.cfg")
+#define CFG_PATH ("EFI\\apps\\config.cfg")
 #define CFG_LINE_DELIMITER ("\n")
 #define CFG_ENTRY_DELIMITER ("\n\n")
 #define CFG_KEY_VALUE_DELIMITER ('=')

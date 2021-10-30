@@ -17,7 +17,7 @@ wchar_t* StringToWideString(char* str)
 }
 
 // devPath, rootDir and fileHandle are OUTPUT parameters
-void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handle_t** rootDir, efi_file_handle_t** fileHandle)
+void GetFileProtocols(char_t* path, efi_device_path_t** devPath, efi_file_handle_t** rootDir, efi_file_handle_t** fileHandle)
 {
     // Get all the simple file system protocol handles
     efi_guid_t sfsGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
@@ -81,16 +81,18 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
         }
 
         // Get a handle to the file
-        status = (*rootDir)->Open((*rootDir), fileHandle, path, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
+        wchar_t* wpath = StringToWideString(path);
+        status = (*rootDir)->Open((*rootDir), fileHandle, wpath, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
         if (EFI_ERROR(status))
         {
-            Log(LL_INFO, 0, "Checking another partition for the file...");
+            Log(LL_INFO, 0, "Checking another partition for the file '%s'...", path);
         }
+        BS->FreePool(wpath);
     }
     BS->FreePool(handles);
     if ((*fileHandle) == NULL)
     {
-        Log(LL_ERROR, 0, "Failed to find the file on the machine.");
+        Log(LL_ERROR, 0, "Failed to find the file '%s' on the machine.", path);
     }
 }
 
