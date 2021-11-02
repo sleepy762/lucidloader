@@ -84,7 +84,7 @@ void *malloc (size_t __size)
      * too, because realloc won't work otherwise... Why can't AllocatePool accept input addresses? */
     for(i = 0; i < __stdlib_numallocs && __stdlib_allocs[i] != 0; i += 2);
     if(i == __stdlib_numallocs) {
-        status = BS->AllocatePool(LIP ? LIP->ImageDataType : EfiLoaderData, __stdlib_numallocs + 2, &ret);
+        status = BS->AllocatePool(LIP ? LIP->ImageDataType : EfiLoaderData, (__stdlib_numallocs + 2) * sizeof(uintptr_t), &ret);
         if(EFI_ERROR(status) || !ret) { errno = ENOMEM; return NULL; }
         if(__stdlib_allocs) memcpy(ret, __stdlib_allocs, __stdlib_numallocs * sizeof(uintptr_t));
         __stdlib_allocs = (uintptr_t*)ret;

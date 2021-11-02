@@ -102,7 +102,7 @@ build:
 	@cp libuefi.a uefi.h ../build/uefi
 
 clean:
-	@rm $(TARGET) $(SRCS:.c=.o) *.a *.lib *.elf $(LIBOBJS) 2>/dev/null || true
+	@rm $(TARGET) $(OBJS) *.a *.lib *.elf $(LIBOBJS) 2>/dev/null || true
 
 distclean: clean
 ifeq ($(wildcard uefi/Makefile),)

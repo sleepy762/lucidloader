@@ -711,12 +711,12 @@ typedef efi_status_t (EFIAPI *efi_check_event_t)(efi_event_t Event);
 typedef efi_status_t (EFIAPI *efi_handle_protocol_t)(efi_handle_t Handle, efi_guid_t *Protocol, void **Interface);
 typedef efi_status_t (EFIAPI *efi_register_protocol_notify_t)(efi_guid_t *Protocol, efi_event_t Event, void **Registration);
 typedef efi_status_t (EFIAPI *efi_locate_handle_t)(efi_locate_search_type_t SearchType, efi_guid_t *Protocol,
-    void *SearchKey, uintn_t* BufferSize, efi_handle_t *Buffer);
+    void *SearchKey, uintn_t *BufferSize, efi_handle_t *Buffer);
 typedef efi_status_t (EFIAPI *efi_locate_device_path_t)(efi_guid_t *Protocol, efi_device_path_t **DevicePath,
     efi_handle_t *Device);
 typedef efi_status_t (EFIAPI *efi_install_configuration_table_t)(efi_guid_t *Guid, void *Table);
 typedef efi_status_t (EFIAPI *efi_image_load_t)(boolean_t BootPolicy, efi_handle_t ParentImageHandle, efi_device_path_t *FilePath,
-    void *SourceBuffer, uintn_t SourceSie, efi_handle_t *ImageHandle);
+    void *SourceBuffer, uintn_t SourceSize, efi_handle_t *ImageHandle);
 typedef efi_status_t (EFIAPI *efi_image_start_t)(efi_handle_t ImageHandle, uintn_t *ExitDataSize, wchar_t **ExitData);
 typedef efi_status_t (EFIAPI *efi_exit_t)(efi_handle_t ImageHandle, efi_status_t ExitStatus, uintn_t ExitDataSize,
     wchar_t *ExitData);

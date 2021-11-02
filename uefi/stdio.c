@@ -43,7 +43,7 @@ void __stdio_cleanup()
         BS->FreePool(__argvutf8);
 #endif
     if(__blk_devs) {
-        BS->FreePool(__blk_devs);
+        free(__blk_devs);
         __blk_devs = NULL;
         __blk_ndevs = 0;
     }
@@ -124,7 +124,7 @@ int fclose (FILE *__stream)
         if(__stream == (FILE*)__blk_devs[i].bio)
             return 1;
     status = __stream->Close(__stream);
-    BS->FreePool(__stream);
+    free(__stream);
     return !EFI_ERROR(status);
 }
 
@@ -182,7 +182,7 @@ err:    __stdio_seterrno(status);
         return -1;
     }
     /* no need for fclose(f); */
-    BS->FreePool(f);
+    free(f);
     return 0;
 }
 
@@ -239,13 +239,14 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
             status = BS->LocateHandle(ByProtocol, &bioGuid, NULL, &handle_size, (efi_handle_t*)&handles);
             if(!EFI_ERROR(status)) {
                 handle_size /= (uintn_t)sizeof(efi_handle_t);
-                //__blk_devs = (block_file_t*)malloc(handle_size * sizeof(block_file_t));
-                status = BS->AllocatePool(LIP->ImageDataType, handle_size * sizeof(block_file_t), (void**)&__blk_devs);
-                if (EFI_ERROR(status)) __blk_devs = NULL;
+                /* workaround a bug in TianoCore, it reports zero size even though the data is in the buffer */
+                if(handle_size < 1)
+                    handle_size = (uintn_t)sizeof(handles) / sizeof(efi_handle_t);
+                __blk_devs = (block_file_t*)malloc(handle_size * sizeof(block_file_t));
                 if(__blk_devs) {
                     memset(__blk_devs, 0, handle_size * sizeof(block_file_t));
                     for(i = __blk_ndevs = 0; i < handle_size; i++)
-                        if(!EFI_ERROR(BS->HandleProtocol(handles[i], &bioGuid, (void **) &__blk_devs[__blk_ndevs].bio)) &&
+                        if(handles[i] && !EFI_ERROR(BS->HandleProtocol(handles[i], &bioGuid, (void **) &__blk_devs[__blk_ndevs].bio)) &&
                             __blk_devs[__blk_ndevs].bio && __blk_devs[__blk_ndevs].bio->Media &&
                             __blk_devs[__blk_ndevs].bio->Media->BlockSize > 0)
                                 __blk_ndevs++;
@@ -268,28 +269,28 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
         return NULL;
     }
     errno = 0;
-    status = BS->AllocatePool(LIP->ImageDataType, sizeof(FILE), (void**)&ret);
-    if (EFI_ERROR(status))
-        return NULL;
+    ret = (FILE*)malloc(sizeof(FILE));
+    if(!ret) return NULL;
 #if USE_UTF8
     mbstowcs((wchar_t*)&wcname, __filename, BUFSIZ - 1);
     status = __root_dir->Open(__root_dir, &ret, (wchar_t*)&wcname,
 #else
     status = __root_dir->Open(__root_dir, &ret, (wchar_t*)__filename,
 #endif
-        (__modes[0] == CL('a') ? EFI_FILE_MODE_WRITE : 0) | (__modes[0] == CL('w') ? (EFI_FILE_MODE_WRITE | EFI_FILE_MODE_READ | EFI_FILE_MODE_CREATE) : EFI_FILE_MODE_READ),
+        __modes[0] == CL('w') || __modes[0] == CL('a') ? (EFI_FILE_MODE_WRITE | EFI_FILE_MODE_READ | EFI_FILE_MODE_CREATE) :
+            EFI_FILE_MODE_READ,
         __modes[1] == CL('d') ? EFI_FILE_DIRECTORY : 0);
     if(EFI_ERROR(status)) {
 err:    __stdio_seterrno(status);
-        BS->FreePool(ret); return NULL;
+        free(ret); return NULL;
     }
     status = ret->GetInfo(ret, &infGuid, &fsiz, &info);
     if(EFI_ERROR(status)) goto err;
     if(__modes[1] == CL('d') && !(info.Attribute & EFI_FILE_DIRECTORY)) {
-        BS->FreePool(ret); errno = ENOTDIR; return NULL;
+        free(ret); errno = ENOTDIR; return NULL;
     }
     if(__modes[1] != CL('d') && (info.Attribute & EFI_FILE_DIRECTORY)) {
-        BS->FreePool(ret); errno = EISDIR; return NULL;
+        free(ret); errno = EISDIR; return NULL;
     }
     if(__modes[0] == CL('a')) fseek(ret, 0, SEEK_END);
     return ret;
