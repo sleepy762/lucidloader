@@ -15,6 +15,8 @@ The OVMF files can be found in these paths:
 - in Arch: `/usr/share/ovmf/x64/OVMF.fd` 
 - in Debian: `/usr/share/ovmf/OVMF.fd`
 
+**DO NOT** use gcc to compile the project because it will not work.
+
 Run `make` in the root directory and you will get the `.efi` file.
 
 Alternatively, run `./qemuScript.sh` - it will compile the sources (runs `make -j8` by default), create a FAT image and convert it into ISO, and start QEMU with the image.
