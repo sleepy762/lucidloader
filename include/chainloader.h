@@ -1,6 +1,6 @@
 #pragma once
 #include <uefi.h>
-#include "debug.h"
+#include "logger.h"
 #include "bootutils.h"
 
-void ChainloadImage(wchar_t* path);
+efi_status_t ChainloadImage(char_t* path);

@@ -4,6 +4,6 @@
 #include "bootutils.h"
 #include "shellerr.h"
 
-int TouchCmd(char args[], char** currPathPtr);
-const char* TouchBrief(void);
-const char* TouchLong(void);
+uint8_t TouchCmd(char_t args[], char_t** currPathPtr);
+const char_t* TouchBrief(void);
+const char_t* TouchLong(void);

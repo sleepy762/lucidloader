@@ -2,5 +2,5 @@
 #include <uefi.h>
 #include "shellerr.h"
 
-int PwdCmd(char args[], char** currPathPtr);
-const char* PwdBrief(void);
+uint8_t PwdCmd(char_t args[], char_t** currPathPtr);
+const char_t* PwdBrief(void);

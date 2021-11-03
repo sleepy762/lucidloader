@@ -2,6 +2,6 @@
 #include <uefi.h>
 #include "shellerr.h"
 
-int EchoCmd(char args[], char** currPathPtr);
-const char* EchoBrief(void);
-const char* EchoLong(void);
+uint8_t EchoCmd(char_t args[], char_t** currPathPtr);
+const char_t* EchoBrief(void);
+const char_t* EchoLong(void);

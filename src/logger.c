@@ -1,26 +1,95 @@
-#include "debug.h"
+#include "logger.h"
 
-void PrintDebug(const char* string)
+efi_time_t timeSinceInit = {0};
+
+// Creates an empty log file and initializes the timeSinceInit variable
+// Returns 1 on success and 0 on failure
+int8_t InitLogger(void)
 {
-    #ifdef DEBUG
-    printf("[DEBUG] %s", string);
-    #endif
+    FILE* fp = fopen(LOG_PATH, "w");
+    if (fp != NULL)
+    {
+        fclose(fp);
+        ST->RuntimeServices->GetTime(&timeSinceInit, NULL);
+
+        // Print the date of the log
+        Log(LL_INFO, 0, "Log date: %02d/%02d/%04d %02d:%02d:%02d.", 
+            timeSinceInit.Day, timeSinceInit.Month, timeSinceInit.Year,
+            timeSinceInit.Hour, timeSinceInit.Minute, timeSinceInit.Second);
+
+        return 1;
+    }
+    return 0;
 }
 
-void ErrorExit(const char* moreInfo, efi_status_t status)
+// The status parameter is optional and can be set to 0 if unneeded
+// fmtMessage should be a string literal (with optional formatting like printf)
+// the last ... are for formatting fmtMessage
+void Log(LogLevel loglevel, efi_status_t status, const char_t* fmtMessage, ...)
 {
-    printf("[ERROR] %s %s (%ld)\n", moreInfo, GetErrorInfo(status), status);
-    sleep(10);
-    BS->Exit(IM, status, 0, NULL);
+    FILE* log = fopen(LOG_PATH, "a");
+    // Don't log if the logger hasn't been initialized (or file is not writable)
+    if (log == NULL || timeSinceInit.Day == 0)
+    {
+        return;
+    }
+    
+    // Print the seconds since launch and log level
+    fprintf(log, "[%04ds] [%s] ", GetSecondsSinceInit(), LogLevelString(loglevel));
+
+    // Print the string and add formatting (if there is any)
+    __builtin_va_list args;
+    __builtin_va_start(args, fmtMessage);
+    vfprintf(log, fmtMessage, args);
+
+    // Append a UEFI error message if the status argument is not 0
+    if (status != EFI_SUCCESS)
+    {
+        fprintf(log, " (EFI Error: %s (%ld))", EfiErrorString(status), status);
+    }
+
+    fprintf(log, "\n");
+    fclose(log);
 }
 
-void PrintWarning(const char* moreInfo, efi_status_t status)
+time_t GetSecondsSinceInit(void)
 {
-    printf("[WARNING] %s %s (%ld)\n", moreInfo, GetErrorInfo(status), status);
+    efi_time_t currTime = {0};
+    efi_status_t status = ST->RuntimeServices->GetTime(&currTime, NULL);
+    if (EFI_ERROR(status))
+    {
+        return 0;
+    }
+
+    time_t seconds = 0;
+    seconds += (currTime.Day - timeSinceInit.Day) * SECONDS_IN_DAY;
+    seconds += (currTime.Hour - timeSinceInit.Hour) * SECONDS_IN_HOUR;
+    seconds += (currTime.Minute - timeSinceInit.Minute) * SECONDS_IN_MINUTE;
+    seconds += currTime.Second - timeSinceInit.Second;
+    
+    return seconds;
 }
 
-// More informative error messages for each error status
-const char* GetErrorInfo(efi_status_t status)
+const char_t* LogLevelString(LogLevel loglevel)
+{
+    switch (loglevel)
+    {
+        case LL_INFO:
+        return "INFO";
+
+        case LL_WARNING:
+        return "WARNING";
+
+        case LL_ERROR:
+        return "ERROR";
+
+        default:
+        return "UNKNOWN";
+    }
+}
+
+// More informative error messages for each UEFI error status
+const char_t* EfiErrorString(efi_status_t status)
 {
     switch(status)
     {

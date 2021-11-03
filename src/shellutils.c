@@ -1,54 +1,43 @@
 #include "shellutils.h"
 
-char* ConcatPaths(char* lhs, char* rhs)
+char_t* ConcatPaths(char_t* lhs, char_t* rhs)
 {
-    char* newPath = NULL;
+    char_t* newPath = NULL;
     size_t lhsLen = strlen(lhs);
     size_t rhsLen = strlen(rhs);
 
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, lhsLen + rhsLen + 2, (void**)&newPath);
     if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to allocate memory to concatenate two paths.");
         return NULL;
+    }
 
     memcpy(newPath, lhs, lhsLen + 1); // Copy with null terminator
 
-    if (strlen(lhs) > 1) 
+    // Don't add an extra backslash if the lhs path is "\"
+    if (strlen(lhs) > 1)
+    {
         strcat(newPath, "\\");
+    }
 
     strcat(newPath, rhs);
 
     return newPath;
 }
 
-boolean_t isspace(char c)
-{
-    return (c == ' ' || c == '\t');
-}
-
-void RemoveRepeatedChars(char* str, char toRemove)
-{
-    char* dest = str;
-
-    while (*str != '\0')
-    {
-        while (*str == toRemove && *(str + 1) == toRemove)
-            str++;
-        
-        *dest++ = *str++;
-    }
-    *dest = 0;
-}
-
 // Normalizes the path by removing "." and ".." directories from the given path
-int NormalizePath(char** path)
+uint8_t NormalizePath(char_t** path)
 {
     // count the amount of tokens
-    char* copy = *path;
-    int tokenAmount = 0;
+    char_t* copy = *path;
+    uint16_t tokenAmount = 0;
     while (*copy != '\0')
     {
         if (*copy == DIRECTORY_DELIM)
+        {
             tokenAmount++;
+        }
         copy++;
     }
     
@@ -58,17 +47,19 @@ int NormalizePath(char** path)
         return CMD_SUCCESS;
     }
 
-    char** tokens = NULL;
-    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, tokenAmount * sizeof(char*), (void**)&tokens);
+    char_t** tokens = NULL;
+    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, tokenAmount * sizeof(char_t*), (void**)&tokens);
     if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to allocate memory while normalizing the path.");
         return CMD_OUT_OF_MEMORY;
+    }
         
     tokens[0] = NULL;
 
-    char* token = NULL;
-    char* src = strdup(*path);
-    char* srcCopy = src + 1;
-    int i = 0;
+    char_t* token = NULL;
+    char_t* srcCopy = *path + 1; // Pass the first character (which is always "\")
+    uint16_t i = 0;
     // Evaluate the path
     while ((token = strtok_r(srcCopy, DIRECTORY_DELIM_STR, &srcCopy)) != NULL)
     {
@@ -89,12 +80,18 @@ int NormalizePath(char** path)
                 tokenAmount = 0;
             }
 
-            if (i > 0) i--;
+            // Don't go backwards past the beginning
+            if (i > 0) 
+            {
+                i--;
+            }
 
             if (tokens[i] != NULL)
             {
-                if (tokenAmount > 0) tokenAmount--;
-
+                if (tokenAmount > 0) 
+                {
+                    tokenAmount--;
+                }
                 BS->FreePool(tokens[i]);
                 tokens[i] = NULL;
             }
@@ -105,7 +102,6 @@ int NormalizePath(char** path)
             i++;
         }
     }
-    BS->FreePool(src);
 
     // Rebuild the string
     (*path)[0] = '\\';
@@ -126,31 +122,24 @@ int NormalizePath(char** path)
     return CMD_SUCCESS;
 }
 
-void CleanPath(char** path)
+void CleanPath(char_t** path)
 {
-    size_t pathLen = strlen(*path);
-    char* originalPath = *path;
-
-    // remove leading whitespace
-    while (isspace(**path)) 
-        (*path)++;
-
-    // remove trailing whitespace
-    char* end = originalPath + pathLen - 1;
-    while (end > originalPath && isspace(*end)) end--;
-    end[1] = 0;
+    *path = TrimSpaces(*path);
 
     // Remove duplicate backslashes from the command
     RemoveRepeatedChars(*path, DIRECTORY_DELIM);
 
     // Remove a backslash from the end if it exists
     size_t lastIndex = strlen(*path) - 1;
-    if ((*path)[lastIndex] == DIRECTORY_DELIM && lastIndex + 1 > 1) (*path)[lastIndex] = 0;
+    if ((*path)[lastIndex] == DIRECTORY_DELIM && lastIndex + 1 > 1) 
+    {
+        (*path)[lastIndex] = 0;
+    }
 }
 
-char* MakeFullPath(char* args, char* currPathPtr, boolean_t* isDynamicMemory)
+char_t* MakeFullPath(char_t* args, char_t* currPathPtr, boolean_t* isDynamicMemory)
 {
-    char* fullPath = NULL;
+    char_t* fullPath = NULL;
 
     CleanPath(&args);
 
@@ -175,4 +164,46 @@ char* MakeFullPath(char* args, char* currPathPtr, boolean_t* isDynamicMemory)
         *isDynamicMemory = TRUE;
     }
     return fullPath;
+}
+
+boolean_t isspace(char_t c)
+{
+    return (c == ' ' || c == '\t');
+}
+
+char_t* TrimSpaces(char_t* str)
+{
+    size_t stringLen = strlen(str);
+    char_t* originalString = str;
+
+    // remove leading whitespace
+    while (isspace(*str))
+    {
+        str++;
+    }
+
+    // remove trailing whitespace
+    char_t* end = originalString + stringLen - 1;
+    while (end > originalString && isspace(*end)) 
+    {
+        end--;
+    }
+    end[1] = 0;
+
+    return str;
+}
+
+void RemoveRepeatedChars(char_t* str, char_t toRemove)
+{
+    char_t* dest = str;
+
+    while (*str != '\0')
+    {
+        while (*str == toRemove && *(str + 1) == toRemove)
+        {
+            str++;
+        }
+        *dest++ = *str++;
+    }
+    *dest = 0;
 }

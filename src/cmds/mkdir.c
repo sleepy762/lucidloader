@@ -1,6 +1,6 @@
 #include "cmds/mkdir.h"
 
-int MkdirCmd(char args[], char** currPathPtr)
+uint8_t MkdirCmd(char_t args[], char_t** currPathPtr)
 {
     if (args == NULL)
     {
@@ -8,7 +8,7 @@ int MkdirCmd(char args[], char** currPathPtr)
     }
 
     boolean_t isDynamicMemory = FALSE;
-    char* path = MakeFullPath(args, *currPathPtr, &isDynamicMemory);
+    char_t* path = MakeFullPath(args, *currPathPtr, &isDynamicMemory);
     if (path == NULL)
     {
         return CMD_NO_DIR_SPEFICIED;
@@ -45,12 +45,12 @@ int MkdirCmd(char args[], char** currPathPtr)
     return CMD_SUCCESS;
 }
 
-const char* MkdirBrief(void)
+const char_t* MkdirBrief(void)
 {
     return "Create a directory.";
 }
 
-const char* MkdirLong(void)
+const char_t* MkdirLong(void)
 {
     return "Usage: mkdir <path or dirname>";
 }

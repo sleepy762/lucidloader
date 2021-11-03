@@ -1,20 +1,23 @@
 #include "bootutils.h"
 
-wchar_t* StringToWideString(char* str)
+wchar_t* StringToWideString(char_t* str)
 {
     const size_t size = strlen(str);
     wchar_t* wpath = NULL;
     
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, size + 1, (void**)&wpath);
     if (EFI_ERROR(status))
-        ErrorExit("Failed to allocate memory during string conversion.", status);
+    {
+        Log(LL_ERROR, status, "Failed to allocate memory during string conversion.");
+    }
 
     wpath[size] = 0;
     mbstowcs(wpath, str, size);
     return wpath;
 }
 
-void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handle_t** rootDir, efi_file_handle_t** fileHandle)
+// devPath, rootDir and fileHandle are OUTPUT parameters
+efi_status_t GetFileProtocols(char_t* path, efi_device_path_t** devPath, efi_file_handle_t** rootDir, efi_file_handle_t** fileHandle)
 {
     // Get all the simple file system protocol handles
     efi_guid_t sfsGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
@@ -22,15 +25,24 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
     efi_handle_t* handles= NULL;
     efi_status_t status = BS->LocateHandle(ByProtocol, &sfsGuid, NULL, &bufSize, handles);
     if (status != EFI_BUFFER_TOO_SMALL)
-        ErrorExit("Initial location of the simple file system protocol handles failed.", status);
+    {
+        Log(LL_ERROR, status, "Initial location of the simple file system protocol handles failed.");
+        return status;
+    }
 
     status = BS->AllocatePool(LIP->ImageDataType, bufSize, (void**)&handles);
     if (EFI_ERROR(status))
-        ErrorExit("Failed to allocate buffer for handles.", status);
+    {
+        Log(LL_ERROR, status, "Failed to allocate buffer for handles.");
+        return status;
+    }
 
     status = BS->LocateHandle(ByProtocol, &sfsGuid, NULL, &bufSize, handles);
     if (EFI_ERROR(status))
-        ErrorExit("Unable to locate the simple file system protocol handles.", status);
+    {
+        Log(LL_ERROR, status, "Unable to locate the simple file system protocol handles.");
+        return status;
+    }
 
     // Find the right protocols
     uintn_t numHandles = bufSize / sizeof(efi_handle_t);
@@ -44,7 +56,10 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
         if (EFI_ERROR(status)) 
         {
             if (i + 1 == numHandles) 
-                ErrorExit("Unable to obtain the simple file system protocol.", status);
+            {
+                Log(LL_ERROR, status, "Failed to obtain the simple file system protocol.");
+                return status;
+            }
             continue;
         }
 
@@ -52,7 +67,10 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
         if (EFI_ERROR(status))
         {
             if (i + 1 == numHandles)
-                ErrorExit("Unable to obtain the device path protocol.", status);
+            {
+                Log(LL_ERROR, status, "Failed to obtain the device path protocol.");
+                return status;
+            }
             continue;
         }
 
@@ -63,16 +81,26 @@ void GetFileProtocols(wchar_t* path, efi_device_path_t** devPath, efi_file_handl
         // Open the root volume
         status = sfsProt->OpenVolume(sfsProt, rootDir);
         if (EFI_ERROR(status))
+        {
             continue;
+        }
 
         // Get a handle to the file
-        status = (*rootDir)->Open((*rootDir), fileHandle, path, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
+        wchar_t* wpath = StringToWideString(path);
+        status = (*rootDir)->Open((*rootDir), fileHandle, wpath, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
         if (EFI_ERROR(status))
-            PrintDebug("Checking another partition for the file...\n");
+        {
+            Log(LL_INFO, 0, "Checking another partition for the file '%s'...", path);
+        }
+        BS->FreePool(wpath);
     }
     BS->FreePool(handles);
-    if ((*fileHandle) == NULL) 
-        ErrorExit("Failed to find the file on the machine.", EFI_NOT_FOUND);
+    if ((*fileHandle) == NULL)
+    {
+        Log(LL_ERROR, 0, "Failed to find the file '%s' on the machine.", path);
+        return EFI_NOT_FOUND;
+    }
+    return EFI_SUCCESS;
 }
 
 efi_status_t GetFileInfo(efi_file_handle_t* fileHandle, efi_file_info_t* fileInfo)
@@ -82,23 +110,28 @@ efi_status_t GetFileInfo(efi_file_handle_t* fileHandle, efi_file_info_t* fileInf
     return fileHandle->GetInfo(fileHandle, &infGuid, &size, (void*)fileInfo);
 }
 
-efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char** buffer)
+efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char_t** buffer)
 {
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, fileSize, (void**)buffer);
     if (EFI_ERROR(status))
-        ErrorExit("Failed to allocate memory to read file.", status);
+    {
+        Log(LL_ERROR, status, "Failed to allocate memory to read file.");
+    }
     return fileHandle->Read(fileHandle, &fileSize, (*buffer));
 }
 
-int GetValueOffset(char* line, size_t* valueOffset, const char delimiter)
+int32_t GetValueOffset(char_t* line, const char_t delimiter)
 {
     char* curr = line;
 
     for (; *curr != delimiter; curr++)
-        if (*curr == '\0') return 1; // Delimiter not found
+    {
+        if (*curr == '\0') 
+        {
+            return -1; // Delimiter not found
+        }
+    }
 
     curr++; // Pass the delimiter
-    *valueOffset = curr - line;
-
-    return 0;
+    return (curr - line);
 }

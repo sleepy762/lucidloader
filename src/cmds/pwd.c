@@ -1,12 +1,12 @@
 #include "cmds/pwd.h"
 
-int PwdCmd(char args[], char** currPathPtr)
+uint8_t PwdCmd(char_t args[], char_t** currPathPtr)
 {
     printf("\n%s", *currPathPtr);
     return CMD_SUCCESS;
 }
 
-const char* PwdBrief(void)
+const char_t* PwdBrief(void)
 {
     return "Print the current working directory.";
 }

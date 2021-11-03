@@ -67,7 +67,7 @@ endif
 all: $(ALLTARGETS) $(EXTRA)
 
 uefi/libuefi.a:
-	@make --no-print-directory -C uefi libuefi.a USE_GCC=$(USE_GCC) ARCH=$(ARCH)
+	@+make --no-print-directory -C uefi libuefi.a USE_GCC=$(USE_GCC) ARCH=$(ARCH)
 
 libuefi.lib: $(LIBOBJS)
 
@@ -102,7 +102,7 @@ build:
 	@cp libuefi.a uefi.h ../build/uefi
 
 clean:
-	@rm $(TARGET) $(SRCS:.c=.o) *.a *.lib *.elf $(LIBOBJS) 2>/dev/null || true
+	@rm $(TARGET) $(OBJS) *.a *.lib *.elf $(LIBOBJS) 2>/dev/null || true
 
 distclean: clean
 ifeq ($(wildcard uefi/Makefile),)

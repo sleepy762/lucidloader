@@ -15,5 +15,5 @@
 #define CMD_BRIEF_HELP_NOT_AVAILABLE (11)
 #define CMD_LONG_HELP_NOT_AVAILABLE (12)
 
-const char* GetCommandErrorInfo(int error);
-void PrintCommandError(const char* cmd, int error);
+const char_t* GetCommandErrorInfo(uint8_t error);
+void PrintCommandError(const char_t* cmd, uint8_t error);

@@ -1,5 +1,5 @@
 #include <uefi.h>
-#include "debug.h"
+#include "logger.h"
 #include "chainloader.h"
 #include "config.h"
 #include "shell.h"
@@ -9,10 +9,10 @@ int main(int argc, char** argv)
     // Global status of the bootloader
     efi_status_t status;
 
-    // Disable the Watchdog timer in order to prevent it from restarting the application after 5 minutes
-    status = BS->SetWatchdogTimer(0, 0, 0, NULL);
-    if (EFI_ERROR(status))
-        PrintWarning("Failed to disable Watchdog timer, app will restart in 5 minutes.", status);
+    if(!InitLogger())
+    {
+        printf("Failed to initialize logger. Logging disabled.\n");
+    }
 
     // Clear the screen
     ST->ConOut->ClearScreen(ST->ConOut);
@@ -29,7 +29,8 @@ int main(int argc, char** argv)
     if (Key.UnicodeChar == 'c') StartShell();
 
     boot_entry_s* entries = ParseConfig();
-    ChainloadImage(StringToWideString("EFI\\apps\\bootmgfw.efi"));
+    (void)entries; // Suppress the warning
+    ChainloadImage("EFI\\apps\\bootmgfw.efi");
     
     // This should never be reached
     return 0;

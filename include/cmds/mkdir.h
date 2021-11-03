@@ -4,6 +4,6 @@
 #include "bootutils.h"
 #include "shellerr.h"
 
-int MkdirCmd(char args[], char** currPathPtr);
-const char* MkdirBrief(void);
-const char* MkdirLong(void);
+uint8_t MkdirCmd(char_t args[], char_t** currPathPtr);
+const char_t* MkdirBrief(void);
+const char_t* MkdirLong(void);
