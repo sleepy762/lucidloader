@@ -3,6 +3,7 @@
 #include "chainloader.h"
 #include "config.h"
 #include "shell.h"
+#include "menu.h"
 
 int main(int argc, char** argv)
 {
@@ -13,7 +14,8 @@ int main(int argc, char** argv)
     status = BS->SetWatchdogTimer(0, 0, 0, NULL);
     if (EFI_ERROR(status))
         PrintWarning("Failed to disable Watchdog timer, app will restart in 5 minutes.", status);
-
+    
+    MainMenu();
     // Clear the screen
     ST->ConOut->ClearScreen(ST->ConOut);
     printf("Hello world!\nPress `c` to open the shell or press any other key to continue...\n");

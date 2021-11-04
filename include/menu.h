@@ -1,4 +1,7 @@
 #include "debug.h"  
 
-void mainMenu();
-void failMenu();
+void MainMenu();
+void FailMenu();
+void Logger();
+void ResetComputer();
+void ShutDown();

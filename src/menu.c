@@ -3,42 +3,74 @@
 #include "config.h"
 #include "config.h"
 
-void mainMenu()
+#define CHAR_INT 48 // to convert from unicode to regular numbers
+#define CLEAR_SCREEN ST->ConOut->ClearScreen(ST->ConOut);
+
+/*char - char_t, int8_t
+  int - int32_t
+  short - int16_t
+*/
+
+void MainMenu()
 {
-    //figure out what is in the config file and print it or an error
-    boot_entry_s* headConfig = ParseConfig();
-
-    if(!headConfig)
-    {
-        failMenu();
-    }
-
+    ST->ConOut->ClearScreen(ST->ConOut);
     
+    //figure out what is in the config file and print it or an error
+    //boot_entry_s* headConfig = ParseConfig();
+    
+    if(1) FailMenu();
+
 }
 
-void failMenu()
+void FailMenu()
 {
-    void* funcArr[3] = {RT->ResetSystem};
+    // void* funcArr[3] = {RT->ResetSystem};
     /*2 options 
     text editor
     restart or shut down
     */
+    
+    
+    CLEAR_SCREEN
+    printf("configure file is empty or incorrect!!!");
+    printf("\n\n1) open shell    (fix/change configure file)\n");
+    printf("2) logger\n3) shut down\n4) restart\n");
 
-    ST->ConOut->ClearScreen(ST->ConOut);
-    printf("configure file is empty or incorrect\n");
-    printf("\n\n1) text editor    (fix/change configure file)\n\n");
-    printf("2) shut down\n3) restart\n\n");
-
-
+    
     //clear buffer and read key stroke
-    ST->ConIn->Reset(ST->ConIn, 0);
+    ST->ConIn->Reset(ST->ConIn, 0);    
     efi_input_key_t key;
+
+    do{
+    while ((ST->ConIn->ReadKeyStroke(ST->ConIn, &key)) == EFI_NOT_READY);     
+    }while((key.UnicodeChar - CHAR_INT >= 1) && ((key.UnicodeChar - CHAR_INT) > 4));
     //check if key is valid af
-    while((ST->ConIn->ReadKeyStroke(ST->ConIn, &key) == EFI_NOT_READY) && &key <= 3 && &key >=1);
+    
+    if(key.UnicodeChar == '1') StartShell();
+    if(key.UnicodeChar == '2') Logger();//need to add a looger
+    if(key.UnicodeChar == '3') ShutDown();
+    if(key.UnicodeChar == '4') ResetComputer();
+    
+}
 
+void Logger()
+{
 
+}
 
+void ShutDown()
+{
+    CLEAR_SCREEN
+    printf("shutdown");
+    
+}
 
+void ResetComputer()
+{
+    CLEAR_SCREEN
+    printf("restarting...\n");
+    ST->BootServices->Stall(500000);
+    ST->RuntimeServices->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
 }
 
 /*meun 
