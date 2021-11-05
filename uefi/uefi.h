@@ -40,20 +40,20 @@ extern "C" {
 #define USE_UTF8            1
 
 /* get these from the compiler */
-#ifndef _STDINT_H
+#if !defined(_STDINT_H) && !defined(_GCC_STDINT_H)
 #define _STDINT_H
-typedef char                int8_t;
+typedef signed char         int8_t;
 typedef unsigned char       uint8_t;
-typedef short               int16_t;
+typedef signed short        int16_t;
 typedef unsigned short      uint16_t;
-typedef int                 int32_t;
+typedef signed int          int32_t;
 typedef unsigned int        uint32_t;
 #ifndef __clang__
-typedef long int            int64_t;
+typedef signed long int     int64_t;
 typedef unsigned long int   uint64_t;
 typedef unsigned long int   uintptr_t;
 #else
-typedef long long           int64_t;
+typedef signed long long    int64_t;
 typedef unsigned long long  uint64_t;
 typedef unsigned long long  uintptr_t;
 #endif
@@ -704,7 +704,7 @@ typedef void (EFIAPI *efi_event_notify_t)(efi_event_t Event, void *Context);
 typedef efi_status_t (EFIAPI *efi_create_event_t)(uint32_t Type, efi_tpl_t NotifyTpl, efi_event_notify_t NotifyFunction,
     void *NextContext, efi_event_t *Event);
 typedef efi_status_t (EFIAPI *efi_set_timer_t)(efi_event_t Event, efi_timer_delay_t Type, uint64_t TriggerTime);
-typedef efi_status_t (EFIAPI *efi_wait_for_event_t)(uintn_t NumberOfEvents, efi_event_t *Event, uintn_t Index);
+typedef efi_status_t (EFIAPI *efi_wait_for_event_t)(uintn_t NumberOfEvents, efi_event_t *Event, uintn_t *Index);
 typedef efi_status_t (EFIAPI *efi_signal_event_t)(efi_event_t Event);
 typedef efi_status_t (EFIAPI *efi_close_event_t)(efi_event_t Event);
 typedef efi_status_t (EFIAPI *efi_check_event_t)(efi_event_t Event);

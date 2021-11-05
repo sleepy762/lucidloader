@@ -15,6 +15,7 @@ uint8_t TouchCmd(char_t args[], char_t** currPathPtr)
         return CMD_NO_FILE_SPECIFIED;
     }
 
+    // Prevent overriding an existing file
     FILE* fp = fopen(path, "r");
     if (fp == NULL)
     {
@@ -27,14 +28,7 @@ uint8_t TouchCmd(char_t args[], char_t** currPathPtr)
     }
     else
     {
-        if (errno == EROFS)
-        {
-            return CMD_READ_ONLY_FILESYSTEM;
-        }
-        else
-        {
-            return CMD_GENERAL_FILE_OPENING_ERROR;
-        }
+        return errno;
     }
     if (isDynamicMemory) BS->FreePool(path);
     

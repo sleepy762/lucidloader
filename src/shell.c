@@ -62,14 +62,12 @@ int8_t ShellLoop(char_t** currPathPtr)
 void GetInput(char_t buffer[], const uint32_t maxInputSize)
 {
     uint32_t index = 0;
-
-    efi_status_t status;
     efi_input_key_t key;
 
     while (TRUE)
     {
         // Continuously read input
-        while ((status = ST->ConIn->ReadKeyStroke(ST->ConIn, &key)) == EFI_NOT_READY);
+        key = GetKey();
 
         // When enter is pressed, leave the loop to process the input
         if (key.UnicodeChar == CARRIAGE_RETURN) 
@@ -133,7 +131,7 @@ int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
     // Let the user know if any error has occurred
     if (commandReturn != CMD_SUCCESS)
     {
-        PrintCommandError(cmd, commandReturn);
+        PrintCommandError(cmd, args, commandReturn);
     }
 
     BS->FreePool(cmd);

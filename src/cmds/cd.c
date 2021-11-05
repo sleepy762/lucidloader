@@ -45,7 +45,7 @@ uint8_t CdCmd(char_t args[], char_t** currPathPtr)
     }
     else
     {
-        return CMD_DIR_NOT_FOUND;
+        return errno;
     }
     return CMD_SUCCESS;
 }

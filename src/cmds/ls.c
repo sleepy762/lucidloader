@@ -40,7 +40,7 @@ uint8_t LsCmd(char_t args[], char_t** currPathPtr)
     }
     else
     {
-        return CMD_CANT_READ_DIR;
+        return errno;
     }
     if (isDynamicMemory) BS->FreePool(dirToList);
 

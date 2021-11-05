@@ -10,6 +10,7 @@
 #include "cmds/touch.h"
 #include "cmds/mkdir.h"
 #include "cmds/clear.h"
+#include "cmds/cat.h"
 
 // Defines a shell command
 typedef struct shell_cmd_s

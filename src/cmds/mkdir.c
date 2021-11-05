@@ -30,14 +30,12 @@ uint8_t MkdirCmd(char_t args[], char_t** currPathPtr)
         }
         else
         {
-            if (errno == EROFS)
+            // Make the error message more sensible
+            if (errno == ENOTDIR)
             {
-                return CMD_READ_ONLY_FILESYSTEM;
+                return EEXIST;
             }
-            else
-            {
-                return CMD_GENERAL_DIR_OPENING_ERROR;
-            }
+            return errno;
         }
     }
     if (isDynamicMemory) BS->FreePool(path);

@@ -207,3 +207,18 @@ void RemoveRepeatedChars(char_t* str, char_t toRemove)
     }
     *dest = 0;
 }
+
+efi_input_key_t GetKey(void)
+{
+    uintn_t idx;
+    BS->WaitForEvent(1, &ST->ConIn->WaitForKey, &idx);
+
+    efi_input_key_t key = { 0 };
+    efi_status_t status = ST->ConIn->ReadKeyStroke(ST->ConIn, &key);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to read keystroke.");
+    }
+
+    return key;
+}

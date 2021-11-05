@@ -14,6 +14,7 @@ uint8_t NormalizePath(char_t** path);
 void CleanPath(char_t** path);
 char_t* MakeFullPath(char_t* args, char_t* currPathPtr, boolean_t* isDynamicMemory);
 
+efi_input_key_t GetKey(void);
 boolean_t isspace(char_t c);
 char_t* TrimSpaces(char_t* str);
 void RemoveRepeatedChars(char_t* str, char_t toRemove);
