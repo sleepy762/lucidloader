@@ -1,6 +1,5 @@
 #include "shell.h"
 
-// Return value 1 is fatal, otherwise can be ignored
 int8_t StartShell(void)
 {
     Log(LL_INFO, 0, "Starting the shell.");
@@ -15,18 +14,18 @@ int8_t StartShell(void)
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to allocate memory for the path during shell initialization.");
-        return 1;
+        return CMD_OUT_OF_MEMORY;
     }
 
     // Initializing the default starting path
     currPath[0] = '\\';
-    currPath[1] = '\0';
+    currPath[1] = CHAR_NULL;
 
     ST->ConIn->Reset(ST->ConIn, 0); // Reset the input buffer
     
     if (ShellLoop(&currPath) == 1)
     {
-        return 1;
+        return CMD_OUT_OF_MEMORY;
     }
 
     // Cleanup
@@ -34,10 +33,9 @@ int8_t StartShell(void)
     BS->FreePool(currPath);
     ST->ConOut->EnableCursor(ST->ConOut, FALSE);
     ST->ConOut->ClearScreen(ST->ConOut);
-    return 0;
+    return CMD_SUCCESS;
 }
 
-// Return value 1 is fatal, otherwise can be ignored
 int8_t ShellLoop(char_t** currPathPtr)
 {
     while (TRUE)
@@ -53,10 +51,10 @@ int8_t ShellLoop(char_t** currPathPtr)
         }
         if (ProcessCommand(buffer, currPathPtr) == 1)
         {
-            return 1;
+            return CMD_OUT_OF_MEMORY;
         }
     }
-    return 0;
+    return CMD_SUCCESS;
 }
 
 void GetInput(char_t buffer[], const uint32_t maxInputSize)
@@ -87,7 +85,7 @@ void GetInput(char_t buffer[], const uint32_t maxInputSize)
         }
         // Add the character to the buffer as long as there is enough space and if its a valid character
         // The character in the last index must be null to terminate the string
-        else if (index < maxInputSize - 1 && key.UnicodeChar != '\0')
+        else if (index < maxInputSize - 1 && key.UnicodeChar != CHAR_NULL)
         {
             buffer[index] = key.UnicodeChar;
             index++;
@@ -96,22 +94,26 @@ void GetInput(char_t buffer[], const uint32_t maxInputSize)
     }
 }
 
-// Return value 1 is fatal, otherwise can be ignored
 int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
 {
     char_t* cmd = NULL;
     char_t* args = NULL;
-    // Store the command and arguments in separate strings
-    if (ParseInput(buffer, &cmd, &args) == 1)
-    {
-        return 1;
-    }
 
+    // Store the command and arguments in separate pointers
+    ParseInput(buffer, &cmd, &args);
     if (cmd == NULL)
     {
-        return 0;
+        return CMD_SUCCESS;
     }
-    
+
+    cmd_args_s cmdArgs = {0};
+    int8_t res = ParseArgs(args, &cmdArgs);
+    if (res != CMD_SUCCESS)
+    {
+        PrintCommandError(cmd, args, res);
+        return res;
+    }
+
     const uint8_t totalCmds = CommandCount();
     uint8_t commandReturn = 0;
     for (uint8_t i = 0; i < totalCmds; i++)
@@ -134,18 +136,18 @@ int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
         PrintCommandError(cmd, args, commandReturn);
     }
 
-    return 0;
+    FreeArgs(&cmdArgs);
+    return CMD_SUCCESS;
 }
 
-// Return value 1 is fatal, otherwise it can be ignored
 // Splits the buffer at the delimiter (space) and stores pointers in *cmd and *args
 // without using dynamically allocated memory and copying strings
-int8_t ParseInput(char_t buffer[], char_t** cmd, char_t** args)
+void ParseInput(char_t buffer[], char_t** cmd, char_t** args)
 {
     size_t bufferLen = strlen(buffer);
     if (bufferLen == 0)
     {
-        return 0;
+        return;
     }
 
     buffer = TrimSpaces(buffer);
@@ -171,5 +173,137 @@ int8_t ParseInput(char_t buffer[], char_t** cmd, char_t** args)
         // Store the pointer after the delimiter (it's already null terminated)
         *args = buffer + argsOffset;
     }
-    return 0;
+}
+
+int8_t ParseArgs(char_t* inputArgs, cmd_args_s* outputArgs)
+{
+    if (inputArgs == NULL)
+    {
+        return CMD_SUCCESS;
+    }
+
+    // Initializing the args struct
+    outputArgs->argc = 0;
+    outputArgs->argv = NULL;
+
+    const size_t argsLen = strlen(inputArgs);
+    char_t tempBuffer[SHELL_MAX_INPUT] = {0};
+    uint8_t bufferIdx = 0;
+
+    boolean_t qoutationMarkOpened = FALSE;
+    for (size_t i = 0; i <= argsLen; i++)
+    {
+        if (inputArgs[i] == QUOTATION_MARK)
+        {
+            // Only if the quotation mark is the last character in the argument
+            if (qoutationMarkOpened && (inputArgs[i + 1] == SPACE || inputArgs[i + 1] == CHAR_NULL))
+            {
+                int8_t res = SplitArgsString(tempBuffer, outputArgs);
+                if (res != CMD_SUCCESS)
+                {
+                    return res;
+                }
+                qoutationMarkOpened = FALSE;
+            }
+            // Only if the quotation mark is the first character in the argument
+            else if (i == 0 || inputArgs[i - 1] == SPACE)
+            {
+                qoutationMarkOpened = TRUE;
+            }
+            else // Add the quotation mark if its in the middle of the arg string
+            {
+                goto addChar;
+            }
+        }
+        // Split the args
+        else if (inputArgs[i] == SPACE)
+        {
+            // If quotation marks were opened and we hit a space, we include that space in the string
+            if (qoutationMarkOpened)
+            {
+                goto addChar;
+            }
+            else
+            {
+                int8_t res = SplitArgsString(tempBuffer, outputArgs);
+                if (res != CMD_SUCCESS)
+                {
+                    return res;
+                }
+                bufferIdx = 0; // Reset the buffer index
+            }
+        }
+        else if (inputArgs[i] == CHAR_NULL)
+        {
+            // Quotation mark wasn't closed
+            if (qoutationMarkOpened)
+            {
+                return CMD_QUOTATION_MARK_OPEN;
+            }
+            else
+            {
+                int8_t res = SplitArgsString(tempBuffer, outputArgs);
+                if (res != CMD_SUCCESS)
+                {
+                    return res;
+                }
+            }
+        }
+        else
+        {
+        addChar:
+            tempBuffer[bufferIdx] = inputArgs[i];
+            bufferIdx++;
+        }
+    }
+    return CMD_SUCCESS;
+}
+
+int8_t SplitArgsString(char_t buffer[], cmd_args_s* outputArgs)
+{
+    // If the buffer is empty don't do anything
+    if (buffer[0] == CHAR_NULL)
+    {
+        return CMD_SUCCESS;
+    }
+
+    outputArgs->argc += 1;
+    if (outputArgs->argv == NULL)
+    {
+        outputArgs->argv = (char_t**)malloc(sizeof(char_t*));
+    }
+    else
+    {
+        outputArgs->argv = (char_t**)realloc(outputArgs->argv, sizeof(char_t*) * outputArgs->argc);
+    }
+
+    // Memory allocation failed
+    if (outputArgs->argv == NULL)
+    {
+        return CMD_OUT_OF_MEMORY;
+    }
+
+    const size_t bufferLen = strlen(buffer);
+    uint8_t lastArgvIndex = outputArgs->argc - 1;
+    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, bufferLen + 1, (void**)(&(outputArgs->argv[lastArgvIndex])));
+    if (EFI_ERROR(status))
+    {
+        return CMD_OUT_OF_MEMORY;
+    }
+    memcpy(outputArgs->argv[lastArgvIndex], buffer, bufferLen);
+    outputArgs->argv[lastArgvIndex][bufferLen] = CHAR_NULL; // Terminate the string
+    
+    memset(buffer, 0, SHELL_MAX_INPUT); // Reset the buffer
+    return CMD_SUCCESS;
+}
+
+void FreeArgs(cmd_args_s* args)
+{
+    for (uint8_t i = 0; i < args->argc; i++)
+    {
+        // The arguments were allocated with BS->AllocatePool
+        BS->FreePool(args->argv[i]);
+    }
+    // The array itself was allocated with malloc()
+    free(args->argv);
 }

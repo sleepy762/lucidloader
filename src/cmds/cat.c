@@ -32,7 +32,7 @@ uint8_t CatCmd(char_t args[], char_t** currPathPtr)
             return CMD_OUT_OF_MEMORY;
         }
         fread(buffer, fileSize, 1, file);
-        buffer[fileSize] = '\0';
+        buffer[fileSize] = CHAR_NULL;
         fclose(file);
 
         printf("\n%s", buffer);

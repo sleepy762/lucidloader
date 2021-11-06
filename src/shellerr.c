@@ -152,6 +152,9 @@ const char_t* GetCommandErrorInfo(const uint8_t error)
         case CMD_LONG_HELP_NOT_AVAILABLE:
         return "no long help available.";
 
+        case CMD_QUOTATION_MARK_OPEN:
+        return "no closing quotation mark found.";
+
         default:
         return "unknown error.";
     }

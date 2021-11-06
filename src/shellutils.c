@@ -32,7 +32,7 @@ uint8_t NormalizePath(char_t** path)
     // count the amount of tokens
     char_t* copy = *path;
     uint16_t tokenAmount = 0;
-    while (*copy != '\0')
+    while (*copy != CHAR_NULL)
     {
         if (*copy == DIRECTORY_DELIM)
         {
@@ -105,7 +105,7 @@ uint8_t NormalizePath(char_t** path)
 
     // Rebuild the string
     (*path)[0] = '\\';
-    (*path)[1] = '\0';
+    (*path)[1] = CHAR_NULL;
     for (i = 0; i < tokenAmount; i++)
     {
         strcat(*path, tokens[i]);
@@ -149,7 +149,7 @@ char_t* MakeFullPath(char_t* args, char_t* currPathPtr, boolean_t* isDynamicMemo
         fullPath = args;
     }
     // if the args are only whitespace
-    else if (args[0] == '\0')
+    else if (args[0] == CHAR_NULL)
     {
         return NULL;
     }
@@ -197,7 +197,7 @@ void RemoveRepeatedChars(char_t* str, char_t toRemove)
 {
     char_t* dest = str;
 
-    while (*str != '\0')
+    while (*str != CHAR_NULL)
     {
         while (*str == toRemove && *(str + 1) == toRemove)
         {
@@ -221,4 +221,20 @@ efi_input_key_t GetKey(void)
     }
 
     return key;
+}
+
+int32_t GetValueOffset(char_t* line, const char_t delimiter)
+{
+    char* curr = line;
+
+    for (; *curr != delimiter; curr++)
+    {
+        if (*curr == CHAR_NULL)
+        {
+            return -1; // Delimiter not found
+        }
+    }
+
+    curr++; // Pass the delimiter
+    return (curr - line);
 }

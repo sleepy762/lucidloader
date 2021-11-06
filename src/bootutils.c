@@ -9,6 +9,7 @@ wchar_t* StringToWideString(char_t* str)
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to allocate memory during string conversion.");
+        return NULL;
     }
 
     wpath[size] = 0;
@@ -116,22 +117,7 @@ efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char_t** 
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to allocate memory to read file.");
+        return status;
     }
     return fileHandle->Read(fileHandle, &fileSize, (*buffer));
-}
-
-int32_t GetValueOffset(char_t* line, const char_t delimiter)
-{
-    char* curr = line;
-
-    for (; *curr != delimiter; curr++)
-    {
-        if (*curr == '\0') 
-        {
-            return -1; // Delimiter not found
-        }
-    }
-
-    curr++; // Pass the delimiter
-    return (curr - line);
 }
