@@ -106,7 +106,7 @@ int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
     {
         return 1;
     }
-    
+
     if (cmd == NULL)
     {
         return 0;
@@ -134,15 +134,12 @@ int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
         PrintCommandError(cmd, args, commandReturn);
     }
 
-    BS->FreePool(cmd);
-    if (args != NULL)
-    {
-        BS->FreePool(args);
-    }
     return 0;
 }
 
 // Return value 1 is fatal, otherwise it can be ignored
+// Splits the buffer at the delimiter (space) and stores pointers in *cmd and *args
+// without using dynamically allocated memory and copying strings
 int8_t ParseInput(char_t buffer[], char_t** cmd, char_t** args)
 {
     size_t bufferLen = strlen(buffer);
@@ -165,28 +162,14 @@ int8_t ParseInput(char_t buffer[], char_t** cmd, char_t** args)
         cmdSize = bufferLen + 1;
     }
 
-    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, cmdSize, (void**)cmd);
-    if (EFI_ERROR(status))
-    {
-        Log(LL_ERROR, status, "Failed to allocate memory while parsing shell input.");
-        return 1;
-    }
-    memcpy(*cmd, buffer, cmdSize);
-    (*cmd)[cmdSize] = 0; // Terminate the string
+    *cmd = buffer;
+    buffer[cmdSize] = 0; // Terminate the string at the delimiter
 
     // If there are arguments present...
     if (argsOffset != -1)
     {
-        size_t argsLen = bufferLen - argsOffset;
-
-        status = BS->AllocatePool(LIP->ImageDataType, argsLen + 1, (void**)args);
-        if (EFI_ERROR(status))
-        {
-            Log(LL_ERROR, status, "Failed to allocate memory for shell command arguments.");
-            return 1;
-        }
-        memcpy(*args, buffer + argsOffset, argsLen);
-        (*args)[argsLen] = 0; // Terminate the string
+        // Store the pointer after the delimiter (it's already null terminated)
+        *args = buffer + argsOffset;
     }
     return 0;
 }

@@ -55,7 +55,7 @@ void Log(LogLevel loglevel, efi_status_t status, const char_t* fmtMessage, ...)
 time_t GetSecondsSinceInit(void)
 {
     efi_time_t currTime = {0};
-    efi_status_t status = ST->RuntimeServices->GetTime(&currTime, NULL);
+    efi_status_t status = RT->GetTime(&currTime, NULL);
     if (EFI_ERROR(status))
     {
         return 0;
