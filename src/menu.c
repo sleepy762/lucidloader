@@ -4,7 +4,6 @@
 #include "config.h"
 
 #define CHAR_INT 48 // to convert from unicode to regular numbers
-#define CLEAR_SCREEN ST->ConOut->ClearScreen(ST->ConOut);
 
 /*char - char_t, int8_t
   int - int32_t
@@ -31,7 +30,7 @@ void FailMenu()
     */
     
     
-    CLEAR_SCREEN
+    ST->ConOut->ClearScreen(ST->ConOut);
     printf("configure file is empty or incorrect!!!");
     printf("\n\n1) open shell    (fix/change configure file)\n");
     printf("2) logger\n3) shut down\n4) restart\n");
@@ -60,14 +59,14 @@ void Logger()
 
 void ShutDown()
 {
-    CLEAR_SCREEN
+    ST->ConOut->ClearScreen(ST->ConOut);
     printf("shutdown");
-    
+    RT->ResetSystem(EfiResetShutdown, EFI_SUCCESS, 0, NULL);
 }
 
 void ResetComputer()
 {
-    CLEAR_SCREEN
+    ST->ConOut->ClearScreen(ST->ConOut);
     printf("restarting...\n");
     ST->BootServices->Stall(500000);
     ST->RuntimeServices->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
