@@ -1,21 +1,42 @@
 #include "cmds/cat.h"
 
-uint8_t CatCmd(char_t args[], char_t** currPathPtr)
+uint8_t CatCmd(cmd_args_s* args, char_t** currPathPtr)
 {
     if (args == NULL)
     {
         return CMD_NO_FILE_SPECIFIED;
     }
 
-    boolean_t isDynamicMemory = FALSE;
-
-    char_t* filePath = MakeFullPath(args, *currPathPtr, &isDynamicMemory);
-    if (filePath == NULL)
+    // Print the content of each file in the arguments
+    printf("\n"); // Move down from the input line
+    while(args != NULL)
     {
-        return CMD_NO_FILE_SPECIFIED;
-    }
+        boolean_t isDynamicMemory = FALSE;
 
-    FILE* file = fopen(filePath, "r");
+        char_t* filePath = MakeFullPath(args->argString, *currPathPtr, &isDynamicMemory);
+        if (filePath == NULL)
+        {
+            return CMD_NO_FILE_SPECIFIED;
+        }
+
+        uint8_t res = PrintFileContent(filePath);
+        if (res != CMD_SUCCESS)
+        {
+            PrintCommandError("cat", args->argString, res);
+        }
+        
+        if (isDynamicMemory)
+        {
+            BS->FreePool(filePath);
+        }
+        args = args->next;
+    }
+    return CMD_SUCCESS;
+}
+
+uint8_t PrintFileContent(char_t* path)
+{
+    FILE* file = fopen(path, "r");
     if (file != NULL)
     {
         // Get file size
@@ -35,7 +56,7 @@ uint8_t CatCmd(char_t args[], char_t** currPathPtr)
         buffer[fileSize] = CHAR_NULL;
         fclose(file);
 
-        printf("\n%s", buffer);
+        printf("%s", buffer);
         BS->FreePool(buffer);
     }
     else

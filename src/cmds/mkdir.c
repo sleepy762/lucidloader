@@ -1,44 +1,50 @@
 #include "cmds/mkdir.h"
 
-uint8_t MkdirCmd(char_t args[], char_t** currPathPtr)
+uint8_t MkdirCmd(cmd_args_s* args, char_t** currPathPtr)
 {
     if (args == NULL)
     {
         return CMD_NO_DIR_SPEFICIED;
     }
 
-    boolean_t isDynamicMemory = FALSE;
-    char_t* path = MakeFullPath(args, *currPathPtr, &isDynamicMemory);
-    if (path == NULL)
+    // Create each directory in the arguments
+    while (args != NULL)
     {
-        return CMD_NO_DIR_SPEFICIED;
-    }
+        boolean_t isDynamicMemory = FALSE;
 
-    DIR* dir = opendir(path);
-    if (dir != NULL)
-    {
-        closedir(dir);
-        return CMD_DIR_ALREADY_EXISTS;
-    }
-    else
-    {
-        // Creates a new directory and frees the pointer to it
-        FILE* fp = fopen(path, "wd");
-        if (fp != NULL)
+        char_t* path = MakeFullPath(args->argString, *currPathPtr, &isDynamicMemory);
+        if (path == NULL)
         {
-            fclose(fp);
+            return CMD_NO_DIR_SPEFICIED;
+        }
+
+        DIR* dir = opendir(path);
+        if (dir != NULL)
+        {
+            closedir(dir);
+            return CMD_DIR_ALREADY_EXISTS;
         }
         else
         {
-            // Make the error message more sensible
-            if (errno == ENOTDIR)
+            // Creates a new directory and frees the pointer to it
+            FILE* fp = fopen(path, "wd");
+            if (fp != NULL)
             {
-                return EEXIST;
+                fclose(fp);
             }
-            return errno;
+            else
+            {
+                // Make the error message more sensible
+                return (errno == ENOTDIR) ? EEXIST : errno;
+            }
         }
+        
+        if (isDynamicMemory) 
+        {
+            BS->FreePool(path);
+        }
+        args = args->next;
     }
-    if (isDynamicMemory) BS->FreePool(path);
 
     return CMD_SUCCESS;
 }

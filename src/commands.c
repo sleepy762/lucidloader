@@ -26,16 +26,17 @@ uint8_t CommandCount(void)
     return totalCmds;
 }
 
-uint8_t HelpCmd(char_t args[], char_t** currPathPtr)
+uint8_t HelpCmd(cmd_args_s* args, char_t** currPathPtr)
 {
     uint8_t totalCmds = CommandCount();
 
-    if (strlen(args) != 0)
+    // This command only uses the first argument
+    if (args != NULL)
     {
         // If an arg(command name) was passed, find help for it
         for (uint8_t i = 0; i < totalCmds; i++)
         {
-            if (strcmp(args, commands[i].commandName) == 0)
+            if (strcmp(args->argString, commands[i].commandName) == 0)
             {
                 if (commands[i].LongHelp != NULL)
                 {

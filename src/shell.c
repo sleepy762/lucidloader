@@ -106,7 +106,8 @@ int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
         return CMD_SUCCESS;
     }
 
-    cmd_args_s cmdArgs = {0};
+    // Parse the arguments into a linked list
+    cmd_args_s* cmdArgs = NULL;
     int8_t res = ParseArgs(args, &cmdArgs);
     if (res != CMD_SUCCESS)
     {
@@ -121,7 +122,7 @@ int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
         // Find the right command and execute the command function
         if (strcmp(cmd, commands[i].commandName) == 0)
         {
-            commandReturn = commands[i].CommandFunction(args, currPathPtr);
+            commandReturn = commands[i].CommandFunction(cmdArgs, currPathPtr);
             break;
         }
         else if (i + 1 == totalCmds)
@@ -136,7 +137,7 @@ int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
         PrintCommandError(cmd, args, commandReturn);
     }
 
-    FreeArgs(&cmdArgs);
+    FreeArgs(cmdArgs);
     return CMD_SUCCESS;
 }
 
@@ -175,16 +176,12 @@ void ParseInput(char_t buffer[], char_t** cmd, char_t** args)
     }
 }
 
-int8_t ParseArgs(char_t* inputArgs, cmd_args_s* outputArgs)
+int8_t ParseArgs(char_t* inputArgs, cmd_args_s** outputArgs)
 {
     if (inputArgs == NULL)
     {
         return CMD_SUCCESS;
     }
-
-    // Initializing the args struct
-    outputArgs->argc = 0;
-    outputArgs->argv = NULL;
 
     const size_t argsLen = strlen(inputArgs);
     char_t tempBuffer[SHELL_MAX_INPUT] = {0};
@@ -259,7 +256,7 @@ int8_t ParseArgs(char_t* inputArgs, cmd_args_s* outputArgs)
     return CMD_SUCCESS;
 }
 
-int8_t SplitArgsString(char_t buffer[], cmd_args_s* outputArgs)
+int8_t SplitArgsString(char_t buffer[], cmd_args_s** outputArgs)
 {
     // If the buffer is empty don't do anything
     if (buffer[0] == CHAR_NULL)
@@ -267,43 +264,72 @@ int8_t SplitArgsString(char_t buffer[], cmd_args_s* outputArgs)
         return CMD_SUCCESS;
     }
 
-    outputArgs->argc += 1;
-    if (outputArgs->argv == NULL)
+    cmd_args_s* node = InitializeArgsNode();
+    if (node == NULL)
     {
-        outputArgs->argv = (char_t**)malloc(sizeof(char_t*));
+        return CMD_OUT_OF_MEMORY;
+    }
+
+    // Allocate memory for the argument string and copy the buffer into it
+    const size_t bufferLen = strlen(buffer);
+    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, bufferLen + 1, (void**)&node->argString);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to allocate memory for the argument string pointer.");
+        return CMD_OUT_OF_MEMORY;
+    }
+    memcpy(node->argString, buffer, bufferLen);
+    node->argString[bufferLen] = CHAR_NULL;
+
+    // Append to the linked list or set the node as the head if it hasn't been initialized yet
+    if (*outputArgs == NULL)
+    {
+        *outputArgs = node;
     }
     else
     {
-        outputArgs->argv = (char_t**)realloc(outputArgs->argv, sizeof(char_t*) * outputArgs->argc);
+        AppendArgsNode(*outputArgs, node);
     }
 
-    // Memory allocation failed
-    if (outputArgs->argv == NULL)
-    {
-        return CMD_OUT_OF_MEMORY;
-    }
-
-    const size_t bufferLen = strlen(buffer);
-    uint8_t lastArgvIndex = outputArgs->argc - 1;
-    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, bufferLen + 1, (void**)(&(outputArgs->argv[lastArgvIndex])));
-    if (EFI_ERROR(status))
-    {
-        return CMD_OUT_OF_MEMORY;
-    }
-    memcpy(outputArgs->argv[lastArgvIndex], buffer, bufferLen);
-    outputArgs->argv[lastArgvIndex][bufferLen] = CHAR_NULL; // Terminate the string
-    
     memset(buffer, 0, SHELL_MAX_INPUT); // Reset the buffer
     return CMD_SUCCESS;
 }
 
+cmd_args_s* InitializeArgsNode(void)
+{
+    cmd_args_s* node = NULL;
+    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, sizeof(cmd_args_s), (void**)&node);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to initialize argument node.");
+    }
+    else
+    {
+        node->argString = NULL;
+        node->next = NULL;
+    }
+    return node;
+}
+
+void AppendArgsNode(cmd_args_s* head, cmd_args_s* node)
+{
+    cmd_args_s* copy = head;
+    while (copy->next != NULL)
+    {
+        copy = copy->next;
+    }
+    copy->next = node;
+}
+
 void FreeArgs(cmd_args_s* args)
 {
-    for (uint8_t i = 0; i < args->argc; i++)
+    while (args != NULL)
     {
-        // The arguments were allocated with BS->AllocatePool
-        BS->FreePool(args->argv[i]);
+        cmd_args_s* next = args->next;
+
+        BS->FreePool(args->argString);
+        BS->FreePool(args);
+
+        args = next;
     }
-    // The array itself was allocated with malloc()
-    free(args->argv);
 }
