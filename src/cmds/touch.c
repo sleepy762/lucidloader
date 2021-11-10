@@ -18,20 +18,10 @@ uint8_t TouchCmd(cmd_args_s* args, char_t** currPathPtr)
             return CMD_NO_FILE_SPECIFIED;
         }
 
-        // Prevent overriding an existing file
-        FILE* fp = fopen(path, "r");
-        if (fp == NULL)
+        uint8_t res = CreateFile(path);
+        if (res != CMD_SUCCESS)
         {
-            fp = fopen(path, "w");
-        }
-
-        if (fp != NULL)
-        {
-            fclose(fp);
-        }
-        else
-        {
-            return errno;
+            PrintCommandError("touch", args->argString, res);
         }
 
         if (isDynamicMemory) 
@@ -44,6 +34,26 @@ uint8_t TouchCmd(cmd_args_s* args, char_t** currPathPtr)
     return CMD_SUCCESS;
 }
 
+uint8_t CreateFile(char_t* path)
+{
+    // Prevent overriding an existing file
+    FILE* fp = fopen(path, "r");
+    if (fp == NULL)
+    {
+        fp = fopen(path, "w");
+    }
+
+    if (fp != NULL)
+    {
+        fclose(fp);
+    }
+    else
+    {
+        return errno;
+    }
+    return CMD_SUCCESS;
+}
+
 const char_t* TouchBrief(void)
 {
     return "Create a file.";
@@ -51,5 +61,5 @@ const char_t* TouchBrief(void)
 
 const char_t* TouchLong(void)
 {
-    return "Usage: touch <path or filename>";
+    return "Usage: touch <path1> [path2] [path3] ...";
 }

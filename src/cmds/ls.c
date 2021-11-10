@@ -72,7 +72,7 @@ const char_t* LsBrief(void)
 
 const char_t* LsLong(void)
 {
-    return "Usage: ls [path]\n\
-[path] - Optional argument where you can specify a path.\n\
+    return "Usage: ls [path1] [path2] [path3] ...\n\
+[pathN] - Optional argument where you can specify a path and multiple paths can be given.\n\
 By default the current directory will be listed if no `path` argument is passed.";
 }
