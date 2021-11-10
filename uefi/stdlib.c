@@ -30,11 +30,22 @@
 
 #include <uefi.h>
 
+/* Sadly UEFI has no concept of reallocation. AllocatePool does not accept
+ * input, and there's no way to query the size of an allocated buffer. So
+ * we are left with two bad options here:
+ * 1. make peace with the fact that we don't know the old buffer's size and
+ *    copying data to the new buffer unavoidably reads out of bounds
+ * 2. we keep track of sizes ourselves, which means more complexcity and with
+ *    a lot of allocations a considerable overhead, so performance loss */
+#define TRACK_ALLOC 0
+
 int errno = 0;
 static uint64_t __srand_seed = 6364136223846793005ULL;
 extern void __stdio_cleanup();
+#if TRACK_ALLOC
 static uintptr_t *__stdlib_allocs = NULL;
 static uintn_t __stdlib_numallocs = 0;
+#endif
 
 int atoi(const char_t *s)
 {
@@ -79,11 +90,11 @@ void *malloc (size_t __size)
 {
     void *ret = NULL;
     efi_status_t status;
+#if TRACK_ALLOC
     uintn_t i;
-    /* this is so fucked up. UEFI firmware must keep track of allocated sizes internally, yet we must
-     * too, because realloc won't work otherwise... Why can't AllocatePool accept input addresses? */
     for(i = 0; i < __stdlib_numallocs && __stdlib_allocs[i] != 0; i += 2);
     if(i == __stdlib_numallocs) {
+        /* no free slots found, (re)allocate the housekeeping array */
         status = BS->AllocatePool(LIP ? LIP->ImageDataType : EfiLoaderData, (__stdlib_numallocs + 2) * sizeof(uintptr_t), &ret);
         if(EFI_ERROR(status) || !ret) { errno = ENOMEM; return NULL; }
         if(__stdlib_allocs) memcpy(ret, __stdlib_allocs, __stdlib_numallocs * sizeof(uintptr_t));
@@ -92,10 +103,13 @@ void *malloc (size_t __size)
         __stdlib_numallocs += 2;
         ret = NULL;
     }
+#endif
     status = BS->AllocatePool(LIP ? LIP->ImageDataType : EfiLoaderData, __size, &ret);
     if(EFI_ERROR(status) || !ret) { errno = ENOMEM; ret = NULL; }
+#if TRACK_ALLOC
     __stdlib_allocs[i] = (uintptr_t)ret;
     __stdlib_allocs[i + 1] = (uintptr_t)__size;
+#endif
     return ret;
 }
 
@@ -110,50 +124,77 @@ void *realloc (void *__ptr, size_t __size)
 {
     void *ret = NULL;
     efi_status_t status;
+#if TRACK_ALLOC
     uintn_t i;
+#endif
     if(!__ptr) return malloc(__size);
+    if(!__size) { free(__ptr); return NULL; }
+#if TRACK_ALLOC
+    /* get the slot which stores the old size for this buffer */
     for(i = 0; i < __stdlib_numallocs && __stdlib_allocs[i] != (uintptr_t)__ptr; i += 2);
     if(i == __stdlib_numallocs) { errno = ENOMEM; return NULL; }
+    /* allocate a new buffer and copy data from old buffer */
     status = BS->AllocatePool(LIP ? LIP->ImageDataType : EfiLoaderData, __size, &ret);
     if(EFI_ERROR(status) || !ret) { errno = ENOMEM; ret = NULL; }
-    if(ret) {
+    else {
         memcpy(ret, (void*)__stdlib_allocs[i], __stdlib_allocs[i + 1] < __size ? __stdlib_allocs[i + 1] : __size);
         if(__size > __stdlib_allocs[i + 1]) memset((uint8_t*)ret + __stdlib_allocs[i + 1], 0, __size - __stdlib_allocs[i + 1]);
+        /* free old buffer and store new buffer in slot */
+        BS->FreePool((void*)__stdlib_allocs[i]);
+        __stdlib_allocs[i] = (uintptr_t)ret;
+        __stdlib_allocs[i + 1] = (uintptr_t)__size;
     }
-    BS->FreePool((void*)__stdlib_allocs[i]);
-    __stdlib_allocs[i] = (uintptr_t)ret;
-    __stdlib_allocs[i + 1] = (uintptr_t)__size;
+#else
+    status = BS->AllocatePool(LIP ? LIP->ImageDataType : EfiLoaderData, __size, &ret);
+    if(EFI_ERROR(status) || !ret) { errno = ENOMEM; return NULL; }
+    /* this means out of bounds read, but fine with POSIX as the end of new buffer supposed to be left uninitialized) */
+    memcpy(ret, (void*)__ptr, __size);
+    BS->FreePool((void*)__ptr);
+#endif
     return ret;
 }
 
 void free (void *__ptr)
 {
     efi_status_t status;
+#if TRACK_ALLOC
     uintn_t i;
+#endif
+    if(!__ptr) { errno = ENOMEM; return; }
+#if TRACK_ALLOC
+    /* find and clear the slot */
     for(i = 0; i < __stdlib_numallocs && __stdlib_allocs[i] != (uintptr_t)__ptr; i += 2);
     if(i == __stdlib_numallocs) { errno = ENOMEM; return; }
     __stdlib_allocs[i] = 0;
     __stdlib_allocs[i + 1] = 0;
+    /* if there are only empty slots, free the housekeeping array too */
     for(i = 0; i < __stdlib_numallocs && __stdlib_allocs[i] == 0; i += 2);
     if(i == __stdlib_numallocs) { BS->FreePool(__stdlib_allocs); __stdlib_allocs = NULL; __stdlib_numallocs = 0; }
+#endif
     status = BS->FreePool(__ptr);
     if(EFI_ERROR(status)) errno = ENOMEM;
 }
 
 void abort ()
 {
+#if TRACK_ALLOC
     if(__stdlib_allocs)
         BS->FreePool(__stdlib_allocs);
+    __stdlib_allocs = NULL;
     __stdlib_numallocs = 0;
+#endif
     __stdio_cleanup();
     BS->Exit(IM, EFI_ABORTED, 0, NULL);
 }
 
 void exit (int __status)
 {
+#if TRACK_ALLOC
     if(__stdlib_allocs)
         BS->FreePool(__stdlib_allocs);
+    __stdlib_allocs = NULL;
     __stdlib_numallocs = 0;
+#endif
     __stdio_cleanup();
     BS->Exit(IM, !__status ? 0 : (__status < 0 ? EFIERR(-__status) : EFIERR(__status)), 0, NULL);
 }
@@ -163,9 +204,12 @@ int exit_bs()
     efi_status_t status;
     efi_memory_descriptor_t *memory_map = NULL;
     uintn_t cnt = 3, memory_map_size=0, map_key=0, desc_size=0;
+#if TRACK_ALLOC
     if(__stdlib_allocs)
         BS->FreePool(__stdlib_allocs);
+    __stdlib_allocs = NULL;
     __stdlib_numallocs = 0;
+#endif
     __stdio_cleanup();
     while(cnt--) {
         status = BS->GetMemoryMap(&memory_map_size, memory_map, &map_key, &desc_size, NULL);

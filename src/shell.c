@@ -106,13 +106,16 @@ int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
         return CMD_SUCCESS;
     }
 
-    // Parse the arguments into a linked list
+    // Parse the arguments into a linked list (if there are any)
     cmd_args_s* cmdArgs = NULL;
-    int8_t res = ParseArgs(args, &cmdArgs);
-    if (res != CMD_SUCCESS)
+    if (args != NULL)
     {
-        PrintCommandError(cmd, args, res);
-        return res;
+        int8_t res = ParseArgs(args, &cmdArgs);
+        if (res != CMD_SUCCESS)
+        {
+            PrintCommandError(cmd, args, res);
+            return res;
+        }
     }
 
     const uint8_t totalCmds = CommandCount();
@@ -185,7 +188,7 @@ int8_t ParseArgs(char_t* inputArgs, cmd_args_s** outputArgs)
 
     const size_t argsLen = strlen(inputArgs);
     char_t tempBuffer[SHELL_MAX_INPUT] = {0};
-    uint8_t bufferIdx = 0;
+    uint8_t bufferIdx = 0; // Current index of the buffer where the next char will be stored
 
     boolean_t qoutationMarkOpened = FALSE;
     for (size_t i = 0; i <= argsLen; i++)
@@ -311,6 +314,7 @@ cmd_args_s* InitializeArgsNode(void)
     return node;
 }
 
+// Add a new node to the end of the linked list
 void AppendArgsNode(cmd_args_s* head, cmd_args_s* node)
 {
     cmd_args_s* copy = head;
@@ -321,6 +325,7 @@ void AppendArgsNode(cmd_args_s* head, cmd_args_s* node)
     copy->next = node;
 }
 
+// Freeing args without recursion
 void FreeArgs(cmd_args_s* args)
 {
     while (args != NULL)
