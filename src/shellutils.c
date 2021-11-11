@@ -208,7 +208,7 @@ void RemoveRepeatedChars(char_t* str, char_t toRemove)
     *dest = 0;
 }
 
-efi_input_key_t GetKey(void)
+efi_input_key_t GetInputKey(void)
 {
     uintn_t idx;
     BS->WaitForEvent(1, &ST->ConIn->WaitForKey, &idx);
@@ -221,6 +221,43 @@ efi_input_key_t GetKey(void)
     }
 
     return key;
+}
+
+void GetInputString(char_t buffer[], const uint32_t maxInputSize)
+{
+    uint32_t index = 0;
+    efi_input_key_t key;
+
+    while (TRUE)
+    {
+        // Continuously read input
+        key = GetInputKey();
+
+        // When enter is pressed, leave the loop to process the input
+        if (key.UnicodeChar == CARRIAGE_RETURN) 
+        {
+            break;
+        }
+
+        // Handling backspace
+        if (key.UnicodeChar == BACKSPACE)
+        {
+            if (index > 0) // Dont delete when the buffer is empty
+            {
+                index--;
+                buffer[index] = 0;
+                printf("\b \b"); // Destructive backspace
+            }
+        }
+        // Add the character to the buffer as long as there is enough space and if its a valid character
+        // The character in the last index must be null to terminate the string
+        else if (index < maxInputSize - 1 && key.UnicodeChar != CHAR_NULL)
+        {
+            buffer[index] = key.UnicodeChar;
+            index++;
+            printf("%c", key.UnicodeChar);
+        }
+    }
 }
 
 int32_t GetValueOffset(char_t* line, const char_t delimiter)

@@ -43,7 +43,7 @@ int8_t ShellLoop(char_t** currPathPtr)
         char_t buffer[SHELL_MAX_INPUT] = {0};
         printf("\n> ");
 
-        GetInput(buffer, SHELL_MAX_INPUT);
+        GetInputString(buffer, SHELL_MAX_INPUT);
 
         if (strcmp(buffer, SHELL_EXIT_STR) == 0)
         {
@@ -55,43 +55,6 @@ int8_t ShellLoop(char_t** currPathPtr)
         }
     }
     return CMD_SUCCESS;
-}
-
-void GetInput(char_t buffer[], const uint32_t maxInputSize)
-{
-    uint32_t index = 0;
-    efi_input_key_t key;
-
-    while (TRUE)
-    {
-        // Continuously read input
-        key = GetKey();
-
-        // When enter is pressed, leave the loop to process the input
-        if (key.UnicodeChar == CARRIAGE_RETURN) 
-        {
-            break;
-        }
-
-        // Handling backspace
-        if (key.UnicodeChar == BACKSPACE)
-        {
-            if (index > 0) // Dont delete when the buffer is empty
-            {
-                index--;
-                buffer[index] = 0;
-                printf("\b \b"); // Destructive backspace
-            }
-        }
-        // Add the character to the buffer as long as there is enough space and if its a valid character
-        // The character in the last index must be null to terminate the string
-        else if (index < maxInputSize - 1 && key.UnicodeChar != CHAR_NULL)
-        {
-            buffer[index] = key.UnicodeChar;
-            index++;
-            printf("%c", key.UnicodeChar);
-        }
-    }
 }
 
 int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
