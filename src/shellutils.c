@@ -32,7 +32,7 @@ uint8_t NormalizePath(char_t** path)
     // count the amount of tokens
     char_t* copy = *path;
     uint16_t tokenAmount = 0;
-    while (*copy != '\0')
+    while (*copy != CHAR_NULL)
     {
         if (*copy == DIRECTORY_DELIM)
         {
@@ -105,7 +105,7 @@ uint8_t NormalizePath(char_t** path)
 
     // Rebuild the string
     (*path)[0] = '\\';
-    (*path)[1] = '\0';
+    (*path)[1] = CHAR_NULL;
     for (i = 0; i < tokenAmount; i++)
     {
         strcat(*path, tokens[i]);
@@ -149,7 +149,7 @@ char_t* MakeFullPath(char_t* args, char_t* currPathPtr, boolean_t* isDynamicMemo
         fullPath = args;
     }
     // if the args are only whitespace
-    else if (args[0] == '\0')
+    else if (args[0] == CHAR_NULL)
     {
         return NULL;
     }
@@ -197,7 +197,7 @@ void RemoveRepeatedChars(char_t* str, char_t toRemove)
 {
     char_t* dest = str;
 
-    while (*str != '\0')
+    while (*str != CHAR_NULL)
     {
         while (*str == toRemove && *(str + 1) == toRemove)
         {
@@ -206,4 +206,72 @@ void RemoveRepeatedChars(char_t* str, char_t toRemove)
         *dest++ = *str++;
     }
     *dest = 0;
+}
+
+efi_input_key_t GetInputKey(void)
+{
+    uintn_t idx;
+    BS->WaitForEvent(1, &ST->ConIn->WaitForKey, &idx);
+
+    efi_input_key_t key = { 0 };
+    efi_status_t status = ST->ConIn->ReadKeyStroke(ST->ConIn, &key);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to read keystroke.");
+    }
+
+    return key;
+}
+
+void GetInputString(char_t buffer[], const uint32_t maxInputSize)
+{
+    uint32_t index = 0;
+    efi_input_key_t key;
+
+    while (TRUE)
+    {
+        // Continuously read input
+        key = GetInputKey();
+
+        // When enter is pressed, leave the loop to process the input
+        if (key.UnicodeChar == CARRIAGE_RETURN) 
+        {
+            break;
+        }
+
+        // Handling backspace
+        if (key.UnicodeChar == BACKSPACE)
+        {
+            if (index > 0) // Dont delete when the buffer is empty
+            {
+                index--;
+                buffer[index] = 0;
+                printf("\b \b"); // Destructive backspace
+            }
+        }
+        // Add the character to the buffer as long as there is enough space and if its a valid character
+        // The character in the last index must be null to terminate the string
+        else if (index < maxInputSize - 1 && key.UnicodeChar != CHAR_NULL)
+        {
+            buffer[index] = key.UnicodeChar;
+            index++;
+            printf("%c", key.UnicodeChar);
+        }
+    }
+}
+
+int32_t GetValueOffset(char_t* line, const char_t delimiter)
+{
+    char* curr = line;
+
+    for (; *curr != delimiter; curr++)
+    {
+        if (*curr == CHAR_NULL)
+        {
+            return -1; // Delimiter not found
+        }
+    }
+
+    curr++; // Pass the delimiter
+    return (curr - line);
 }

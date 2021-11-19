@@ -2,6 +2,7 @@
 #include <uefi.h>
 #include "logger.h"
 #include "bootutils.h"
+#include "shellutils.h"
 
 // Temporary path
 #define CFG_PATH ("EFI\\apps\\config.cfg")

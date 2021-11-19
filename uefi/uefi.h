@@ -39,8 +39,8 @@ extern "C" {
 /* comment out this if you want to use wchar_t in your application */
 #define USE_UTF8            1
 
-/* get these from the compiler */
-#ifndef _STDINT_H
+/* get these from the compiler or the efi headers, only define if we have neither */
+#if !defined(_STDINT_H) && !defined(_GCC_STDINT_H) && !defined(_EFI_INCLUDE_)
 #define _STDINT_H
 typedef char                int8_t;
 typedef unsigned char       uint8_t;
@@ -704,7 +704,7 @@ typedef void (EFIAPI *efi_event_notify_t)(efi_event_t Event, void *Context);
 typedef efi_status_t (EFIAPI *efi_create_event_t)(uint32_t Type, efi_tpl_t NotifyTpl, efi_event_notify_t NotifyFunction,
     void *NextContext, efi_event_t *Event);
 typedef efi_status_t (EFIAPI *efi_set_timer_t)(efi_event_t Event, efi_timer_delay_t Type, uint64_t TriggerTime);
-typedef efi_status_t (EFIAPI *efi_wait_for_event_t)(uintn_t NumberOfEvents, efi_event_t *Event, uintn_t Index);
+typedef efi_status_t (EFIAPI *efi_wait_for_event_t)(uintn_t NumberOfEvents, efi_event_t *Event, uintn_t *Index);
 typedef efi_status_t (EFIAPI *efi_signal_event_t)(efi_event_t Event);
 typedef efi_status_t (EFIAPI *efi_close_event_t)(efi_event_t Event);
 typedef efi_status_t (EFIAPI *efi_check_event_t)(efi_event_t Event);

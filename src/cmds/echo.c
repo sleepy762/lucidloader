@@ -1,10 +1,15 @@
 #include "cmds/echo.h"
 
-uint8_t EchoCmd(char_t args[], char_t** currPathPtr)
+uint8_t EchoCmd(cmd_args_s* args, char_t** currPathPtr)
 {
     if (args != NULL)
     {
-        printf("\n%s", args);
+        printf("\n");
+        while (args != NULL)
+        {
+            printf("%s ", args->argString);
+            args = args->next;
+        }
     }
     return CMD_SUCCESS;
 }

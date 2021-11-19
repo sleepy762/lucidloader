@@ -765,23 +765,18 @@ int fprintf (FILE *__stream, const char_t *__format, ...)
     return vfprintf(__stream, __format, args);
 }
 
-int getchar (void)
-{
-    efi_input_key_t key;
-    efi_status_t status = ST->ConIn->ReadKeyStroke(ST->ConIn, &key);
-    return EFI_ERROR(status) ? -1 : key.UnicodeChar;
-
-}
-
 int getchar_ifany (void)
 {
-    efi_input_key_t key;
-    efi_status_t status = BS->CheckEvent(ST->ConIn->WaitForKey);
-    if(!status) {
-        status = ST->ConIn->ReadKeyStroke(ST->ConIn, &key);
-        return EFI_ERROR(status) ? -1 : key.UnicodeChar;
-    }
-    return 0;
+    efi_input_key_t key = { 0 };
+    efi_status_t status = ST->ConIn->ReadKeyStroke(ST->ConIn, &key);
+    return EFI_ERROR(status) ? -1 : key.UnicodeChar;
+}
+
+int getchar (void)
+{
+    uintn_t idx;
+    BS->WaitForEvent(1, &ST->ConIn->WaitForKey, &idx);
+    return getchar_ifany();
 }
 
 int putchar (int __c)
