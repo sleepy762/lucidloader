@@ -23,7 +23,9 @@ LIBOBJS = $(TMP2:.S=.o)
 
 # detect toolchain
 ifeq ($(wildcard /usr/bin/clang),)
+ifeq ($(wildcard /usr/lib/llvm/*/bin/clang),)
 USE_GCC = 1
+endif
 endif
 ifneq ($(USE_GCC),)
 ifeq ($(ARCH),x86_64)
