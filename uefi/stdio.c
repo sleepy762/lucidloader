@@ -89,8 +89,8 @@ int fstat (FILE *__f, struct stat *__buf)
     for(i = 0; i < __blk_ndevs; i++)
         if(__f == (FILE*)__blk_devs[i].bio) {
             __buf->st_mode = S_IREAD | S_IWRITE | S_IFBLK;
-            __buf->st_size = (off_t)__blk_devs[i].bio->Media->BlockSize * (off_t)__blk_devs[i].bio->Media->LastBlock;
-            __buf->st_blocks = __blk_devs[i].bio->Media->LastBlock;
+            __buf->st_size = (off_t)__blk_devs[i].bio->Media->BlockSize * ((off_t)__blk_devs[i].bio->Media->LastBlock + 1);
+            __buf->st_blocks = __blk_devs[i].bio->Media->LastBlock + 1;
             return 0;
         }
     status = __f->GetInfo(__f, &infGuid, &fsiz, &info);
@@ -518,7 +518,7 @@ int vsnprintf(char_t *dst, size_t maxlen, const char_t *fmt, __builtin_va_list a
             }
             if(*fmt==CL('l')) fmt++;
             if(*fmt==CL('c')) {
-                arg = __builtin_va_arg(args, int);
+                arg = __builtin_va_arg(args, uint32_t);
 #if USE_UTF8
                 if(arg<0x80) { *dst++ = arg; } else
                 if(arg<0x800) { *dst++ = ((arg>>6)&0x1F)|0xC0; *dst++ = (arg&0x3F)|0x80; } else
@@ -530,7 +530,7 @@ int vsnprintf(char_t *dst, size_t maxlen, const char_t *fmt, __builtin_va_list a
                 continue;
             } else
             if(*fmt==CL('d')) {
-                arg = __builtin_va_arg(args, int);
+                arg = __builtin_va_arg(args, int64_t);
                 sign=0;
                 if((int)arg<0) {
                     arg*=-1;
@@ -561,7 +561,7 @@ int vsnprintf(char_t *dst, size_t maxlen, const char_t *fmt, __builtin_va_list a
                 len = 16; pad = CL('0'); goto hex;
             } else
             if(*fmt==CL('x') || *fmt==CL('X')) {
-                arg = __builtin_va_arg(args, long int);
+                arg = __builtin_va_arg(args, int64_t);
 hex:            i=16;
                 tmpstr[i]=0;
                 do {
