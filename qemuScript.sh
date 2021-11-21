@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # This script is used for quick testing
 
 make -j8
