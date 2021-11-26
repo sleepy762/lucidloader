@@ -1,7 +1,7 @@
 #include "menu.h"
 #include "shell.h"
 #include "config.h"
-#include "config.h"
+#include "chainloader.h"
 
 #define CHAR_INT 48 // to convert from unicode to regular numbers
 
@@ -13,11 +13,53 @@
 void MainMenu()
 {
     ST->ConOut->ClearScreen(ST->ConOut);
-    
+    boot_entry_s* headConfig = NULL;
     //figure out what is in the config file and print it or an error
-    //boot_entry_s* headConfig = ParseConfig();
+    headConfig = ParseConfig();
     
-    if(1) FailMenu();
+    ST->ConOut->ClearScreen(ST->ConOut);
+    printf("yes");
+    ST->BootServices->Stall(100000);
+
+    if(!headConfig){
+         FailMenu();
+    }
+    else{
+        SuccssesMenu(headConfig);
+    }
+
+}
+
+void SuccssesMenu(boot_entry_s* head)
+{
+    uint8_t i = 0;
+    boot_entry_s* curr = head;
+
+    ST->ConOut->ClearScreen(ST->ConOut);
+    
+    while (curr)
+    {  
+        printf("%d. %s, %d , %s\n",++i, curr->name, curr->type, curr->mainPath);
+        curr = curr->next;
+    } 
+    
+    printf("\nfor shell press 'c'\n\n");
+
+    //clear buffer and read key stroke
+    ST->ConIn->Reset(ST->ConIn, 0);    
+    efi_input_key_t key;
+
+    do{
+    while ((ST->ConIn->ReadKeyStroke(ST->ConIn, &key)) == EFI_NOT_READY); 
+    ST->ConOut->ClearScreen(ST->ConOut);
+    }while(!((key.UnicodeChar == 'c') || (key.UnicodeChar <= i + CHAR_INT) && (key.UnicodeChar >= '1')));
+    
+    if(key.UnicodeChar == 'c') StartShell();
+
+    curr = GetCurrOS(key.UnicodeChar - CHAR_INT, head);
+
+    if(curr->type == 1) ChainloadImage(curr->mainPath);
+    if(curr->type == 2) printf("not avilable at the moment\n");// will append this func soon     
 
 }
 
@@ -54,7 +96,7 @@ void FailMenu()
 
 void Logger()
 {
-
+ //the looger will be clear for a while
 }
 
 void ShutDown()
@@ -77,3 +119,16 @@ void ResetComputer()
 2. settings 
 3. start shell
 4. reset */
+
+boot_entry_s * GetCurrOS(uint8_t numOfPartition, boot_entry_s * head)
+{
+    uint8_t  i = 0;
+    boot_entry_s * curr = head;
+
+    for(i = 1; i < numOfPartition; i++)
+    {
+        curr = curr->next;
+    }
+    
+    return curr;
+}
