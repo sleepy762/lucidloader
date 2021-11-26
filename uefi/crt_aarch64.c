@@ -144,7 +144,7 @@ void bootstrap()
 /**
  * Initialize POSIX-UEFI and call the application's main() function
  */
-int uefi_init (
+efi_status_t uefi_init (
     efi_handle_t image, efi_system_table_t *systab
 #ifndef __clang__
     , uintptr_t ldbase, Elf64_Dyn *dyn
@@ -156,10 +156,10 @@ int uefi_init (
     efi_shell_interface_protocol_t *shi = NULL;
     efi_guid_t lipGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
     efi_status_t status;
-    int argc = 0, i;
+    int argc = 0, i, ret;
     wchar_t **argv = NULL;
 #if USE_UTF8
-    int ret, j;
+    int j;
     char *s;
 #endif
 #ifndef __clang__
@@ -178,7 +178,7 @@ int uefi_init (
     if (rel && relent) {
         while (relsz > 0) {
             if(ELF64_R_TYPE (rel->r_info) == R_AARCH64_RELATIVE)
-                { addr = (unsigned long *)(ldbase + rel->r_offset); *addr += ldbase; break; }
+                { addr = (unsigned long *)(ldbase + rel->r_offset); *addr += ldbase; }
             rel = (Elf64_Rel*) ((char *) rel + relent);
             relsz -= relent;
         }
@@ -186,6 +186,10 @@ int uefi_init (
 #else
     (void)i;
 #endif
+    /* failsafes, should never happen */
+    if(!image || !systab || !systab->BootServices || !systab->BootServices->HandleProtocol ||
+        !systab->BootServices->OpenProtocol || !systab->BootServices->AllocatePool || !systab->BootServices->FreePool)
+            return EFI_UNSUPPORTED;
     /* save EFI pointers and loaded image into globals */
     IM = image;
     ST = systab;
@@ -227,6 +231,7 @@ int uefi_init (
     if(__argvutf8) BS->FreePool(__argvutf8);
     return ret;
 #else
-    return main(argc, argv);
+    ret = main(argc, argv);
 #endif
+    return ret ? EFIERR(ret) : EFI_SUCCESS;
 }
