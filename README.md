@@ -5,7 +5,7 @@ A UEFI bootloader that aims to be a simpler implementation of GRUB.
 This bootloader is being developed using the [POSIX-UEFI](https://gitlab.com/bztsrc/posix-uefi) wrapper library.
 
 
-#### Dependencies
+## Dependencies
 
 Arch GNU/Linux (pacman): `make` (part of `base-devel`), `clang` / `gcc`, `mtools`, `qemu`\*, `ovmf`\*, `xorriso`, `lld`, `efibootmgr`
 
