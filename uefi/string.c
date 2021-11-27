@@ -174,12 +174,7 @@ int strncmp(const char_t *s1, const char_t *s2, size_t n)
 char_t *strdup(const char_t *s)
 {
     int i = (strlen(s)+1) * sizeof(char_t);
-
-    char_t* s2 = NULL;
-    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, i, (void**)&s2);
-    if (EFI_ERROR(status))
-        return NULL;
-
+    char_t *s2 = (char_t *)malloc(i);
     if(s2 != NULL) memcpy(s2, (void*)s, i);
     return s2;
 }

@@ -3,7 +3,8 @@
 #include "shellutils.h"
 #include "bootutils.h"
 #include "shellerr.h"
+#include "commanddefs.h"
 
-int CdCmd(char args[], char** currPathPtr);
-const char* CdBrief(void);
-const char* CdLong(void);
+uint8_t CdCmd(cmd_args_s* args, char_t** currPathPtr);
+const char_t* CdBrief(void);
+const char_t* CdLong(void);

@@ -1,20 +1,25 @@
 #include "cmds/echo.h"
 
-int EchoCmd(char args[], char** currPathPtr)
+uint8_t EchoCmd(cmd_args_s* args, char_t** currPathPtr)
 {
     if (args != NULL)
     {
-        printf("\n%s", args);
+        printf("\n");
+        while (args != NULL)
+        {
+            printf("%s ", args->argString);
+            args = args->next;
+        }
     }
     return CMD_SUCCESS;
 }
 
-const char* EchoBrief(void)
+const char_t* EchoBrief(void)
 {
     return "Print a string. Used for debugging.";
 }
 
-const char* EchoLong(void)
+const char_t* EchoLong(void)
 {
     return "Usage: echo <string>";
 }

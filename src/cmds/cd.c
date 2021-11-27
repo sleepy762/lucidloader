@@ -1,7 +1,8 @@
 #include "cmds/cd.h"
 
-int CdCmd(char args[], char** currPathPtr)
+uint8_t CdCmd(cmd_args_s* args, char_t** currPathPtr)
 {
+    // This command only uses the first argument
     if (args == NULL)
     {
         return CMD_NO_DIR_SPEFICIED;
@@ -9,13 +10,13 @@ int CdCmd(char args[], char** currPathPtr)
 
     boolean_t isDynamicMemory = FALSE;
 
-    char* dirToChangeTo = MakeFullPath(args, *currPathPtr, &isDynamicMemory);
+    char_t* dirToChangeTo = MakeFullPath(args->argString, *currPathPtr, &isDynamicMemory);
     if (dirToChangeTo == NULL)
     {
         return CMD_NO_DIR_SPEFICIED;
     }
 
-    int normalizationResult = NormalizePath(&dirToChangeTo);
+    uint8_t normalizationResult = NormalizePath(&dirToChangeTo);
     if (normalizationResult != CMD_SUCCESS)
     {
         return normalizationResult;
@@ -37,24 +38,25 @@ int CdCmd(char args[], char** currPathPtr)
             size_t newDirLen = strlen(dirToChangeTo);
             efi_status_t status = BS->AllocatePool(LIP->ImageDataType, newDirLen + 1, (void**)currPathPtr);
             if (EFI_ERROR(status))
+            {
                 return CMD_OUT_OF_MEMORY;
+            }
             memcpy(*currPathPtr, dirToChangeTo, newDirLen + 1);
         }
     }
     else
     {
-        return CMD_DIR_NOT_FOUND;
+        return errno;
     }
-    
     return CMD_SUCCESS;
 }
 
-const char* CdBrief(void)
+const char_t* CdBrief(void)
 {
     return "Change the current working directory.";
 }
 
-const char* CdLong(void)
+const char_t* CdLong(void)
 {
     return "Usage: cd <directory>";
 }

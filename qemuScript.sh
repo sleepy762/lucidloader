@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # This script is used for quick testing
 
 make -j8
@@ -18,7 +18,5 @@ mcopy -i fat.img binaries/* ::/EFI/apps
 # Create an ISO image with our EFI file and start uefi qemu to test it
 cp fat.img iso
 xorriso -as mkisofs -R -f -e fat.img -no-emul-boot -o cdimage.iso iso
-qemu-system-x86_64 -cpu qemu64 -bios ovmf/OVMF.fd -drive file=cdimage.iso,if=ide
-
-# Remove all object files
-make clean
+rm -rf iso
+qemu-system-x86_64 -cpu qemu64 -bios ovmf/OVMF.fd -drive file=cdimage.iso,if=ide -net none

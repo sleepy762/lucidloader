@@ -12,16 +12,24 @@ boot_entry_s* ParseConfig(void)
     efi_file_info_t configInfo;
     efi_status_t status = GetFileInfo(configFileHandle, &configInfo);
     if (EFI_ERROR(status))
-        ErrorExit("Failed to get config file info.", status);
+    {
+        Log(LL_ERROR, status, "Failed to get config file info.");
+        return NULL;
+    }
 
-    char* configData = NULL;
+    char_t* configData = NULL;
     uint64_t configSize = configInfo.FileSize;
     status = ReadFile(configFileHandle, configSize + 1, &configData);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to read the config file.");
+        return NULL;
+    }
     configData[configSize] = 0;
 
-    char* line;
-    char* configEntry;
-    char* srcCopy = configData;
+    char_t* line;
+    char_t* configEntry;
+    char_t* srcCopy = configData;
     boot_entry_s* head = NULL;
 
     // Gets blocks of text from the config
@@ -30,26 +38,49 @@ boot_entry_s* ParseConfig(void)
         boot_entry_s entry = {0};
         size_t len = configEntry - srcCopy;
 
-        char* strippedEntry = NULL; // Holds the current entry block
-        BS->AllocatePool(LIP->ImageDataType, len + 1, (void**)&strippedEntry);
+        char_t* strippedEntry = NULL; // Holds the current entry block
+        status = BS->AllocatePool(LIP->ImageDataType, len + 1, (void**)&strippedEntry);
+        if (EFI_ERROR(status))
+        {
+            Log(LL_ERROR, status, "Failed to allocate memory while parsing config entries.");
+            BS->FreePool(configData);
+            return head;
+        }
 
         memcpy(strippedEntry, srcCopy, len);
         strippedEntry[len] = 0;
         srcCopy += len + strlen(CFG_ENTRY_DELIMITER); // Move the pointer to the next entry block
 
-        char* entryCopy = strippedEntry;
+        char_t* entryCopy = strippedEntry;
         // Gets lines from the blocks of text
         while ((line = strtok_r(entryCopy, CFG_LINE_DELIMITER, &entryCopy)) != NULL)
-            ParseLine(&entry, line);
+        {
+            if (ParseLine(&entry, line) == 1)
+            {
+                BS->FreePool(configData);
+                BS->FreePool(strippedEntry);
+                return head;
+            }
+        }
 
         BS->FreePool(strippedEntry);
-        ValidateEntry(entry, &head);
+        if (ValidateEntry(entry, &head) == 1)
+        {
+            BS->FreePool(configData);
+            return head;
+        }
     }
 
     // Handle the last entry
     boot_entry_s entry = {0};
     while ((line = strtok_r(srcCopy, CFG_LINE_DELIMITER, &srcCopy)) != NULL)
-        ParseLine(&entry, line);
+    {
+        if (ParseLine(&entry, line) == 1)
+        {
+            BS->FreePool(configData);
+            return head;
+        }
+    }
     ValidateEntry(entry, &head);
 
     BS->FreePool(configData);
@@ -57,34 +88,46 @@ boot_entry_s* ParseConfig(void)
 }
 
 // If the entry is valid then it is added to the entry linked list
-void ValidateEntry(boot_entry_s newEntry, boot_entry_s** head)
+// Return value 1 is fatal, otherwise it can be ignored.
+int8_t ValidateEntry(boot_entry_s newEntry, boot_entry_s** head)
 {
     if (strlen(newEntry.name) == 0)
     {
-        printf("[WARNING] Ignoring entry with no name.\n");
-        return;
+        Log(LL_WARNING, 0, "Ignoring config entry with no name.");
+        return 0;
     }
-    else if (newEntry.type != Linux && newEntry.type != Chainload)
+    else if (newEntry.type != BT_LINUX && newEntry.type != BT_CHAINLOAD)
     {
-        printf("[WARNING] Unknown boot type in entry.\n");
-        return;
+        Log(LL_WARNING, 0, "Ignoring config entry with unknown boot type. (entry name: %s)", newEntry.name);
+        return 0;
     }
     else if (strlen(newEntry.mainPath) == 0)
     {
-        printf("[WARNING] Ignoring entry with no main path specified.\n");
-        return;
+        Log(LL_WARNING, 0, "Ignoring entry with no main path specified. (entry name: %s)", newEntry.name);
+        return 0;
     }
     boot_entry_s* entry = InitializeEntry();
+
+    if (entry == NULL)
+    {
+        return 1;
+    }
+
     *entry = newEntry;
     entry->next = NULL;
 
     if (*head == NULL)
+    {
         *head = entry;
+    }
     else
+    {
         AppendEntry(*head, entry);
+    }
+    return 0;
 }
 
-void AssignValueToEntry(const char* key, char* value, boot_entry_s* entry)
+void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry)
 {
     if (strcmp(key, "name") == 0)
     {
@@ -92,10 +135,14 @@ void AssignValueToEntry(const char* key, char* value, boot_entry_s* entry)
     }
     else if (strcmp(key, "type") == 0)
     {
-        if (strcmp(value, "chainload") == 0) 
-            entry->type = Chainload;
-        else if (strcmp(value, "linux") == 0) 
-            entry->type = Linux;
+        if (strcmp(value, "chainload") == 0)
+        {
+            entry->type = BT_CHAINLOAD;
+        }
+        else if (strcmp(value, "linux") == 0)
+        {
+            entry->type = BT_LINUX;
+        }
     }
     else if (strcmp(key, "path") == 0|| strcmp(key, "kernel") == 0) 
     {
@@ -111,24 +158,38 @@ void AssignValueToEntry(const char* key, char* value, boot_entry_s* entry)
     }
     else
     {
-        printf("[WARNING] Unknown key value (%s) in config file.\n", key);
+        Log(LL_WARNING, 0, "Unknown key '%s' in the config file.", key);
     }
 }
 
 // Stores the key and value in separate strings
-void ParseLine(boot_entry_s* entry, char* token)
+// Return value 1 is fatal, otherwise it can be ignored
+int8_t ParseLine(boot_entry_s* entry, char_t* token)
 {
-    size_t valueOffset = 0;
-    size_t tokenLen = strlen(token);
-    if (GetValueOffset(token, &valueOffset, CFG_KEY_VALUE_DELIMITER) != 0) 
-        return;
+    efi_status_t status;
+    int32_t valueOffset = GetValueOffset(token, CFG_KEY_VALUE_DELIMITER);
+    if (valueOffset == -1)
+    {
+        return 0;
+    }
 
+    size_t tokenLen = strlen(token);
     size_t valueLength = tokenLen - valueOffset;
 
-    char* key = NULL;
-    char* value = NULL;
-    BS->AllocatePool(LIP->ImageDataType, valueOffset, (void**)&key);
-    BS->AllocatePool(LIP->ImageDataType, valueLength + 1, (void**)&value);
+    char_t* key = NULL;
+    char_t* value = NULL;
+    status = BS->AllocatePool(LIP->ImageDataType, valueOffset, (void**)&key);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to allocate memory for the key string during config line parsing.");
+        return 1;
+    }
+    status = BS->AllocatePool(LIP->ImageDataType, valueLength + 1, (void**)&value);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to allocate memory for the value string during config line parsing.");
+        return 1;
+    }
 
     memcpy(key, token, valueOffset - 1);
     key[valueOffset - 1] = 0;
@@ -138,6 +199,7 @@ void ParseLine(boot_entry_s* entry, char* token)
 
     AssignValueToEntry(key, value, entry);
     BS->FreePool(key);
+    return 0;
 }
 
 // Creates a new entry pointer
@@ -146,15 +208,18 @@ boot_entry_s* InitializeEntry(void)
     boot_entry_s* entry = NULL;
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, sizeof(boot_entry_s), (void**)&entry);
     if (EFI_ERROR(status))
-        ErrorExit("Failed to initialize a pointer for an entry.", status);
-
-    entry->name = NULL;
-    entry->type = 0;
-    entry->mainPath = NULL;
-    entry->linuxValues.initrdPath = NULL;
-    entry->linuxValues.kernelArgs = NULL;
-    entry->next = NULL;
-
+    {
+        Log(LL_ERROR, status, "Failed to allocate memory during entry node initialization.");
+    }
+    else
+    {
+        entry->name = NULL;
+        entry->type = 0;
+        entry->mainPath = NULL;
+        entry->linuxValues.initrdPath = NULL;
+        entry->linuxValues.kernelArgs = NULL;
+        entry->next = NULL;
+    }
     return entry;
 }
 
@@ -163,6 +228,8 @@ void AppendEntry(boot_entry_s* head, boot_entry_s* entry)
 {
     boot_entry_s* copy = head;
     while (copy->next != NULL)
+    {
         copy = copy->next;
+    }
     copy->next = entry;
 }

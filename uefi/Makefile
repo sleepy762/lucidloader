@@ -22,7 +22,7 @@ TMP2 = $(LIBSRCS:.c=.o)
 LIBOBJS = $(TMP2:.S=.o)
 
 # detect toolchain
-ifeq ($(wildcard /usr/bin/clang),)
+ifeq ($(wildcard /usr/bin/clang)$(wildcard /usr/local/bin/clang)$(wildcard /usr/lib/llvm/*/bin/clang),)
 USE_GCC = 1
 endif
 ifneq ($(USE_GCC),)
@@ -67,7 +67,7 @@ endif
 all: $(ALLTARGETS) $(EXTRA)
 
 uefi/libuefi.a:
-	@make --no-print-directory -C uefi libuefi.a USE_GCC=$(USE_GCC) ARCH=$(ARCH)
+	@+make --no-print-directory -C uefi libuefi.a USE_GCC=$(USE_GCC) ARCH=$(ARCH)
 
 libuefi.lib: $(LIBOBJS)
 
@@ -102,7 +102,7 @@ build:
 	@cp libuefi.a uefi.h ../build/uefi
 
 clean:
-	@rm $(TARGET) $(SRCS:.c=.o) *.a *.lib *.elf $(LIBOBJS) 2>/dev/null || true
+	@rm $(TARGET) $(OBJS) *.a *.lib *.elf $(LIBOBJS) 2>/dev/null || true
 
 distclean: clean
 ifeq ($(wildcard uefi/Makefile),)

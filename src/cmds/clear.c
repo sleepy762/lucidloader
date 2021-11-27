@@ -1,12 +1,12 @@
 #include "cmds/clear.h"
 
-int ClearCmd(char args[], char** currPathPtr)
+uint8_t ClearCmd(cmd_args_s* args, char_t** currPathPtr)
 {
     ST->ConOut->ClearScreen(ST->ConOut);
     return CMD_SUCCESS;
 }
 
-const char* ClearBrief(void)
+const char_t* ClearBrief(void)
 {
     return "Clears the screen.";
 }
