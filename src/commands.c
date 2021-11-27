@@ -2,15 +2,17 @@
 
 // List of all the commands
 const shell_cmd_s commands[] = {
-{ "help",   HelpCmd,   HelpBrief,     HelpLong },
-{ "echo",   EchoCmd,   EchoBrief,     EchoLong },
-{ "pwd",    PwdCmd,    PwdBrief,      NULL },
-{ "ls",     LsCmd,     LsBrief,       LsLong },
-{ "cd",     CdCmd,     CdBrief,       CdLong },
-{ "touch",  TouchCmd,  TouchBrief,    TouchLong },
-{ "mkdir",  MkdirCmd,  MkdirBrief,    MkdirLong },
-{ "clear",  ClearCmd,  ClearBrief,    NULL },
-{ "cat",    CatCmd,    CatBrief,      CatLong },
+{ "help",     HelpCmd,     HelpBrief,     HelpLong },
+{ "echo",     EchoCmd,     EchoBrief,     EchoLong },
+{ "pwd",      PwdCmd,      PwdBrief,      NULL },
+{ "ls",       LsCmd,       LsBrief,       LsLong },
+{ "cd",       CdCmd,       CdBrief,       CdLong },
+{ "touch",    TouchCmd,    TouchBrief,    TouchLong },
+{ "mkdir",    MkdirCmd,    MkdirBrief,    MkdirLong },
+{ "clear",    ClearCmd,    ClearBrief,    NULL },
+{ "cat",      CatCmd,      CatBrief,      CatLong },
+{ "reboot",   RebootCmd,   RebootBrief,   RebootLong },
+{ "shutdown", ShutdownCmd, ShutdownBrief, NULL },
 { "", NULL, NULL, NULL } // Has to be here in order to terminate the command counter
 };
 
@@ -74,7 +76,7 @@ uint8_t HelpCmd(cmd_args_s* args, char_t** currPathPtr)
 
 const char_t* HelpBrief(void)
 {
-    return "Displays all the commands and their description. help [cmd] for info on a command.";
+    return "Displays all the commands and their description.";
 }
 
 const char_t* HelpLong(void)

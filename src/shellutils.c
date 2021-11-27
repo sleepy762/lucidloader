@@ -210,12 +210,14 @@ void RemoveRepeatedChars(char_t* str, char_t toRemove)
 
 efi_input_key_t GetInputKey(void)
 {
+    ST->ConIn->Reset(ST->ConIn, 0);
+    
     uintn_t idx;
     BS->WaitForEvent(1, &ST->ConIn->WaitForKey, &idx);
 
     efi_input_key_t key = { 0 };
     efi_status_t status = ST->ConIn->ReadKeyStroke(ST->ConIn, &key);
-    if (EFI_ERROR(status))
+    if (EFI_ERROR(status) && status != EFI_NOT_READY)
     {
         Log(LL_ERROR, status, "Failed to read keystroke.");
     }

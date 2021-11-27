@@ -12,6 +12,8 @@
 #include "cmds/mkdir.h"
 #include "cmds/clear.h"
 #include "cmds/cat.h"
+#include "cmds/reboot.h"
+#include "cmds/shutdown.h"
 
 // The only command in this file because it has to access the list of all commands
 uint8_t HelpCmd(cmd_args_s* args, char_t** currPathPtr);

@@ -155,6 +155,12 @@ const char_t* GetCommandErrorInfo(const uint8_t error)
         case CMD_QUOTATION_MARK_OPEN:
         return "no closing quotation mark found.";
 
+        case CMD_REBOOT_FAIL:
+        return "failed to reboot, check the log for more info.";
+
+        case CMD_SHUTDOWN_FAIL:
+        return "failed to shutdown, check the log for more info.";
+
         default:
         return "unknown error.";
     }
