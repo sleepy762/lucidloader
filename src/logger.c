@@ -46,7 +46,7 @@ void Log(LogLevel loglevel, efi_status_t status, const char_t* fmtMessage, ...)
     if (status != EFI_SUCCESS)
     {
         // We must turn off the sign bit in status, therefore we subtract 0x8000000000000000
-        fprintf(log, " (EFI Error: %s (%ld))", EfiErrorString(status), (status - 0x8000000000000000));
+        fprintf(log, " (EFI Error: %s (%ld))", EfiErrorString(status), (status - EFI_ERROR_MASK));
     }
 
     fprintf(log, "\n");

@@ -111,6 +111,7 @@ efi_status_t GetFileInfo(efi_file_handle_t* fileHandle, efi_file_info_t* fileInf
     return fileHandle->GetInfo(fileHandle, &infGuid, &size, (void*)fileInfo);
 }
 
+// A bare-bones function that reads a file's content into a buffer
 efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char_t** buffer)
 {
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, fileSize, (void**)buffer);
