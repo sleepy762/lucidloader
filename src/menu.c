@@ -2,6 +2,8 @@
 #include "shell.h"
 #include "config.h"
 #include "chainloader.h"
+#include "cmds/cat.h"
+#include "logger.h"
 
 #define CHAR_INT 48 // to convert from unicode to regular numbers
 
@@ -14,13 +16,9 @@ void MainMenu()
 {
     ST->ConOut->ClearScreen(ST->ConOut);
     boot_entry_s* headConfig = NULL;
-    //figure out what is in the config file and print it or an error
+    //figure out what is in the config file and print it or an error    
     headConfig = ParseConfig();
-    
-    ST->ConOut->ClearScreen(ST->ConOut);
-    printf("yes");
-    ST->BootServices->Stall(100000);
-
+     
     if(!headConfig){
          FailMenu();
     }
@@ -88,7 +86,7 @@ void FailMenu()
     //check if key is valid af
     
     if(key.UnicodeChar == '1') StartShell();
-    if(key.UnicodeChar == '2') Logger();//need to add a looger
+    if(key.UnicodeChar == '2') Logger();
     if(key.UnicodeChar == '3') ShutDown();
     if(key.UnicodeChar == '4') ResetComputer();
     
@@ -97,6 +95,16 @@ void FailMenu()
 void Logger()
 {
  //the looger will be clear for a while
+    ST->ConOut->ClearScreen(ST->ConOut);
+
+    char_t* envPath = "\\EFI\\apps\\";
+
+    cmd_args_s catVar;
+    catVar.argString = "ezboot-log.txt";
+    catVar.next = NULL;
+
+    CatCmd(&catVar, &envPath); // using the cat cmd to open the file and print it
+   
 }
 
 void ShutDown()
