@@ -4,12 +4,12 @@ uint8_t EchoCmd(cmd_args_s* args, char_t** currPathPtr)
 {
     if (args != NULL)
     {
-        printf("\n");
         while (args != NULL)
         {
             printf("%s ", args->argString);
             args = args->next;
         }
+        printf("\n"); // We want this to be printed once, only if there are args
     }
     return CMD_SUCCESS;
 }

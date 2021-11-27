@@ -6,7 +6,7 @@ int8_t StartShell(void)
     ST->ConOut->ClearScreen(ST->ConOut);
     ST->ConOut->EnableCursor(ST->ConOut, TRUE);
     printf("Welcome to the bootloader shell!\n");
-    printf("Type `help` to get a list of commands.\n");
+    printf("Type `help` to get a list of commands.\n\n");
 
     char_t* currPath = NULL;
     // 2 is the initial size for the root dir "\" and null string terminator
@@ -41,7 +41,7 @@ int8_t ShellLoop(char_t** currPathPtr)
     while (TRUE)
     {
         char_t buffer[SHELL_MAX_INPUT] = {0};
-        printf("\n> ");
+        printf("> ");
 
         GetInputString(buffer, SHELL_MAX_INPUT);
 
@@ -93,7 +93,7 @@ int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
         }
         else if (i + 1 == totalCmds)
         {
-            printf("\nCommand '%s' not found.", cmd);
+            printf("Command '%s' not found.\n", cmd);
         }
     }
 

@@ -2,7 +2,7 @@
 
 uint8_t PwdCmd(cmd_args_s* args, char_t** currPathPtr)
 {
-    printf("\n%s", *currPathPtr);
+    printf("%s\n", *currPathPtr);
     return CMD_SUCCESS;
 }
 

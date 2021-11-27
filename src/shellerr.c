@@ -2,12 +2,12 @@
 
 void PrintCommandError(const char_t* cmd, const char_t* args, const uint8_t error)
 {
-    printf("\n%s: ", cmd);
+    printf("%s: ", cmd);
     if (args != NULL)
     {
         printf("%s: ", args);
     }
-    printf("%s", GetCommandErrorInfo(error));
+    printf("%s\n", GetCommandErrorInfo(error));
 }
 
 const char_t* GetCommandErrorInfo(const uint8_t error)

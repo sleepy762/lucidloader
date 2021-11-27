@@ -32,6 +32,10 @@ uint8_t LsCmd(cmd_args_s* args, char_t** currPathPtr)
             {
                 PrintCommandError("ls", args->argString, res);
             }
+            else
+            {
+                printf("\n");
+            }
 
             if (isDynamicMemory) 
             {
@@ -51,7 +55,7 @@ uint8_t ListDir(char_t* path)
     {
         struct dirent* de;
 
-        printf("\nReading the directory: %s\n", path);
+        printf("Reading the directory: %s\n", path);
         while ((de = readdir(dir)) != NULL)
         {
             printf("%c %04x %s\n", de->d_type == DT_DIR ? 'd' : '.', de->d_type, de->d_name);

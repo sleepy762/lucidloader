@@ -236,6 +236,7 @@ void GetInputString(char_t buffer[], const uint32_t maxInputSize)
         // When enter is pressed, leave the loop to process the input
         if (key.UnicodeChar == CARRIAGE_RETURN) 
         {
+            printf("\n");
             break;
         }
 

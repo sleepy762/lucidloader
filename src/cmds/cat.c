@@ -8,7 +8,6 @@ uint8_t CatCmd(cmd_args_s* args, char_t** currPathPtr)
     }
 
     // Print the content of each file in the arguments
-    printf("\n"); // Move down from the input line
     while(args != NULL)
     {
         boolean_t isDynamicMemory = FALSE;

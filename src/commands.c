@@ -40,7 +40,7 @@ uint8_t HelpCmd(cmd_args_s* args, char_t** currPathPtr)
             {
                 if (commands[i].LongHelp != NULL)
                 {
-                    printf("\n%s", commands[i].LongHelp());
+                    printf("%s\n", commands[i].LongHelp());
                 }
                 else
                 {
@@ -56,7 +56,7 @@ uint8_t HelpCmd(cmd_args_s* args, char_t** currPathPtr)
         // List all commands with their brief help
         for (uint8_t i = 0; i < totalCmds; i++)
         {
-            printf("\n%s -- ", commands[i].commandName);
+            printf("%s -- ", commands[i].commandName);
 
             if (commands[i].BriefHelp != NULL)
             {
@@ -64,8 +64,9 @@ uint8_t HelpCmd(cmd_args_s* args, char_t** currPathPtr)
             }
             else
             {
-                return CMD_BRIEF_HELP_NOT_AVAILABLE;
+                printf("no description available.");
             }
+            printf("\n");
         }
     }
     return CMD_SUCCESS;
