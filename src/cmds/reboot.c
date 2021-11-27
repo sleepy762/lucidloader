@@ -1,9 +1,9 @@
 #include "cmds/reboot.h"
 
-uint8_t RebootCmd(cmd_args_s* args, char_t** currPathPtr)
+uint8_t RebootCmd(cmd_args_s** args, char_t** currPathPtr)
 {
     // Reboot into firmware setup or do a normal cold reboot
-    if (args != NULL && strcmp(args->argString, REBOOT_TO_FW) == 0)
+    if (*args != NULL && strcmp((*args)->argString, REBOOT_TO_FW) == 0)
     {
         RebootDevice(TRUE);
     }

@@ -89,7 +89,8 @@ int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
         // Find the right command and execute the command function
         if (strcmp(cmd, commands[i].commandName) == 0)
         {
-            commandReturn = commands[i].CommandFunction(cmdArgs, currPathPtr);
+            // Pass a pointer to the head of the linked list because it may be modified
+            commandReturn = commands[i].CommandFunction(&cmdArgs, currPathPtr);
             break;
         }
         else if (i + 1 == totalCmds)

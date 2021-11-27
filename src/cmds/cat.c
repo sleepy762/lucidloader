@@ -1,18 +1,19 @@
 #include "cmds/cat.h"
 
-uint8_t CatCmd(cmd_args_s* args, char_t** currPathPtr)
+uint8_t CatCmd(cmd_args_s** args, char_t** currPathPtr)
 {
-    if (args == NULL)
+    if (*args == NULL)
     {
         return CMD_NO_FILE_SPECIFIED;
     }
 
     // Print the content of each file in the arguments
-    while(args != NULL)
+    cmd_args_s* arg = *args;
+    while(arg != NULL)
     {
         boolean_t isDynamicMemory = FALSE;
 
-        char_t* filePath = MakeFullPath(args->argString, *currPathPtr, &isDynamicMemory);
+        char_t* filePath = MakeFullPath(arg->argString, *currPathPtr, &isDynamicMemory);
         if (filePath == NULL)
         {
             return CMD_NO_FILE_SPECIFIED;
@@ -21,14 +22,14 @@ uint8_t CatCmd(cmd_args_s* args, char_t** currPathPtr)
         uint8_t res = PrintFileContent(filePath);
         if (res != CMD_SUCCESS)
         {
-            PrintCommandError("cat", args->argString, res);
+            PrintCommandError("cat", arg->argString, res);
         }
         
         if (isDynamicMemory)
         {
             BS->FreePool(filePath);
         }
-        args = args->next;
+        arg = arg->next;
     }
     return CMD_SUCCESS;
 }
@@ -43,6 +44,13 @@ uint8_t PrintFileContent(char_t* path)
         fseek(file, 0, SEEK_END);
         fileSize = ftell(file);
         fseek(file, 0, SEEK_SET);
+
+        // Prevent a nasty bug from happening when calling fread() with size 0
+        if (fileSize == 0)
+        {
+            fclose(file);
+            return CMD_SUCCESS;
+        }
 
         // Read the file data into a buffer
         char_t* buffer = NULL;

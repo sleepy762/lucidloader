@@ -210,8 +210,6 @@ void RemoveRepeatedChars(char_t* str, char_t toRemove)
 
 efi_input_key_t GetInputKey(void)
 {
-    ST->ConIn->Reset(ST->ConIn, 0);
-    
     uintn_t idx;
     BS->WaitForEvent(1, &ST->ConIn->WaitForKey, &idx);
 
@@ -277,4 +275,44 @@ int32_t GetValueOffset(char_t* line, const char_t delimiter)
 
     curr++; // Pass the delimiter
     return (curr - line);
+}
+
+// Tries to find a flag in the arguments, returns TRUE if it's found, FALSE otherwise
+// Additionally it removes the first instance of the node of the flag from the linked list
+boolean_t FindFlagAndDelete(cmd_args_s** argsHead, const char* flagStr)
+{
+    // If there are no args, the flag won't be found
+    if (*argsHead == NULL || flagStr == NULL)
+    {
+        return FALSE;
+    }
+
+    cmd_args_s* args = *argsHead;
+    // If the requested node is the head, change it to the next pointer
+    if (strcmp(args->argString, flagStr) == 0)
+    {
+        *argsHead = args->next;
+        BS->FreePool(args);
+        return TRUE;
+    }
+
+    // Start from the 2nd node
+    cmd_args_s* prev = args;
+    args = args->next;
+    while (args != NULL)
+    {
+        // Check if the flag is in the current node
+        if (strcmp(args->argString, flagStr) == 0)
+        {
+            // Deleting the argument node
+            prev->next = args->next;
+            BS->FreePool(args);
+            return TRUE;
+        }
+        // Advancing the list search
+        prev = args;
+        args = args->next;
+    }
+
+    return FALSE;
 }

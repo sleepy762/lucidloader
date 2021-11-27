@@ -1,16 +1,16 @@
 #include "cmds/cd.h"
 
-uint8_t CdCmd(cmd_args_s* args, char_t** currPathPtr)
+uint8_t CdCmd(cmd_args_s** args, char_t** currPathPtr)
 {
     // This command only uses the first argument
-    if (args == NULL)
+    if (*args == NULL)
     {
         return CMD_NO_DIR_SPEFICIED;
     }
 
     boolean_t isDynamicMemory = FALSE;
 
-    char_t* dirToChangeTo = MakeFullPath(args->argString, *currPathPtr, &isDynamicMemory);
+    char_t* dirToChangeTo = MakeFullPath((*args)->argString, *currPathPtr, &isDynamicMemory);
     if (dirToChangeTo == NULL)
     {
         return CMD_NO_DIR_SPEFICIED;

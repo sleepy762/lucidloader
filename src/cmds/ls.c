@@ -1,19 +1,20 @@
 #include "cmds/ls.h"
 
-uint8_t LsCmd(cmd_args_s* args, char_t** currPathPtr)
+uint8_t LsCmd(cmd_args_s** args, char_t** currPathPtr)
 {
-    if (args == NULL) // If no arguments were passed
+    if (*args == NULL) // If no arguments were passed
     {
         return ListDir(*currPathPtr);
     }
     else
     {
         // Print each directory in the arguments
-        while (args != NULL)
+        cmd_args_s* arg = *args;
+        while (arg != NULL)
         {
             boolean_t isDynamicMemory = FALSE;
 
-            char_t* dirToList = MakeFullPath(args->argString, *currPathPtr, &isDynamicMemory);
+            char_t* dirToList = MakeFullPath(arg->argString, *currPathPtr, &isDynamicMemory);
             if (dirToList != NULL)
             {
                 uint8_t normalizationResult = NormalizePath(&dirToList);
@@ -30,7 +31,7 @@ uint8_t LsCmd(cmd_args_s* args, char_t** currPathPtr)
             uint8_t res = ListDir(dirToList);
             if (res != CMD_SUCCESS)
             {
-                PrintCommandError("ls", args->argString, res);
+                PrintCommandError("ls", arg->argString, res);
             }
             else
             {
@@ -41,7 +42,7 @@ uint8_t LsCmd(cmd_args_s* args, char_t** currPathPtr)
             {
                 BS->FreePool(dirToList);
             }
-            args = args->next;
+            arg = arg->next;
         }
     }
 

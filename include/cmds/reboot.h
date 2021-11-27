@@ -7,6 +7,6 @@
 // The argument that the user must pass in order to enter firmware settings
 #define REBOOT_TO_FW ("fw")
 
-uint8_t RebootCmd(cmd_args_s* args, char_t** currPathPtr);
+uint8_t RebootCmd(cmd_args_s** args, char_t** currPathPtr);
 const char_t* RebootBrief(void);
 const char_t* RebootLong(void);
