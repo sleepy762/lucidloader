@@ -64,7 +64,7 @@ efi_system_table_t *ST = NULL;
 efi_boot_services_t *BS = NULL;
 efi_runtime_services_t *RT = NULL;
 efi_loaded_image_protocol_t *LIP = NULL;
-#if USE_UTF8
+#ifndef UEFI_NO_UTF8
 char *__argvutf8 = NULL;
 #endif
 
@@ -152,7 +152,7 @@ efi_status_t uefi_init (
     efi_status_t status;
     int argc = 0, i, ret;
     wchar_t **argv = NULL;
-#if USE_UTF8
+#ifndef UEFI_NO_UTF8
     int j;
     char *s;
 #endif
@@ -208,7 +208,7 @@ efi_status_t uefi_init (
         if(!EFI_ERROR(status) && shi) { argc = shi->Argc; argv = shi->Argv; }
     }
     /* call main */
-#if USE_UTF8
+#ifndef UEFI_NO_UTF8
     if(argc && argv) {
         ret = (argc + 1) * (sizeof(uintptr_t) + 1);
         for(i = 0; i < argc; i++)

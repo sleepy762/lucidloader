@@ -13,6 +13,7 @@ const shell_cmd_s commands[] = {
 { "cat",      CatCmd,      CatBrief,      CatLong },
 { "reboot",   RebootCmd,   RebootBrief,   RebootLong },
 { "shutdown", ShutdownCmd, ShutdownBrief, NULL },
+{ "rm",       RmCmd,       RmBrief,       RmLong },
 { "", NULL, NULL, NULL } // Has to be here in order to terminate the command counter
 };
 
