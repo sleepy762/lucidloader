@@ -20,8 +20,17 @@ uint8_t RmCmd(cmd_args_s** args, char_t** currPathPtr)
             return CMD_NO_FILE_SPECIFIED;
         }
 
-        int32_t ret = RemoveFile(filePath);
-        if (ret != 0)
+        int32_t res;
+        if (recursiveFlag)
+        {
+            res = RemoveDirRecursively(filePath);
+        }
+        else
+        {
+            res = RemoveFile(filePath);
+        }
+
+        if (res != 0)
         {
             PrintCommandError("rm", arg->argString, errno);
         }
@@ -34,6 +43,57 @@ uint8_t RmCmd(cmd_args_s** args, char_t** currPathPtr)
     }
 
     return CMD_SUCCESS;
+}
+
+uint8_t RemoveDirRecursively(char_t* mainPath)
+{
+    DIR* dir = opendir(mainPath);
+    // Allow deleting normal files with the recursive flag on
+    if (dir == NULL && errno == ENOTDIR)
+    {
+        return RemoveFile(mainPath) != 0 ? errno : 0;
+    }
+    else if (dir == NULL)
+    {
+        return errno;
+    }
+
+    struct dirent* de;
+    while ((de = readdir(dir)) != NULL)
+    {
+        if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)
+        {
+            // Skip the current and previous directory
+            continue;
+        }
+        int32_t res;
+
+        boolean_t isDynamicMemory = FALSE;
+        // Concatenate the current directory path with the name of the directory to delete
+        char_t* filePath = MakeFullPath(de->d_name, mainPath, &isDynamicMemory);
+
+        // If we find a directory, we descend into it and delete everything in it
+        if (de->d_type == DT_DIR)
+        {
+            res = RemoveDirRecursively(filePath);
+        }
+        else
+        {
+            res = RemoveFile(filePath);
+        }
+
+        if (res != 0)
+        {
+            PrintCommandError("rm", filePath, errno);
+        }
+
+        if (isDynamicMemory)
+        {
+            BS->FreePool(filePath);
+        }
+    }
+    // Remove the parent directory
+    return RemoveDir(mainPath) != 0 ? errno : 0;
 }
 
 const char_t* RmBrief(void)
