@@ -48,17 +48,16 @@ void SuccssesMenu(boot_entry_s* head)
     efi_input_key_t key;
 
     do{
-    while ((ST->ConIn->ReadKeyStroke(ST->ConIn, &key)) == EFI_NOT_READY); 
-    ST->ConOut->ClearScreen(ST->ConOut);
+        key = GetInputKey();
     }while(!((key.UnicodeChar == 'c') || (key.UnicodeChar <= i + CHAR_INT) && (key.UnicodeChar >= '1')));
     
-    if(key.UnicodeChar == 'c') StartShell();
 
     curr = GetCurrOS(key.UnicodeChar - CHAR_INT, head);
+    
 
     if(curr->type == 1) ChainloadImage(curr->mainPath);
     if(curr->type == 2) printf("not avilable at the moment\n");// will append this func soon     
-
+    if(key.UnicodeChar == 'c') StartShell();
 }
 
 void FailMenu()
