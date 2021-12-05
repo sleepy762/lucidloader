@@ -7,11 +7,19 @@ uint8_t RmCmd(cmd_args_s** args, char_t** currPathPtr)
         return CMD_NO_FILE_SPECIFIED;
     }
 
-    boolean_t recursiveFlag = FindFlagAndDelete(args, "-r");
+    boolean_t recursiveFlag = FindFlagAndDelete(args, RECURSIVE_FLAG);
 
     cmd_args_s* arg = *args;
     while (arg != NULL)
     {
+        // Refuse to remove '.' or '..' directories
+        if (strcmp(arg->argString, ".") == 0 || strcmp(arg->argString, "..") == 0)
+        {
+            PrintCommandError("rm", arg->argString, CMD_REFUSE_REMOVE);
+            arg = arg->next;
+            continue;
+        }
+
         boolean_t isDynamicMemory = FALSE;
 
         char_t* filePath = MakeFullPath(arg->argString, *currPathPtr, &isDynamicMemory);
@@ -27,7 +35,7 @@ uint8_t RmCmd(cmd_args_s** args, char_t** currPathPtr)
         }
         else
         {
-            res = RemoveFile(filePath);
+            res = remove(filePath);
         }
 
         if (res != 0)
@@ -51,14 +59,15 @@ uint8_t RemoveDirRecursively(char_t* mainPath)
     // Allow deleting normal files with the recursive flag on
     if (dir == NULL && errno == ENOTDIR)
     {
-        return RemoveFile(mainPath) != 0 ? errno : 0;
+        return (remove(mainPath) != 0) ? 1 : 0;
     }
     else if (dir == NULL)
     {
-        return errno;
+        return 1;
     }
 
     struct dirent* de;
+    // This loop looks similar to the loop in the main RmCmd function, but it's in fact different
     while ((de = readdir(dir)) != NULL)
     {
         if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)
@@ -79,7 +88,7 @@ uint8_t RemoveDirRecursively(char_t* mainPath)
         }
         else
         {
-            res = RemoveFile(filePath);
+            res = remove(filePath);
         }
 
         if (res != 0)
@@ -93,7 +102,7 @@ uint8_t RemoveDirRecursively(char_t* mainPath)
         }
     }
     // Remove the parent directory
-    return RemoveDir(mainPath) != 0 ? errno : 0;
+    return (remove(mainPath) != 0) ? 1 : 0;
 }
 
 const char_t* RmBrief(void)

@@ -161,6 +161,9 @@ const char_t* GetCommandErrorInfo(const uint8_t error)
         case CMD_SHUTDOWN_FAIL:
         return "failed to shutdown, check the log for more info.";
 
+        case CMD_REFUSE_REMOVE:
+        return "refusing to remove '.' or '..' directory.";
+
         default:
         return "unknown error.";
     }

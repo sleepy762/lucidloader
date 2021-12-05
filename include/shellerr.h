@@ -16,6 +16,7 @@
 #define CMD_QUOTATION_MARK_OPEN (46)
 #define CMD_REBOOT_FAIL (47)
 #define CMD_SHUTDOWN_FAIL (48)
+#define CMD_REFUSE_REMOVE (49)
 
 const char_t* GetCommandErrorInfo(const uint8_t error);
 void PrintCommandError(const char_t* cmd, const char_t* args, const uint8_t error);

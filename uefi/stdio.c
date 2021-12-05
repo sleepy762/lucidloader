@@ -154,8 +154,11 @@ int __remove (const char_t *__filename, int isdir)
     efi_file_info_t info;
     uintn_t fsiz = (uintn_t)sizeof(efi_file_info_t), i;
     /* little hack to support read and write mode for Delete() without create mode */
-    FILE *f = fopen(__filename, (isdir == 1 ? CL("@d") : CL("@")));
+    FILE *f = fopen(__filename, CL("@"));
+    if(errno)
+        return 1;
     if(!f || f == stdin || f == stdout || f == stderr || (__ser && f == (FILE*)__ser)) {
+        errno = EBADF;
         return 1;
     }
     for(i = 0; i < __blk_ndevs; i++)
@@ -181,6 +184,11 @@ err:    __stdio_seterrno(status);
         fclose(f);
         return -1;
     }
+    // Temporary
+    else if (status == EFI_WARN_DELETE_FAILURE) {
+        errno = EISDIR;
+        return -1;
+    }
     /* no need for fclose(f); */
     free(f);
     return 0;
@@ -203,6 +211,7 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
 #ifndef UEFI_NO_UTF8
     wchar_t wcname[BUFSIZ];
 #endif
+    errno = 0;
     if(!__filename || !*__filename || !__modes || !*__modes) {
         errno = EINVAL;
         return NULL;
@@ -268,7 +277,6 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
         errno = ENODEV;
         return NULL;
     }
-    errno = 0;
     ret = (FILE*)malloc(sizeof(FILE));
     if(!ret) return NULL;
     /* normally write means read,write,create. But for remove (internal '@' mode), we need read,write without create */
@@ -285,6 +293,7 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
 err:    __stdio_seterrno(status);
         free(ret); return NULL;
     }
+    if(__modes[0] == CL('@')) return ret;
     status = ret->GetInfo(ret, &infGuid, &fsiz, &info);
     if(EFI_ERROR(status)) goto err;
     if(__modes[1] == CL('d') && !(info.Attribute & EFI_FILE_DIRECTORY)) {
@@ -547,7 +556,7 @@ int vsnprintf(char_t *dst, size_t maxlen, const char_t *fmt, __builtin_va_list a
                     tmpstr[--i]=CL('-');
                 }
                 if(len>0 && len<23) {
-                    while(i>23-len) {
+                    while(i && i>23-len) {
                         tmpstr[--i]=pad;
                     }
                 }

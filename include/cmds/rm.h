@@ -5,9 +5,7 @@
 #include "shellutils.h"
 #include "bootutils.h"
 
-extern int __remove (const char_t *__filename, int isdir);
-#define RemoveFile(filePath) (__remove(filePath, -1))
-#define RemoveDir(dirPath) (__remove(dirPath, 1))
+#define RECURSIVE_FLAG ("-r")
 
 uint8_t RmCmd(cmd_args_s** args, char_t** currPathPtr);
 const char_t* RmBrief(void);

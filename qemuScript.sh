@@ -19,4 +19,4 @@ mcopy -i fat.img binaries/* ::/EFI/apps
 cp fat.img iso
 xorriso -as mkisofs -R -f -e fat.img -no-emul-boot -o cdimage.iso iso
 rm -rf iso
-qemu-system-x86_64 -cpu qemu64 -bios ovmf/OVMF.fd -drive file=cdimage.iso,if=ide -net none
+qemu-system-x86_64 -cpu qemu64 -bios ovmf/OVMF.fd -drive file=cdimage.iso,if=ide -net none -enable-kvm
