@@ -2,7 +2,7 @@
 #include "chainloader.h"
 
 void MainMenu();
-void SuccssesMenu(boot_entry_s* head);
+void SuccessMenu(boot_entry_s* head);
 void FailMenu();
 void Logger();
 void ResetComputer();

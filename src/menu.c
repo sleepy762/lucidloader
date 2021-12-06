@@ -6,6 +6,7 @@
 #include "logger.h"
 
 #define CHAR_INT 48 // to convert from unicode to regular numbers
+#define SHELL_CHAR 'c'
 
 /*char - char_t, int8_t
   int - int32_t
@@ -15,27 +16,27 @@
 void MainMenu()
 {
     ST->ConOut->ClearScreen(ST->ConOut);
-    boot_entry_s* headConfig = NULL;
-    //figure out what is in the config file and print it or an error    
-    headConfig = ParseConfig();
+    boot_entry_s* headConfig = ParseConfig();
      
-    if(!headConfig){
+    if(headConfig == NULL)
+    {
          FailMenu();
     }
-    else{
-        SuccssesMenu(headConfig);
+    else
+    {
+        SuccessMenu(headConfig);
     }
 
 }
 
-void SuccssesMenu(boot_entry_s* head)
+void SuccessMenu(boot_entry_s* head)
 {
     uint8_t i = 0;
     boot_entry_s* curr = head;
 
     ST->ConOut->ClearScreen(ST->ConOut);
     
-    while (curr)
+    while (curr != NULL)
     {  
         printf("%d. %s, %d , %s\n",++i, curr->name, curr->type, curr->mainPath);
         curr = curr->next;
@@ -49,15 +50,27 @@ void SuccssesMenu(boot_entry_s* head)
 
     do{
         key = GetInputKey();
-    }while(!((key.UnicodeChar == 'c') || (key.UnicodeChar <= i + CHAR_INT) && (key.UnicodeChar >= '1')));
+    }while(key.UnicodeChar != SHELL_CHAR && ((key.UnicodeChar > i + CHAR_INT) || (key.UnicodeChar < '1')));
     
 
     curr = GetCurrOS(key.UnicodeChar - CHAR_INT, head);
-    
 
-    if(curr->type == 1) ChainloadImage(curr->mainPath);
-    if(curr->type == 2) printf("not avilable at the moment\n");// will append this func soon     
-    if(key.UnicodeChar == 'c') StartShell();
+    switch(key.UnicodeChar)
+    {
+        case BT_CHAINLOAD:
+            ChainloadImage(curr->mainPath);
+            break;
+        case BT_LINUX:
+            printf("not avilable at the moment\n");// will append this func soon  
+            break;
+        case SHELL_CHAR:
+            StartShell();
+            break;    
+
+    } 
+
+          
+    
 }
 
 void FailMenu()
@@ -70,9 +83,11 @@ void FailMenu()
     
     
     ST->ConOut->ClearScreen(ST->ConOut);
-    printf("configure file is empty or incorrect!!!");
-    printf("\n\n1) open shell    (fix/change configure file)\n");
-    printf("2) logger\n3) shut down\n4) restart\n");
+    printf("configure file is empty or incorrect!!!\n\n");
+    printf("n1) open shell    (fix/change configure file)\n");
+    printf("2) logger\n");
+    printf("3) shut down\n");
+    printf("4) restart\n");
 
     
     //clear buffer and read key stroke
@@ -80,30 +95,37 @@ void FailMenu()
     efi_input_key_t key;
 
     do{
-    while ((ST->ConIn->ReadKeyStroke(ST->ConIn, &key)) == EFI_NOT_READY);     
-    }while((key.UnicodeChar - CHAR_INT >= 1) && ((key.UnicodeChar - CHAR_INT) > 4));
+        key = GetInputKey();
+    }while((key.UnicodeChar < '1') || (key.UnicodeChar > '4'));
     //check if key is valid af
     
-    if(key.UnicodeChar == '1') StartShell();
-    if(key.UnicodeChar == '2') Logger();
-    if(key.UnicodeChar == '3') ShutDown();
-    if(key.UnicodeChar == '4') ResetComputer();
+    switch(key.UnicodeChar)
+    {
+        case '1':
+            StartShell();
+            break;
+        case '2':
+            Logger();
+            break;
+        case '3':
+            ShutDown();
+            break;
+        case '4':
+            ResetComputer();
+            break;
+    }
     
 }
 
 void Logger()
 {
  //the looger will be clear for a while
-    ST->ConOut->ClearScreen(ST->ConOut);
+    uint8_t res = PrintFileContent(LOG_PATH);
+    if (res != CMD_SUCCESS)
+    {
+        printf("Failed to open log file!\n");
+    }
 
-    char_t* envPath = "\\EFI\\apps\\";
-
-    cmd_args_s catVar;
-    catVar.argString = "ezboot-log.txt";
-    catVar.next = NULL;
-
-    CatCmd(&catVar, &envPath); // using the cat cmd to open the file and print it
-   
 }
 
 void ShutDown()
@@ -117,8 +139,8 @@ void ResetComputer()
 {
     ST->ConOut->ClearScreen(ST->ConOut);
     printf("restarting...\n");
-    ST->BootServices->Stall(500000);
-    ST->RuntimeServices->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
+    BS->Stall(500000);
+    RT->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
 }
 
 /*meun 
