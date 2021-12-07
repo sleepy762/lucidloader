@@ -14,7 +14,7 @@ boot_entry_s* ParseConfig(void)
     }
 
     efi_file_info_t configInfo;
-    efi_status_t status = GetFileInfo(configFileHandle, &configInfo);
+    status = GetFileInfo(configFileHandle, &configInfo);
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to get config file info.");
