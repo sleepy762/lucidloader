@@ -42,8 +42,8 @@ void Log(LogLevel loglevel, efi_status_t status, const char_t* fmtMessage, ...)
     __builtin_va_start(args, fmtMessage);
     vfprintf(log, fmtMessage, args);
 
-    // Append a UEFI error message if the status argument is not 0
-    if (status != EFI_SUCCESS)
+    // Append a UEFI error message if the status argument is an error status
+    if (EFI_ERROR(status))
     {
         // We must turn off the sign bit in status, therefore we subtract 0x8000000000000000
         fprintf(log, " (EFI Error: %s (%ld))", EfiErrorString(status), (status - EFI_ERROR_MASK));

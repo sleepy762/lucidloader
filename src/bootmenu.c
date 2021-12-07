@@ -35,7 +35,7 @@ void SuccessMenu(boot_entry_s* head)
             curr = curr->next;
         } 
         
-        printf("\nfor shell press 'c'\n\n");
+        printf("\nPress 'c' to open the shell\n\n");
 
         //clear buffer and read key stroke
         ST->ConIn->Reset(ST->ConIn, 0);    
@@ -51,7 +51,7 @@ void SuccessMenu(boot_entry_s* head)
         {
             StartShell();
         }
-        
+
         curr = GetCurrOS(key.UnicodeChar - CHAR_INT, head);
 
         switch(curr->type)
@@ -76,11 +76,11 @@ void FailMenu(void)
     while (TRUE)
     {
         ST->ConOut->ClearScreen(ST->ConOut);
-        printf("configure file is empty or incorrect!!!\n\n");
-        printf("1) open shell    (fix/change configure file)\n");
-        printf("2) logger\n");
-        printf("3) shut down\n");
-        printf("4) restart\n");
+        printf("Configuration file is empty or incorrect!!!\n\n");
+        printf("1) Open shell    (fix/change configuration file)\n");
+        printf("2) Show log\n");
+        printf("3) Shutdown\n");
+        printf("4) Restart\n");
         
         //clear buffer and read key stroke
         ST->ConIn->Reset(ST->ConIn, 0);    
