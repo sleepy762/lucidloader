@@ -59,7 +59,7 @@ void SuccessMenu(boot_entry_s* head)
 
     curr = GetCurrOS(key.UnicodeChar - CHAR_INT, head);
 
-    switch(key.UnicodeChar)
+    switch(curr->type)
     {
         case BT_CHAINLOAD:
             ChainloadImage(curr->mainPath);
