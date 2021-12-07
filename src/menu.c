@@ -52,6 +52,10 @@ void SuccessMenu(boot_entry_s* head)
         key = GetInputKey();
     }while(key.UnicodeChar != SHELL_CHAR && ((key.UnicodeChar > i + CHAR_INT) || (key.UnicodeChar < '1')));
     
+    if(key.UnicodeChar == SHELL_CHAR)
+    {
+        StartShell();
+    }
 
     curr = GetCurrOS(key.UnicodeChar - CHAR_INT, head);
 
@@ -62,11 +66,7 @@ void SuccessMenu(boot_entry_s* head)
             break;
         case BT_LINUX:
             printf("not avilable at the moment\n");// will append this func soon  
-            break;
-        case SHELL_CHAR:
-            StartShell();
-            break;    
-
+            break; 
     } 
 
           

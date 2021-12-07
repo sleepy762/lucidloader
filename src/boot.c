@@ -8,9 +8,7 @@
 int main(int argc, char** argv)
 {
     // Global status of the bootloader
-    efi_status_t status;
     
-
     if(!InitLogger())
     {
         printf("Failed to initialize logger. Logging disabled.\n");
