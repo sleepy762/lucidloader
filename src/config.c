@@ -7,7 +7,11 @@ boot_entry_s* ParseConfig(void)
     efi_device_path_t* devPath = NULL;
     efi_file_handle_t* rootDir = NULL;
     efi_file_handle_t* configFileHandle = NULL;
-    GetFileProtocols(CFG_PATH, &devPath, &rootDir, &configFileHandle);
+    efi_status_t status = GetFileProtocols(CFG_PATH, &devPath, &rootDir, &configFileHandle);
+    if (EFI_ERROR(status))
+    {
+        return NULL;
+    }
 
     efi_file_info_t configInfo;
     efi_status_t status = GetFileInfo(configFileHandle, &configInfo);

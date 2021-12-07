@@ -18,15 +18,14 @@ void MainMenu()
     ST->ConOut->ClearScreen(ST->ConOut);
     boot_entry_s* headConfig = ParseConfig();
      
-    if(headConfig == NULL)
+    if (headConfig == NULL)
     {
-         FailMenu();
+        FailMenu();
     }
     else
     {
         SuccessMenu(headConfig);
     }
-
 }
 
 void SuccessMenu(boot_entry_s* head)
@@ -48,9 +47,11 @@ void SuccessMenu(boot_entry_s* head)
     ST->ConIn->Reset(ST->ConIn, 0);    
     efi_input_key_t key;
 
-    do{
+    do
+    {
         key = GetInputKey();
-    }while(key.UnicodeChar != SHELL_CHAR && ((key.UnicodeChar > i + CHAR_INT) || (key.UnicodeChar < '1')));
+    } while (key.UnicodeChar != SHELL_CHAR && 
+            ((key.UnicodeChar > i + CHAR_INT) || (key.UnicodeChar < '1')));
     
     if(key.UnicodeChar == SHELL_CHAR)
     {
@@ -67,10 +68,7 @@ void SuccessMenu(boot_entry_s* head)
         case BT_LINUX:
             printf("not avilable at the moment\n");// will append this func soon  
             break; 
-    } 
-
-          
-    
+    }
 }
 
 void FailMenu()
@@ -80,7 +78,6 @@ void FailMenu()
     text editor
     restart or shut down
     */
-    
     
     ST->ConOut->ClearScreen(ST->ConOut);
     printf("configure file is empty or incorrect!!!\n\n");
@@ -94,9 +91,10 @@ void FailMenu()
     ST->ConIn->Reset(ST->ConIn, 0);    
     efi_input_key_t key;
 
-    do{
+    do
+    {
         key = GetInputKey();
-    }while((key.UnicodeChar < '1') || (key.UnicodeChar > '4'));
+    } while ((key.UnicodeChar < '1') || (key.UnicodeChar > '4'));
     //check if key is valid af
     
     switch(key.UnicodeChar)
@@ -113,19 +111,21 @@ void FailMenu()
         case '4':
             ResetComputer();
             break;
+        default:
+            // nothing
+            break;
     }
     
 }
 
 void Logger()
 {
- //the looger will be clear for a while
+    //the looger will be clear for a while
     uint8_t res = PrintFileContent(LOG_PATH);
     if (res != CMD_SUCCESS)
     {
         printf("Failed to open log file!\n");
     }
-
 }
 
 void ShutDown()
