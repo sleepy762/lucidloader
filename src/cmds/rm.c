@@ -59,7 +59,7 @@ uint8_t RemoveDirRecursively(char_t* mainPath)
     // Allow deleting normal files with the recursive flag on
     if (dir == NULL && errno == ENOTDIR)
     {
-        return (remove(mainPath) != 0) ? 1 : 0;
+        return remove(mainPath);
     }
     else if (dir == NULL)
     {
@@ -102,7 +102,7 @@ uint8_t RemoveDirRecursively(char_t* mainPath)
         }
     }
     // Remove the parent directory
-    return (remove(mainPath) != 0) ? 1 : 0;
+    return remove(mainPath);
 }
 
 const char_t* RmBrief(void)
