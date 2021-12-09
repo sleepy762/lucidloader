@@ -10,7 +10,7 @@ int8_t InitLogger(void)
     if (fp != NULL)
     {
         fclose(fp);
-        ST->RuntimeServices->GetTime(&timeSinceInit, NULL);
+        RT->GetTime(&timeSinceInit, NULL);
 
         // Print the date of the log
         Log(LL_INFO, 0, "Log date: %02d/%02d/%04d %02d:%02d:%02d.", 
