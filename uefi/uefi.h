@@ -32,12 +32,14 @@
 #ifndef _UEFI_H_
 #define _UEFI_H_
 
+/*** configuration ***/
+/* #define UEFI_NO_UTF8 */                  /* use wchar_t in your application */
+#define UEFI_NO_TRACK_ALLOC           /* do not track allocated buffers' size */
+/*** configuration ends ***/
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-/* comment out this if you want to use wchar_t in your application */
-#define USE_UTF8            1
 
 /* get these from the compiler or the efi headers, only define if we have neither */
 #if !defined(_STDINT_H) && !defined(_GCC_STDINT_H) && !defined(_EFI_INCLUDE_)
@@ -82,7 +84,7 @@ typedef uint64_t efi_physical_address_t;
 typedef uint64_t efi_virtual_address_t;
 typedef void     *efi_handle_t;
 typedef void     *efi_event_t;
-#if USE_UTF8
+#ifndef UEFI_NO_UTF8
 typedef char    char_t;
 #define CL(a)   a
 extern char *__argvutf8;

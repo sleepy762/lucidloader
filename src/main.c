@@ -1,14 +1,9 @@
 #include <uefi.h>
 #include "logger.h"
-#include "chainloader.h"
-#include "config.h"
-#include "shell.h"
-#include "menu.h"
+#include "bootmenu.h"
 
 int main(int argc, char** argv)
 {
-    // Global status of the bootloader
-    
     if(!InitLogger())
     {
         printf("Failed to initialize logger. Logging disabled.\n");
@@ -17,5 +12,5 @@ int main(int argc, char** argv)
     MainMenu();
 
     // This should never be reached
-    return 0;
+    return 1;
 }

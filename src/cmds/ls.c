@@ -1,19 +1,20 @@
 #include "cmds/ls.h"
 
-uint8_t LsCmd(cmd_args_s* args, char_t** currPathPtr)
+uint8_t LsCmd(cmd_args_s** args, char_t** currPathPtr)
 {
-    if (args == NULL) // If no arguments were passed
+    if (*args == NULL) // If no arguments were passed
     {
         return ListDir(*currPathPtr);
     }
     else
     {
         // Print each directory in the arguments
-        while (args != NULL)
+        cmd_args_s* arg = *args;
+        while (arg != NULL)
         {
             boolean_t isDynamicMemory = FALSE;
 
-            char_t* dirToList = MakeFullPath(args->argString, *currPathPtr, &isDynamicMemory);
+            char_t* dirToList = MakeFullPath(arg->argString, *currPathPtr, &isDynamicMemory);
             if (dirToList != NULL)
             {
                 uint8_t normalizationResult = NormalizePath(&dirToList);
@@ -30,14 +31,18 @@ uint8_t LsCmd(cmd_args_s* args, char_t** currPathPtr)
             uint8_t res = ListDir(dirToList);
             if (res != CMD_SUCCESS)
             {
-                PrintCommandError("ls", args->argString, res);
+                PrintCommandError("ls", arg->argString, res);
+            }
+            else
+            {
+                printf("\n");
             }
 
             if (isDynamicMemory) 
             {
                 BS->FreePool(dirToList);
             }
-            args = args->next;
+            arg = arg->next;
         }
     }
 
@@ -51,7 +56,7 @@ uint8_t ListDir(char_t* path)
     {
         struct dirent* de;
 
-        printf("\nReading the directory: %s\n", path);
+        printf("Reading the directory: %s\n", path);
         while ((de = readdir(dir)) != NULL)
         {
             printf("%c %04x %s\n", de->d_type == DT_DIR ? 'd' : '.', de->d_type, de->d_name);

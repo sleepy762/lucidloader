@@ -2,12 +2,12 @@
 
 void PrintCommandError(const char_t* cmd, const char_t* args, const uint8_t error)
 {
-    printf("\n%s: ", cmd);
+    printf("%s: ", cmd);
     if (args != NULL)
     {
         printf("%s: ", args);
     }
-    printf("%s", GetCommandErrorInfo(error));
+    printf("%s\n", GetCommandErrorInfo(error));
 }
 
 const char_t* GetCommandErrorInfo(const uint8_t error)
@@ -154,6 +154,15 @@ const char_t* GetCommandErrorInfo(const uint8_t error)
 
         case CMD_QUOTATION_MARK_OPEN:
         return "no closing quotation mark found.";
+
+        case CMD_REBOOT_FAIL:
+        return "failed to reboot, check the log for more info.";
+
+        case CMD_SHUTDOWN_FAIL:
+        return "failed to shutdown, check the log for more info.";
+
+        case CMD_REFUSE_REMOVE:
+        return "refusing to remove '.' or '..' directory.";
 
         default:
         return "unknown error.";

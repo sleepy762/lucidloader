@@ -3,6 +3,7 @@
 #include "logger.h"
 #include "bootutils.h"
 #include "shellerr.h"
+#include "commanddefs.h"
 
 #define CARRIAGE_RETURN ('\r')  // The "character" when you press the enter key
 #define BACKSPACE ('\b')
@@ -24,3 +25,5 @@ boolean_t isspace(char_t c);
 char_t* TrimSpaces(char_t* str);
 void RemoveRepeatedChars(char_t* str, char_t toRemove);
 int32_t GetValueOffset(char_t* line, const char_t delimiter);
+
+boolean_t FindFlagAndDelete(cmd_args_s** argsHead, const char* flagStr);

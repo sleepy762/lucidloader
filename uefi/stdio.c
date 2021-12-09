@@ -38,7 +38,7 @@ extern time_t __mktime_efi(efi_time_t *t);
 
 void __stdio_cleanup()
 {
-#if USE_UTF8
+#ifndef UEFI_NO_UTF8
     if(__argvutf8)
         BS->FreePool(__argvutf8);
 #endif
@@ -153,7 +153,10 @@ int __remove (const char_t *__filename, int isdir)
     efi_guid_t infGuid = EFI_FILE_INFO_GUID;
     efi_file_info_t info;
     uintn_t fsiz = (uintn_t)sizeof(efi_file_info_t), i;
-    FILE *f = fopen(__filename, CL("r"));
+    /* little hack to support read and write mode for Delete() without create mode */
+    FILE *f = fopen(__filename, CL("@"));
+    if(errno)
+        return 1;
     if(!f || f == stdin || f == stdout || f == stderr || (__ser && f == (FILE*)__ser)) {
         errno = EBADF;
         return 1;
@@ -181,6 +184,11 @@ err:    __stdio_seterrno(status);
         fclose(f);
         return -1;
     }
+    // Temporary
+    else if (status == EFI_WARN_DELETE_FAILURE) {
+        errno = EISDIR;
+        return -1;
+    }
     /* no need for fclose(f); */
     free(f);
     return 0;
@@ -200,9 +208,10 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
     efi_guid_t infGuid = EFI_FILE_INFO_GUID;
     efi_file_info_t info;
     uintn_t fsiz = (uintn_t)sizeof(efi_file_info_t), par, i;
-#if USE_UTF8
+#ifndef UEFI_NO_UTF8
     wchar_t wcname[BUFSIZ];
 #endif
+    errno = 0;
     if(!__filename || !*__filename || !__modes || !*__modes) {
         errno = EINVAL;
         return NULL;
@@ -268,29 +277,30 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
         errno = ENODEV;
         return NULL;
     }
-    errno = 0;
     ret = (FILE*)malloc(sizeof(FILE));
     if(!ret) return NULL;
-#if USE_UTF8
+    /* normally write means read,write,create. But for remove (internal '@' mode), we need read,write without create */
+#ifndef UEFI_NO_UTF8
     mbstowcs((wchar_t*)&wcname, __filename, BUFSIZ - 1);
     status = __root_dir->Open(__root_dir, &ret, (wchar_t*)&wcname,
 #else
     status = __root_dir->Open(__root_dir, &ret, (wchar_t*)__filename,
 #endif
         __modes[0] == CL('w') || __modes[0] == CL('a') ? (EFI_FILE_MODE_WRITE | EFI_FILE_MODE_READ | EFI_FILE_MODE_CREATE) :
-            EFI_FILE_MODE_READ,
+            EFI_FILE_MODE_READ | (__modes[0] == CL('@') ? EFI_FILE_MODE_WRITE : 0),
         __modes[1] == CL('d') ? EFI_FILE_DIRECTORY : 0);
     if(EFI_ERROR(status)) {
 err:    __stdio_seterrno(status);
         free(ret); return NULL;
     }
+    if(__modes[0] == CL('@')) return ret;
     status = ret->GetInfo(ret, &infGuid, &fsiz, &info);
     if(EFI_ERROR(status)) goto err;
     if(__modes[1] == CL('d') && !(info.Attribute & EFI_FILE_DIRECTORY)) {
-        free(ret); errno = ENOTDIR; return NULL;
+        ret->Close(ret); free(ret); errno = ENOTDIR; return NULL;
     }
     if(__modes[1] != CL('d') && (info.Attribute & EFI_FILE_DIRECTORY)) {
-        free(ret); errno = EISDIR; return NULL;
+        ret->Close(ret); free(ret); errno = EISDIR; return NULL;
     }
     if(__modes[0] == CL('a')) fseek(ret, 0, SEEK_END);
     return ret;
@@ -497,8 +507,8 @@ int vsnprintf(char_t *dst, size_t maxlen, const char_t *fmt, __builtin_va_list a
     uint8_t *mem;
     int64_t arg;
     int len, sign, i, j;
-    char_t *p, *orig=dst, *end = dst + maxlen - 1, tmpstr[19], pad, n;
-#if !defined(USE_UTF8) || !USE_UTF8
+    char_t *p, *orig=dst, *end = dst + maxlen - 1, tmpstr[24], pad, n;
+#ifdef UEFI_NO_UTF8
     char *c;
 #endif
     if(dst==NULL || fmt==NULL)
@@ -519,7 +529,7 @@ int vsnprintf(char_t *dst, size_t maxlen, const char_t *fmt, __builtin_va_list a
             if(*fmt==CL('l')) fmt++;
             if(*fmt==CL('c')) {
                 arg = __builtin_va_arg(args, uint32_t);
-#if USE_UTF8
+#ifndef UEFI_NO_UTF8
                 if(arg<0x80) { *dst++ = arg; } else
                 if(arg<0x800) { *dst++ = ((arg>>6)&0x1F)|0xC0; *dst++ = (arg&0x3F)|0x80; } else
                 { *dst++ = ((arg>>12)&0x0F)|0xE0; *dst++ = ((arg>>6)&0x3F)|0x80; *dst++ = (arg&0x3F)|0x80; }
@@ -532,14 +542,11 @@ int vsnprintf(char_t *dst, size_t maxlen, const char_t *fmt, __builtin_va_list a
             if(*fmt==CL('d')) {
                 arg = __builtin_va_arg(args, int64_t);
                 sign=0;
-                if((int)arg<0) {
+                if(arg<0) {
                     arg*=-1;
                     sign++;
                 }
-                if(arg>99999999999999999L) {
-                    arg=99999999999999999L;
-                }
-                i=18;
+                i=23;
                 tmpstr[i]=0;
                 do {
                     tmpstr[--i]=CL('0')+(arg%10);
@@ -548,8 +555,8 @@ int vsnprintf(char_t *dst, size_t maxlen, const char_t *fmt, __builtin_va_list a
                 if(sign) {
                     tmpstr[--i]=CL('-');
                 }
-                if(len>0 && len<18) {
-                    while(i>18-len) {
+                if(len>0 && len<23) {
+                    while(i && i>23-len) {
                         tmpstr[--i]=pad;
                     }
                 }
@@ -604,7 +611,7 @@ copystring:     if(p==NULL) {
                     }
                 }
             } else
-#if !defined(USE_UTF8) || !USE_UTF8
+#ifdef UEFI_NO_UTF8
             if(*fmt==L'S' || *fmt==L'Q') {
                 c = __builtin_va_arg(args, char*);
                 if(c==NULL) goto copystring;
@@ -705,7 +712,7 @@ int vprintf(const char_t* fmt, __builtin_va_list args)
 {
     int ret;
     wchar_t dst[BUFSIZ];
-#if USE_UTF8
+#ifndef UEFI_NO_UTF8
     char_t tmp[BUFSIZ];
     ret = vsnprintf(tmp, BUFSIZ, fmt, args);
     mbstowcs(dst, tmp, BUFSIZ - 1);
@@ -728,7 +735,7 @@ int vfprintf (FILE *__stream, const char_t *__format, __builtin_va_list args)
     wchar_t dst[BUFSIZ];
     char_t tmp[BUFSIZ];
     uintn_t ret, i;
-#if USE_UTF8
+#ifndef UEFI_NO_UTF8
     ret = vsnprintf(tmp, BUFSIZ, __format, args);
     ret = mbstowcs(dst, tmp, BUFSIZ - 1);
 #else
@@ -745,12 +752,12 @@ int vfprintf (FILE *__stream, const char_t *__format, __builtin_va_list args)
     else if(__stream == stderr)
         ST->StdErr->OutputString(ST->StdErr, (wchar_t*)&dst);
     else if(__ser && __stream == (FILE*)__ser) {
-#if !defined(USE_UTF8) || !USE_UTF8
+#ifdef UEFI_NO_UTF8
         wcstombs((char*)&tmp, dst, BUFSIZ - 1);
 #endif
         __ser->Write(__ser, &ret, (void*)&tmp);
     } else
-#if USE_UTF8
+#ifndef UEFI_NO_UTF8
         __stream->Write(__stream, &ret, (void*)&tmp);
 #else
         __stream->Write(__stream, &ret, (void*)&dst);

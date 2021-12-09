@@ -1,18 +1,19 @@
 #include "cmds/touch.h"
 
-uint8_t TouchCmd(cmd_args_s* args, char_t** currPathPtr)
+uint8_t TouchCmd(cmd_args_s** args, char_t** currPathPtr)
 {
-    if (args == NULL)
+    if (*args == NULL)
     {
         return CMD_NO_FILE_SPECIFIED;
     }
 
     // Create each file in the arguments
-    while (args != NULL)
+    cmd_args_s* arg = *args;
+    while (arg != NULL)
     {
         boolean_t isDynamicMemory = FALSE;
 
-        char_t* path = MakeFullPath(args->argString, *currPathPtr, &isDynamicMemory);
+        char_t* path = MakeFullPath(arg->argString, *currPathPtr, &isDynamicMemory);
         if (path == NULL)
         {
             return CMD_NO_FILE_SPECIFIED;
@@ -21,14 +22,14 @@ uint8_t TouchCmd(cmd_args_s* args, char_t** currPathPtr)
         uint8_t res = CreateFile(path);
         if (res != CMD_SUCCESS)
         {
-            PrintCommandError("touch", args->argString, res);
+            PrintCommandError("touch", arg->argString, res);
         }
 
         if (isDynamicMemory) 
         {
             BS->FreePool(path);
         }
-        args = args->next;
+        arg = arg->next;
     }
     
     return CMD_SUCCESS;

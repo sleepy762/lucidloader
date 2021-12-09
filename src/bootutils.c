@@ -111,6 +111,7 @@ efi_status_t GetFileInfo(efi_file_handle_t* fileHandle, efi_file_info_t* fileInf
     return fileHandle->GetInfo(fileHandle, &infGuid, &size, (void*)fileInfo);
 }
 
+// A bare-bones function that reads a file's content into a buffer
 efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char_t** buffer)
 {
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, fileSize, (void**)buffer);
@@ -120,4 +121,70 @@ efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char_t** 
         return status;
     }
     return fileHandle->Read(fileHandle, &fileSize, (*buffer));
+}
+
+efi_status_t RebootDevice(boolean_t rebootToFirmware)
+{
+    efi_status_t status = 0;
+    if (rebootToFirmware)
+    {
+        uint64_t newOsIndications = EFI_OS_INDICATIONS_BOOT_TO_FW_UI;
+        efi_guid_t global = EFI_GLOBAL_VARIABLE;
+        uintn_t oiSize;
+        uint64_t* currOsIndications = NULL;
+        
+        // Get the size required to store the variable (oiSize is an output parameter)
+        RT->GetVariable(u"OsIndications", &global, NULL, &oiSize, NULL);
+
+        // Create a buffer with the appropriate size
+        status = BS->AllocatePool(LIP->ImageDataType, oiSize, (void**)&currOsIndications);
+        if (EFI_ERROR(status))
+        {
+            Log(LL_ERROR, status, "Failed to allocate memory pool for variable data.");
+        }
+
+        // Get the actual data
+        RT->GetVariable(u"OsIndications", &global, NULL, &oiSize, (void*)currOsIndications);
+        if (currOsIndications == NULL)
+        {
+            Log(LL_ERROR, 0, "Failed to get OsIndications environment variable.");
+            return EFI_OUT_OF_RESOURCES;
+        }
+
+        if (oiSize == sizeof(newOsIndications))
+        {
+            newOsIndications |= *currOsIndications;
+        }
+
+        // Setting the variable with the firmware reboot bit
+        status = RT->SetVariable(u"OsIndications", &global, 
+        (EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS), 
+        sizeof(newOsIndications), (void*)&newOsIndications);
+        if (EFI_ERROR(status))
+        {
+            Log(LL_ERROR, status, "Failed to set OsIndications environment variable.");
+        }
+
+        Log(LL_INFO, 0, "Attempting to reboot device into firmware settings...");
+        status = RT->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
+    }
+    else
+    {
+        Log(LL_INFO, 0, "Rebooting device...");
+        status = RT->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
+    }
+
+    // Will be reached only if rebooting failed
+    Log(LL_ERROR, status, "Failed to reboot!");
+    return status;
+}
+
+efi_status_t ShutdownDevice(void)
+{
+    Log(LL_INFO, 0, "Shutting down device...");
+    efi_status_t status = RT->ResetSystem(EfiResetShutdown, EFI_SUCCESS, 0, NULL);
+
+    // Will be reached only if shutting down failed
+    Log(LL_ERROR, status, "Failed to shutdown!");
+    return status;
 }
