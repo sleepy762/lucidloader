@@ -10,18 +10,6 @@
 #define CFG_ENTRY_DELIMITER ("\n\n")
 #define CFG_KEY_VALUE_DELIMITER ('=')
 
-typedef enum boot_type_t
-{
-    BT_CHAINLOAD = 1, 
-    BT_LINUX
-} boot_type_t;
-
-typedef struct linux_values_s
-{
-    char_t* initrdPath;
-    char_t* kernelArgs;
-} linux_values_s;
-
 // General struct which applies to any type of booting
 // The mainPath variable depends on the boot type -
 // When chainloading, it holds the path to the image to be chainloaded
@@ -29,9 +17,8 @@ typedef struct linux_values_s
 typedef struct boot_entry_s
 {
     char_t* name;
-    boot_type_t type;
     char_t* mainPath;
-    linux_values_s linuxValues;
+    char_t* imgArgs; // Used if the image needs args
     struct boot_entry_s* next;
 } boot_entry_s;
 
@@ -42,3 +29,4 @@ int8_t ParseLine(boot_entry_s* entry, char_t* token);
 
 boot_entry_s* InitializeEntry(void);
 void AppendEntry(boot_entry_s* head, boot_entry_s* entry);
+void FreeBootEntries(boot_entry_s* head);

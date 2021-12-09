@@ -100,11 +100,6 @@ int8_t ValidateEntry(boot_entry_s newEntry, boot_entry_s** head)
         Log(LL_WARNING, 0, "Ignoring config entry with no name.");
         return 0;
     }
-    else if (newEntry.type != BT_LINUX && newEntry.type != BT_CHAINLOAD)
-    {
-        Log(LL_WARNING, 0, "Ignoring config entry with unknown boot type. (entry name: %s)", newEntry.name);
-        return 0;
-    }
     else if (strlen(newEntry.mainPath) == 0)
     {
         Log(LL_WARNING, 0, "Ignoring entry with no main path specified. (entry name: %s)", newEntry.name);
@@ -137,28 +132,13 @@ void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry)
     {
         entry->name = value;
     }
-    else if (strcmp(key, "type") == 0)
-    {
-        if (strcmp(value, "chainload") == 0)
-        {
-            entry->type = BT_CHAINLOAD;
-        }
-        else if (strcmp(value, "linux") == 0)
-        {
-            entry->type = BT_LINUX;
-        }
-    }
     else if (strcmp(key, "path") == 0|| strcmp(key, "kernel") == 0) 
     {
         entry->mainPath = value;
     }
     else if (strcmp(key, "args") == 0)
     {
-        entry->linuxValues.kernelArgs = value;
-    }
-    else if (strcmp(key, "initrd") == 0)
-    {
-        entry->linuxValues.initrdPath = value;
+        entry->imgArgs = value;
     }
     else
     {
@@ -218,10 +198,8 @@ boot_entry_s* InitializeEntry(void)
     else
     {
         entry->name = NULL;
-        entry->type = 0;
         entry->mainPath = NULL;
-        entry->linuxValues.initrdPath = NULL;
-        entry->linuxValues.kernelArgs = NULL;
+        entry->imgArgs = NULL;
         entry->next = NULL;
     }
     return entry;
@@ -236,4 +214,23 @@ void AppendEntry(boot_entry_s* head, boot_entry_s* entry)
         copy = copy->next;
     }
     copy->next = entry;
+}
+
+// Frees the memory taken by the boot entries and the pointers the struct holds
+void FreeBootEntries(boot_entry_s* head)
+{
+    while (head != NULL)
+    {
+        boot_entry_s* next = head->next;
+
+        if (head->imgArgs) 
+        {
+            BS->FreePool(head->imgArgs);
+        }
+        BS->FreePool(head->name);
+        BS->FreePool(head->mainPath);
+        BS->FreePool(head);
+
+        head = next;
+    }
 }

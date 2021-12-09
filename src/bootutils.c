@@ -2,7 +2,9 @@
 
 wchar_t* StringToWideString(char_t* str)
 {
-    const size_t size = strlen(str);
+    // The size has to be multiplied by the size of wchar_t 
+    // because wchar_t is 2 bytes, while char_t is 1 byte
+    const size_t size = strlen(str) * sizeof(wchar_t);
     wchar_t* wpath = NULL;
     
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, size + 1, (void**)&wpath);

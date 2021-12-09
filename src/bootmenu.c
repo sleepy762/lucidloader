@@ -1,10 +1,5 @@
 #include "bootmenu.h"
 
-/*char - char_t, int8_t
-  int - int32_t
-  short - int16_t
-*/
-
 void MainMenu(void)
 {
     ST->ConOut->ClearScreen(ST->ConOut);
@@ -12,7 +7,7 @@ void MainMenu(void)
      
     if (headConfig == NULL)
     {
-        FailMenu();
+        FailMenu(BAD_CONFIGURATION_ERR_MSG);
     }
     else
     {
@@ -31,7 +26,7 @@ void SuccessMenu(boot_entry_s* head)
         
         while (curr != NULL)
         {  
-            printf("%d. %s, %d , %s\n",++i, curr->name, curr->type, curr->mainPath);
+            printf("%d. %s, %s\n", ++i, curr->name, curr->mainPath);
             curr = curr->next;
         } 
         
@@ -50,33 +45,32 @@ void SuccessMenu(boot_entry_s* head)
         if(key.UnicodeChar == SHELL_CHAR)
         {
             StartShell();
+            continue; // Return to the beginning
         }
 
         curr = GetCurrOS(key.UnicodeChar - CHAR_INT, head);
 
-        switch(curr->type)
-        {
-            case BT_CHAINLOAD:
-                ChainloadImage(curr->mainPath);
-                break;
-            case BT_LINUX:
-                printf("not avilable at the moment\n");// will append this func soon  
-                break; 
-        }
+        // Printing info before booting
+        ST->ConOut->ClearScreen(ST->ConOut);
+        printf("Booting `%s`...\n", curr->name);
+        printf("- path: `%s`\n", curr->mainPath);
+        printf("- args: `%s`\n\n", curr->imgArgs);
+
+        ChainloadImage(curr->mainPath, curr->imgArgs);
+
+        // If booting failed we break the loop in order to show the fail menu
+        break;
     }
+    FreeBootEntries(head);
+    FailMenu(FAILED_BOOT_ERR_MSG);
 }
 
-void FailMenu(void)
+void FailMenu(const char_t* errorMsg)
 {
-    // void* funcArr[3] = {RT->ResetSystem};
-    /*2 options 
-    text editor
-    restart or shut down
-    */
     while (TRUE)
     {
         ST->ConOut->ClearScreen(ST->ConOut);
-        printf("Configuration file is empty or incorrect!!!\n\n");
+        printf("%s\n\n", errorMsg);
         printf("1) Open shell    (fix/change configuration file)\n");
         printf("2) Show log\n");
         printf("3) Shutdown\n");
@@ -126,12 +120,6 @@ void ShowLogFile(void)
     printf("\nPress any key to continue...");
     GetInputKey();
 }
-
-/*meun 
-1. boot menu - shows all os/efi  and start booting proc
-2. settings 
-3. start shell
-4. reset */
 
 boot_entry_s * GetCurrOS(uint8_t numOfPartition, boot_entry_s * head)
 {

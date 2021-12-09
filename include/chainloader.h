@@ -3,4 +3,4 @@
 #include "logger.h"
 #include "bootutils.h"
 
-efi_status_t ChainloadImage(char_t* path);
+efi_status_t ChainloadImage(char_t* path, char_t* args);
