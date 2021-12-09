@@ -25,7 +25,7 @@ int8_t InitLogger(void)
 // The status parameter is optional and can be set to 0 if unneeded
 // fmtMessage should be a string literal (with optional formatting like printf)
 // the last ... are for formatting fmtMessage
-void Log(LogLevel loglevel, efi_status_t status, const char_t* fmtMessage, ...)
+void Log(log_level_t loglevel, efi_status_t status, const char_t* fmtMessage, ...)
 {
     FILE* log = fopen(LOG_PATH, "a");
     // Don't log if the logger hasn't been initialized (or file is not writable)
@@ -71,7 +71,7 @@ time_t GetSecondsSinceInit(void)
     return seconds;
 }
 
-const char_t* LogLevelString(LogLevel loglevel)
+const char_t* LogLevelString(log_level_t loglevel)
 {
     switch (loglevel)
     {
