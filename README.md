@@ -31,7 +31,7 @@ The OVMF files can be found in these paths:
 
 Running `./qemuScript.sh` will compile the sources (runs `make -j8` by default), create a FAT image and convert it into ISO, and start QEMU with the bootloader.
 
-Any files that you want to have in the FAT image should be in the `binaries` folder, and they will be stored in the path `\EFI\apps\` on the fat image.
+Any files that you want to have in the FAT image should be in the `add-to-image` directory, and they will be stored in the path `\EFI\ezboot\etc` on the fat image.
 
 
 ## Building

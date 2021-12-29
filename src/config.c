@@ -88,6 +88,10 @@ boot_entry_s* ParseConfig(void)
     ValidateEntry(entry, &head);
 
     BS->FreePool(configData);
+    if (head == NULL)
+    {
+        Log(LL_ERROR, 0, "The configuration file is empty or has incorrect entries.");
+    }
     return head;
 }
 
