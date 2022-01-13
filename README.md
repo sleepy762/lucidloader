@@ -29,9 +29,11 @@ The OVMF files can be found in these paths:
 - in Debian: `/usr/share/ovmf/OVMF.fd`
 - in Gentoo: `/usr/share/edk2-ovmf/OVMF_CODE.fd` (make sure to rename it to `OVMF.fd` in the `ovmf` directory)
 
-Running `./qemuScript.sh` will compile the sources (runs `make -j8` by default), create a FAT image and convert it into ISO, and start QEMU with the bootloader.
+Running `./launch_qemu.sh` will compile the sources (runs `make -j4` by default), create a FAT image and convert it into ISO, and start QEMU with the bootloader.
 
 Any files that you want to have in the FAT image should be in the `add-to-image` directory, and they will be stored in the path `\EFI\ezboot\etc` on the fat image.
+
+After playing around with the bootloader in QEMU, if you want to check the filesystem on the FAT image, it's possible to mount the image onto a directory using `mount_image.sh`.
 
 
 ## Building
