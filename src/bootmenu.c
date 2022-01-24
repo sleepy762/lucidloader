@@ -1,5 +1,10 @@
 #include "bootmenu.h"
 
+void PrintBootloaderVersion(void)
+{
+    printf("%s v%s\n\n", BOOTLOADER_NAME_STR, BOOTLOADER_VERSION);
+}
+
 void MainMenu(void)
 {
     ST->ConOut->ClearScreen(ST->ConOut);
@@ -27,6 +32,7 @@ void SuccessMenu(boot_entry_s* head)
 
         ST->ConOut->ClearScreen(ST->ConOut);
         
+        PrintBootloaderVersion();
         while (curr != NULL)
         {  
             printf("%d. %s, %s\n", ++i, curr->name, curr->mainPath);
@@ -73,6 +79,8 @@ void FailMenu(const char_t* errorMsg)
     while (!returnToMainMenu)
     {
         ST->ConOut->ClearScreen(ST->ConOut);
+
+        PrintBootloaderVersion();
         printf("%s\n\n", errorMsg);
         printf("1) Open shell    (fix/change configuration file)\n");
         printf("2) Show log\n");
