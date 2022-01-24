@@ -85,7 +85,7 @@ ifneq ($(USE_GCC),)
 	@rm $(TARGET).so
 endif
 
-$(TARGET).so: $(OBJS)
+$(TARGET).so: $(OBJS) $(EXTRA)
 	$(LD) $(LDFLAGS) $^ $(LIBS)
 	@rm *.lib 2>/dev/null || true
 

@@ -4,14 +4,17 @@ void MainMenu(void)
 {
     ST->ConOut->ClearScreen(ST->ConOut);
     boot_entry_s* headConfig = ParseConfig();
-     
-    if (headConfig == NULL)
+    
+    while (TRUE)
     {
-        FailMenu(BAD_CONFIGURATION_ERR_MSG);
-    }
-    else
-    {
-        SuccessMenu(headConfig);
+        if (headConfig == NULL)
+        {
+            FailMenu(BAD_CONFIGURATION_ERR_MSG);
+        }
+        else
+        {
+            SuccessMenu(headConfig);
+        }
     }
 }
 
@@ -61,13 +64,13 @@ void SuccessMenu(boot_entry_s* head)
         // If booting failed we break the loop in order to show the fail menu
         break;
     }
-    FreeBootEntries(head);
     FailMenu(FAILED_BOOT_ERR_MSG);
 }
 
 void FailMenu(const char_t* errorMsg)
 {
-    while (TRUE)
+    boolean_t returnToMainMenu = FALSE;
+    while (!returnToMainMenu)
     {
         ST->ConOut->ClearScreen(ST->ConOut);
         printf("%s\n\n", errorMsg);
@@ -75,6 +78,7 @@ void FailMenu(const char_t* errorMsg)
         printf("2) Show log\n");
         printf("3) Shutdown\n");
         printf("4) Restart\n");
+        printf("5) Return to main menu\n");
         
         //clear buffer and read key stroke
         ST->ConIn->Reset(ST->ConIn, 0);    
@@ -83,7 +87,7 @@ void FailMenu(const char_t* errorMsg)
         do
         {
             key = GetInputKey();
-        } while ((key.UnicodeChar < '1') || (key.UnicodeChar > '4'));
+        } while ((key.UnicodeChar < '1') || (key.UnicodeChar > '5'));
         //check if key is valid af
         
         switch(key.UnicodeChar)
@@ -99,6 +103,9 @@ void FailMenu(const char_t* errorMsg)
                 break;
             case '4':
                 RebootDevice(FALSE);
+                break;
+            case '5':
+                returnToMainMenu = TRUE;
                 break;
             default:
                 // nothing
