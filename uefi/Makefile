@@ -64,7 +64,7 @@ else
 ALLTARGETS = uefi/crt_$(ARCH).o uefi/libuefi.a $(OBJS) $(TARGET)
 endif
 
-all: $(ALLTARGETS) $(EXTRA)
+all: $(ALLTARGETS) $(EXTRA) $(ALSO)
 
 uefi/libuefi.a:
 	@+make --no-print-directory -C uefi libuefi.a USE_GCC=$(USE_GCC) ARCH=$(ARCH)
