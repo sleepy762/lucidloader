@@ -7,18 +7,20 @@ This bootloader is being developed using the [POSIX-UEFI](https://gitlab.com/bzt
 
 ## Dependencies
 
-Arch GNU/Linux (pacman): `make` (part of `base-devel`), `clang`\*\*, `lld`\*\*, `efibootmgr`, `mtools`\*, `qemu`\*, `ovmf`\*, `xorriso`\*
+Arch GNU/Linux (pacman): `make`, `clang`\*\*, `lld`\*\*, `efibootmgr`, `mtools`\*, `qemu`\*, `ovmf`\*, `xorriso`\*
 
-Debian GNU/Linux (apt): `make` (part of `build-essential`), `clang`\*\*, `lld`\*\*, `efibootmgr`, `mtools`\*, `qemu-system-x86`\*, `ovmf`\*, `xorriso`\*
+Debian GNU/Linux (apt): `make`, `clang`\*\*, `lld`\*\*, `efibootmgr`, `mtools`\*, `qemu-system-x86`\*, `ovmf`\*, `xorriso`\*
 
 Gentoo GNU/Linux (emerge): `sys-devel/make`, `sys-devel/clang`\*\*, `sys-devel/lld`\*\*, `sys-boot/efibootmgr`, `sys-fs/mtools`\*, `app-emulation/qemu`\*, `sys-firmware/edk2-ovmf`\*, `dev-libs/libisoburn`\*
 
 \* - Optional (used for emulation in QEMU), not required for building and installing.
 
-\*\* - The Makefile will prefer clang over gcc, but if clang isn't installed then gcc will be used.
+\*\* - The Makefile will prefer clang+lld over gcc+ld, but if clang isn't installed then gcc will be used.
 
 
 ## Emulating
+
+Emulation is used to quickly test code changes.
 
 Installing your distro's OVMF package and QEMU is required for this part.
 
@@ -31,7 +33,7 @@ The OVMF files can be found in these paths:
 
 Running `./launch_qemu.sh` will compile the sources, create a FAT image and convert it into ISO, and start QEMU with the bootloader.
 
-Any files that you want to have in the FAT image should be in the `add-to-image` directory, and they will be stored in the path `\EFI\ezboot\etc` on the fat image.
+Any files that you want to have in the FAT image should be in the `add-to-image` directory, and they will be stored in the path `\EFI\ezboot` on the fat image.
 
 After playing around with the bootloader in QEMU, if you want to check the filesystem on the FAT image, it's possible to mount the image onto a directory using `mount_image.sh`.
 
