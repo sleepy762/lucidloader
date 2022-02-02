@@ -153,8 +153,8 @@ int __remove (const char_t *__filename, int isdir)
     efi_guid_t infGuid = EFI_FILE_INFO_GUID;
     efi_file_info_t info;
     uintn_t fsiz = (uintn_t)sizeof(efi_file_info_t), i;
-    /* little hack to support read and write mode for Delete() without create mode */
-    FILE *f = fopen(__filename, CL("@"));
+    /* little hack to support read and write mode for Delete() and stat() without create mode or checks */
+    FILE *f = fopen(__filename, CL("*"));
     if(errno)
         return 1;
     if(!f || f == stdin || f == stdout || f == stderr || (__ser && f == (FILE*)__ser)) {
@@ -212,7 +212,8 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
     wchar_t wcname[BUFSIZ];
 #endif
     errno = 0;
-    if(!__filename || !*__filename || !__modes || !*__modes) {
+    if(!__filename || !*__filename || !__modes || (__modes[0] != CL('r') && __modes[0] != CL('w') && __modes[0] != CL('a') &&
+      __modes[0] != CL('*')) || (__modes[1] != 0 && __modes[1] != CL('d') && __modes[1] != CL('+'))) {
         errno = EINVAL;
         return NULL;
     }
@@ -279,7 +280,9 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
     }
     ret = (FILE*)malloc(sizeof(FILE));
     if(!ret) return NULL;
-    /* normally write means read,write,create. But for remove (internal '@' mode), we need read,write without create */
+    /* normally write means read,write,create. But for remove (internal '*' mode), we need read,write without create
+     * also mode 'w' in POSIX means write-only (without read), but that's not working on certain firmware, we must
+     * pass read too. This poses a problem of truncating a write-only file, see issue #26, we have to do that manually */
 #ifndef UEFI_NO_UTF8
     mbstowcs((wchar_t*)&wcname, __filename, BUFSIZ - 1);
     status = __root_dir->Open(__root_dir, &ret, (wchar_t*)&wcname,
@@ -287,13 +290,13 @@ FILE *fopen (const char_t *__filename, const char_t *__modes)
     status = __root_dir->Open(__root_dir, &ret, (wchar_t*)__filename,
 #endif
         __modes[0] == CL('w') || __modes[0] == CL('a') ? (EFI_FILE_MODE_WRITE | EFI_FILE_MODE_READ | EFI_FILE_MODE_CREATE) :
-            EFI_FILE_MODE_READ | (__modes[0] == CL('@') ? EFI_FILE_MODE_WRITE : 0),
+            EFI_FILE_MODE_READ | (__modes[0] == CL('*') || __modes[1] == CL('+') ? EFI_FILE_MODE_WRITE : 0),
         __modes[1] == CL('d') ? EFI_FILE_DIRECTORY : 0);
     if(EFI_ERROR(status)) {
 err:    __stdio_seterrno(status);
         free(ret); return NULL;
     }
-    if(__modes[0] == CL('@')) return ret;
+    if(__modes[0] == CL('*')) return ret;
     status = ret->GetInfo(ret, &infGuid, &fsiz, &info);
     if(EFI_ERROR(status)) goto err;
     if(__modes[1] == CL('d') && !(info.Attribute & EFI_FILE_DIRECTORY)) {
@@ -303,6 +306,13 @@ err:    __stdio_seterrno(status);
         ret->Close(ret); free(ret); errno = EISDIR; return NULL;
     }
     if(__modes[0] == CL('a')) fseek(ret, 0, SEEK_END);
+    if(__modes[0] == CL('w')) {
+        /* manually truncate file size
+         * See https://github.com/tianocore/edk2/blob/master/MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.c
+         * function FileHandleSetSize */
+        info.FileSize = 0;
+        ret->SetInfo(ret, &infGuid, fsiz, &info);
+    }
     return ret;
 }
 

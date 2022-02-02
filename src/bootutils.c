@@ -190,3 +190,21 @@ efi_status_t ShutdownDevice(void)
     Log(LL_ERROR, status, "Failed to shutdown!");
     return status;
 }
+
+void DisableWatchdogTimer(void)
+{
+    efi_status_t status = BS->SetWatchdogTimer(0, 0, 0, NULL);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_WARNING, status, "Failed to disable watchdog.");
+    }
+}
+
+void EnableWatchdogTimer(uintn_t seconds)
+{
+    efi_status_t status = BS->SetWatchdogTimer(seconds, 0, 0, NULL);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_WARNING, status, "Failed to set watchdog timeout to %d seconds.", seconds);
+    }
+}

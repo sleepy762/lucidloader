@@ -3,7 +3,7 @@
 
 # Make sure we are running with root access (in order for the mounting to succeed)
 if [ "$EUID" -ne 0 ]; then
-    echo "Root privilege required."
+    echo "This script must be run as root."
     exit 1
 fi
 

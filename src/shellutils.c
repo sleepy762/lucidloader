@@ -211,6 +211,8 @@ void RemoveRepeatedChars(char_t* str, char_t toRemove)
 efi_input_key_t GetInputKey(void)
 {
     uintn_t idx;
+
+    DisableWatchdogTimer();
     BS->WaitForEvent(1, &ST->ConIn->WaitForKey, &idx);
 
     efi_input_key_t key = { 0 };
@@ -220,6 +222,7 @@ efi_input_key_t GetInputKey(void)
         Log(LL_ERROR, status, "Failed to read keystroke.");
     }
 
+    EnableWatchdogTimer(DEFAULT_WATCHDOG_TIMEOUT);
     return key;
 }
 

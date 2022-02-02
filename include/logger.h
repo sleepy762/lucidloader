@@ -1,7 +1,7 @@
 #pragma once
 #include <uefi.h>
 
-#define LOG_PATH ("\\EFI\\apps\\ezboot-log.txt")
+#define LOG_PATH ("\\EFI\\ezboot\\ezboot-log.txt")
 
 #define SECONDS_IN_DAY (86400)
 #define SECONDS_IN_HOUR (3600)
