@@ -50,7 +50,7 @@ void SuccessMenu(boot_entry_s* head)
             key = GetInputKey();
         } while (key.UnicodeChar != SHELL_CHAR && 
                 ((key.UnicodeChar > i + CHAR_INT) || (key.UnicodeChar < '1')));
-        
+
         if(key.UnicodeChar == SHELL_CHAR)
         {
             StartShell();
@@ -92,12 +92,12 @@ void FailMenu(const char_t* errorMsg)
         ST->ConIn->Reset(ST->ConIn, 0);    
         efi_input_key_t key;
 
+        // check if key is valid
         do
         {
             key = GetInputKey();
         } while ((key.UnicodeChar < '1') || (key.UnicodeChar > '5'));
-        //check if key is valid af
-        
+
         switch(key.UnicodeChar)
         {
             case '1':
