@@ -1,7 +1,7 @@
 #!/bin/bash
 # This script is used for quick testing
 
-make -j4
+make
 
 [ -d add-to-image ] || mkdir add-to-image
 [ -d iso ] || mkdir iso
