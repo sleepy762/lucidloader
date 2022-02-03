@@ -7,15 +7,15 @@ This bootloader is being developed using the [POSIX-UEFI](https://gitlab.com/bzt
 
 ## Dependencies
 
-Arch GNU/Linux (pacman): `make`, `clang`\*\*, `lld`\*\*, `efibootmgr`, `mtools`\*, `qemu`\*, `ovmf`\*, `xorriso`\*
+Arch GNU/Linux (pacman): **`make`** ***`clang`*** ***`lld`*** **`efibootmgr`** `mtools` `qemu` `ovmf` `xorriso`
 
-Debian GNU/Linux (apt): `make`, `clang`\*\*, `lld`\*\*, `efibootmgr`, `mtools`\*, `qemu-system-x86`\*, `ovmf`\*, `xorriso`\*
+Debian GNU/Linux (apt): **`make`** ***`clang`*** ***`lld`*** **`efibootmgr`** `mtools` `qemu-system-x86` `ovmf` `xorriso`
 
-Gentoo GNU/Linux (emerge): `sys-devel/make`, `sys-devel/clang`\*\*, `sys-devel/lld`\*\*, `sys-boot/efibootmgr`, `sys-fs/mtools`\*, `app-emulation/qemu`\*, `sys-firmware/edk2-ovmf`\*, `dev-libs/libisoburn`\*
+Gentoo GNU/Linux (emerge): **`sys-devel/make`** ***`sys-devel/clang`*** ***`sys-devel/lld`*** **`sys-boot/efibootmgr`** `sys-fs/mtools` `app-emulation/qemu` `sys-firmware/edk2-ovmf` `dev-libs/libisoburn`
 
-\* - Optional (used for emulation in QEMU), not required for building and installing.
+The non-bold dependencies are optional (used for emulation in QEMU) and they are not required for building and installing.
 
-\*\* - The Makefile will prefer clang+lld over gcc+ld, but if clang isn't installed then gcc will be used.
+***Bold Italicized*** - The Makefile will prefer clang+lld over gcc+ld, but if clang isn't installed then gcc will be used.
 
 
 ## Emulating
