@@ -1,4 +1,5 @@
 #pragma once
+#include <uefi.h>
 /*---------------------defines-----------------------*/
 #define ROUNDS 10 //key rounds 
 #define ROW 4
