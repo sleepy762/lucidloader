@@ -356,7 +356,7 @@ void InvertSubBytes(uint8_t s[][ROW])
 
 void Enc(uint8_t key[], uint8_t text[])
 {
-    //one odd round so we do it sepratliy
+    //one odd round so we do it separately
     uint8_t i = 0;
     
     uint8_t tmpKeys[ROW *(ROUNDS + 1)][ROW];
