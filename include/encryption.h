@@ -53,31 +53,31 @@ const uint8_t round_consts[] = {0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
 
 //helpers
 void MatrixToArr(uint8_t matrix[ROW][ROW], uint8_t arr[]);
-void arrToMatrix(uint8_t arr[], uint8_t matrix[ROW][ROW]);
-void groupKeys(uint8_t matrix[][ROW], uint8_t keys[ROUNDS+1][ROW][ROW]);
+void ArrToMatrix(uint8_t arr[], uint8_t matrix[ROW][ROW]);
+void GroupKeys(uint8_t matrix[][ROW], uint8_t keys[ROUNDS+1][ROW][ROW]);
 
-uint8_t xor_time(uint8_t a);
-void xor_arr(uint8_t a[], uint8_t b[], uint8_t ans[]);
+uint8_t XorTime(uint8_t a);
+void XorArr(uint8_t a[], uint8_t b[], uint8_t ans[]);
 
-void rot(uint8_t s[], uint8_t k);
-void rev(uint8_t s[], uint8_t h, uint8_t l);
-void deep_cop(uint8_t* a, uint8_t b[]);
-void matrix_cop(uint8_t a[][ROW], uint8_t b[][ROW]);
+void Rot(uint8_t s[], uint8_t k);
+void Rev(uint8_t s[], uint8_t h, uint8_t l);
+void DeepCop(uint8_t* a, uint8_t b[]);
+void MatrixCop(uint8_t a[][ROW], uint8_t b[][ROW]);
 
 //enc dec func
-void expandKey(uint8_t key[], uint8_t word[ROW *(ROUNDS + 1)][ROW]);
-void add_round_key(uint8_t state[][ROW], uint8_t key[][ROW]);
+void ExpandKey(uint8_t key[], uint8_t word[ROW *(ROUNDS + 1)][ROW]);
+void AddRoundKey(uint8_t state[][ROW], uint8_t key[][ROW]);
 
-void shift_rows(uint8_t state[][ROW]);
-void inv_shift_rows(uint8_t state[][ROW]);
+void ShiftRows(uint8_t state[][ROW]);
+void InvShiftRows(uint8_t state[][ROW]);
 
-void mix_col(uint8_t matrix[][ROW]);
-void inv_mix_col(uint8_t s[][ROW]);
+void MixCol(uint8_t matrix[][ROW]);
+void InvMixCol(uint8_t s[][ROW]);
 
-void mix_single_col(uint8_t col[]);
+void MixSingleCol(uint8_t col[]);
 
-void sub_bytes(uint8_t s[][ROW]);
-void invert_sub_bytes(uint8_t s[][ROW]);
+void SubBytes(uint8_t s[][ROW]);
+void InvertSubBytes(uint8_t s[][ROW]);
 
 
-void enc(uint8_t key[], uint8_t text[]);
+void Enc(uint8_t key[], uint8_t text[]);
