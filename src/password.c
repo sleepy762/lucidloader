@@ -14,3 +14,9 @@ boolean_t CheckPassword(char_t password[])
 
     return FALSE;
 }
+
+boolean_t EnterPassword()
+{
+    //need to do 
+    return 0;
+}

@@ -2,20 +2,34 @@
 
 uint8_t PasswdCmd(cmd_args_s** args, char_t** currPathPtr)
 {
+
+    boolean_t ans;
+    cmd_args_s* arg = *args;
+
     FILE* passFile = fopen(PASS_FILE_PATH, "w");
     if (passFile == NULL)
     {
         PrintCommandError("passwd", NULL, CMD_GENERAL_FILE_OPENING_ERROR);
         return CMD_SUCCESS;
     }
+    
+    uint64_t fileSize;
+    fseek(passFile, 0, SEEK_END);
+    fileSize = ftell(passFile);
 
+    if(fileSize == 0)
+    {
+        return EnterPassword();
+    }
+
+
+    ans = CheckPassword(arg->argString);
+    
     //char_t* buffer[] = {0};
     //GetInputString(buffer, MAX_PASS_LEN, TRUE);
 
-    //Enc((uint8_t*)buffer, (uint8_t*)buffer);
-
     fclose(passFile);
-    return CMD_SUCCESS;
+    return ans;
 }
 
 const char_t* PasswdBrief(void)
