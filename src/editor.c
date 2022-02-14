@@ -1,6 +1,13 @@
 #include "editor.h"
 
+/* Static declarations */
 static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx);
+static void EditorDrawRows(buffer_t* buf);
+static void EditorMoveCursor(uint16_t scancode);
+static void EditorRefreshScreen(void);
+static void InitEditorConfig(void);
+static int8_t EditorOpen(char_t* filename);
+
 static editor_config_t cfg;
 
 /* Renderers */
@@ -9,26 +16,38 @@ static void EditorDrawRows(buffer_t* buf)
     for (uint16_t y = 0; y < cfg.screenRows; y++)
     {
         // Temporary welcome message
-        if (y == cfg.screenRows / 3)
+        if (y >= cfg.numRows)
         {
-            char welcome[80];
-            uintn_t welcomelen = snprintf(welcome, sizeof(welcome), "EZBoot Editor");
-            if (welcomelen > cfg.screenCols)
+            if (y == cfg.screenRows / 3)
             {
-                welcomelen = cfg.screenCols;
+                char welcome[80];
+                uintn_t welcomelen = snprintf(welcome, sizeof(welcome), "EZBoot Editor");
+                if (welcomelen > cfg.screenCols)
+                {
+                    welcomelen = cfg.screenCols;
+                }
+                uintn_t padding = (cfg.screenCols - welcomelen) / 2;
+                if (padding)
+                {
+                    AppendToBuffer(buf, "~", 1);
+                    padding--;
+                }
+                while (padding--) AppendToBuffer(buf, " ", 1);
+                AppendToBuffer(buf, welcome, welcomelen);
             }
-            uintn_t padding = (cfg.screenCols - welcomelen) / 2;
-            if (padding)
+            else
             {
                 AppendToBuffer(buf, "~", 1);
-                padding--;
             }
-            while (padding--) AppendToBuffer(buf, " ", 1);
-            AppendToBuffer(buf, welcome, welcomelen);
         }
         else
         {
-            AppendToBuffer(buf, "~", 1);
+            uint32_t len = cfg.row.size;
+            if (len > cfg.screenCols)
+            {
+                len = cfg.screenCols;
+            }
+            AppendToBuffer(buf, cfg.row.chars, len);
         }
 
         if (y < cfg.screenRows - 1)
@@ -100,9 +119,10 @@ static void InitEditorConfig(void)
     }
     cfg.cx = 0;
     cfg.cy = 0;
+    cfg.numRows = 0;
 }
 
-int8_t StartEditor(void)
+int8_t StartEditor(char_t* filename)
 {
     // We need to get the extended text input protocol in order to get more data about key presses
     // for example, to tell if the left control key was pressed with another key 
@@ -116,6 +136,7 @@ int8_t StartEditor(void)
     }
 
     InitEditorConfig();
+    EditorOpen(filename);
 
     // Keep reading and processing input until the editor is closed
     while (ProcessEditorInput(ConInEx));
@@ -174,6 +195,18 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
     return TRUE;
 }
 
+static int8_t EditorOpen(char_t* filename)
+{
+    FILE* fp = fopen(filename, "r");
+    if (fp == NULL)
+    {
+        return errno;
+    }
+
+    fclose(fp);
+    return 0;
+}
+
 // This function is pretty much the same as GetInputKey but using the extended input protocol
 efi_key_data_t GetInputKeyData(efi_simple_text_input_ex_protocol_t* ConInEx)
 {
@@ -222,5 +255,10 @@ void FreeBuffer(buffer_t* buf)
 
 void PrintBuffer(buffer_t* buf)
 {
-    printf("%s", buf->b);
+    // This is a worse alternative to using write() which unfortunately doesn't exist here
+    char_t* b = buf->b;
+    for (uint32_t i = 0; i < buf->len; i++)
+    {
+        putchar(b[i]);
+    }
 }

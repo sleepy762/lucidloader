@@ -20,6 +20,12 @@
 
 #define DELETE_KEY_SCANCODE     (0x08)
 
+typedef struct text_row_t
+{
+    uint32_t size;
+    char_t* chars;
+} text_row_t;
+
 typedef struct editor_config_t
 {
     // Size of the screen in rows and columns
@@ -29,6 +35,9 @@ typedef struct editor_config_t
     // The current cursor location
     uintn_t cx;
     uintn_t cy;
+
+    uint32_t numRows;
+    text_row_t row;
 } editor_config_t;
 
 typedef struct buffer_t
@@ -40,7 +49,7 @@ typedef struct buffer_t
 
 boolean_t IsKeyPressedWithLCtrl(efi_key_data_t keyData, char_t key);
 
-int8_t StartEditor(void);
+int8_t StartEditor(char_t* filename);
 efi_key_data_t GetInputKeyData(efi_simple_text_input_ex_protocol_t* ConInEx);
 
 void AppendToBuffer(buffer_t* buf, const char_t* str, uint32_t len);
