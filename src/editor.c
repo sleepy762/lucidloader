@@ -8,6 +8,7 @@ static void EditorRefreshScreen(void);
 static void InitEditorConfig(void);
 static int8_t EditorOpen(char_t* filename);
 static void AppendEditorWelcomeMessage(buffer_t* buf);
+static void EditorAppendRow(char_t* str, size_t len);
 
 static editor_config_t cfg;
 
@@ -30,12 +31,12 @@ static void EditorDrawRows(buffer_t* buf)
         }
         else // Append the data of the file lines
         {
-            uint32_t len = cfg.row.size;
+            uint32_t len = cfg.row[y].size;
             if (len > cfg.screenCols)
             {
-                len = cfg.screenCols;
+                len = cfg.screenCols - 1;
             }
-            AppendToBuffer(buf, cfg.row.chars, len);
+            AppendToBuffer(buf, cfg.row[y].chars, len);
         }
 
         if (y < cfg.screenRows - 1)
@@ -108,6 +109,7 @@ static void InitEditorConfig(void)
     cfg.cx = 0;
     cfg.cy = 0;
     cfg.numRows = 0;
+    cfg.row = NULL;
 }
 
 int8_t StartEditor(char_t* filename)
@@ -196,36 +198,35 @@ static int8_t EditorOpen(char_t* filename)
         return errno;
     }
 
-    char_t* fileData = GetFileContent(filename);
-    char_t* fileDataCopy = fileData;
+    char_t* origDataPtr = GetFileContent(filename);
+    char_t* fileData = origDataPtr;
+    char_t* token;
 
-    size_t linelen = 0;
-    char_t* delimPtr = strchr(fileDataCopy, '\n');
-    
-    // If a newline character wasn't found then the line length is the file size
-    if (delimPtr == NULL)
+    while ((token = strtok_r(fileData, "\n", &fileData)) != NULL)
     {
-        linelen = GetFileSize(fp);
-    }
-    else
-    {
-        linelen = delimPtr - fileDataCopy;
+        size_t linelen = strlen(token);
+        while (linelen > 0 && (token[linelen - 1] == '\n' || token[linelen - 1] == '\r'))
+        {
+            linelen--;
+        }
+        EditorAppendRow(token, linelen);
     }
 
-    while (linelen > 0 && (fileDataCopy[linelen - 1] == '\n' || fileDataCopy[linelen - 1] == '\r'))
-    {
-        linelen--;
-    }
-
-    cfg.row.size = linelen;
-    cfg.row.chars = malloc(linelen + 1);
-    memcpy(cfg.row.chars, fileDataCopy, linelen);
-    cfg.row.chars[linelen] = CHAR_NULL;
-    cfg.numRows = 1;
-
-    BS->FreePool(fileData);
+    BS->FreePool(origDataPtr);
     fclose(fp);
     return 0;
+}
+
+static void EditorAppendRow(char_t* str, size_t len)
+{
+    cfg.row = realloc(cfg.row, sizeof(text_row_t) * (cfg.numRows + 1));
+
+    uint32_t at = cfg.numRows;
+    cfg.row[at].size = len;
+    cfg.row[at].chars = malloc(len + 1);
+    memcpy(cfg.row[at].chars, str, len);
+    cfg.row[at].chars[len] = CHAR_NULL;
+    cfg.numRows++;
 }
 
 static void AppendEditorWelcomeMessage(buffer_t* buf)

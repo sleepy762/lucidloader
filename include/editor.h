@@ -35,9 +35,10 @@ typedef struct editor_config_t
     // The current cursor location
     uintn_t cx;
     uintn_t cy;
-
+    
+    // Stores the text of the opened file
     uint32_t numRows;
-    text_row_t row;
+    text_row_t* row;
 } editor_config_t;
 
 typedef struct buffer_t

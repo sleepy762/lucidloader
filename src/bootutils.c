@@ -156,21 +156,13 @@ char_t* GetFileContent(char_t* path)
         // Get file size
         uint64_t fileSize = GetFileSize(file);
 
-        // Prevent a bug that happens when filesize is 0
-        if (fileSize == 0)
-        {
-            return "";
-        }
-
-        // Read the file data into a buffer
-        efi_status_t status = BS->AllocatePool(LIP->ImageDataType, fileSize + 1, (void**)&buffer);
+        efi_status_t status = ReadFile(file, fileSize, &buffer);
         if (EFI_ERROR(status))
         {
-            Log(LL_ERROR, status, "Failed to allocate buffer when reading file %s.", path);
+            Log(LL_ERROR, status, "Failed to read file %s.", path);
             return NULL;
         }
 
-        fread(buffer, fileSize, 1, file);
         buffer[fileSize] = CHAR_NULL;
         fclose(file);
     }
