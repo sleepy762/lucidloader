@@ -306,6 +306,7 @@ static void EditorMoveCursor(uint16_t scancode)
 
 static void EditorScroll(void)
 {
+    cfg.rx = 0;
     if (cfg.cy < cfg.numRows)
     {
         cfg.rx = EditorRowCxToRx(&cfg.row[cfg.cy], cfg.cx);

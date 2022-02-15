@@ -5,6 +5,7 @@
 #include "logger.h"
 #include "efiextendedinput.h"
 
+// Some editor configuration macros
 #define EDITOR_EXIT_KEY ('q')
 
 #define EDITOR_STATUS_MSG_ARR_SIZE (80)
@@ -16,6 +17,7 @@
 // How many spaces to replace TABs with
 #define EDITOR_TAB_SIZE (4)
 
+// Used in the input processing function
 #define UP_ARROW_SCANCODE       (0x01)
 #define DOWN_ARROW_SCANCODE     (0x02)
 #define RIGHT_ARROW_SCANCODE    (0x03)
