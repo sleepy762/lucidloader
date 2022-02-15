@@ -2,7 +2,26 @@
 
 uint8_t EditCmd(cmd_args_s** args, char_t** currPathPtr)
 {
-    return StartEditor((*args)->argString);
+    boolean_t isDynamicMemory = FALSE;
+
+    char_t* filePath = NULL;
+    if (*args != NULL)
+    {
+        filePath = MakeFullPath((*args)->argString, *currPathPtr, &isDynamicMemory);
+        if (filePath == NULL)
+        {
+            return CMD_NO_FILE_SPECIFIED;
+        }
+    }
+
+    int8_t res = StartEditor(filePath);
+
+    if (isDynamicMemory)
+    {
+        BS->FreePool(filePath);
+    }
+
+    return res;
 }
 
 const char_t* EditBrief(void)

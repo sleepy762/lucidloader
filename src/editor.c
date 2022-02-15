@@ -7,6 +7,7 @@ static void EditorMoveCursor(uint16_t scancode);
 static void EditorRefreshScreen(void);
 static void InitEditorConfig(void);
 static int8_t EditorOpen(char_t* filename);
+static void AppendEditorWelcomeMessage(buffer_t* buf);
 
 static editor_config_t cfg;
 
@@ -15,32 +16,19 @@ static void EditorDrawRows(buffer_t* buf)
 {
     for (uint16_t y = 0; y < cfg.screenRows; y++)
     {
-        // Temporary welcome message
         if (y >= cfg.numRows)
         {
-            if (y == cfg.screenRows / 3)
+            // Write a welcome message if no file was loaded
+            if (cfg.numRows == 0 && y == cfg.screenRows / 3)
             {
-                char welcome[80];
-                uintn_t welcomelen = snprintf(welcome, sizeof(welcome), "EZBoot Editor");
-                if (welcomelen > cfg.screenCols)
-                {
-                    welcomelen = cfg.screenCols;
-                }
-                uintn_t padding = (cfg.screenCols - welcomelen) / 2;
-                if (padding)
-                {
-                    AppendToBuffer(buf, "~", 1);
-                    padding--;
-                }
-                while (padding--) AppendToBuffer(buf, " ", 1);
-                AppendToBuffer(buf, welcome, welcomelen);
+                AppendEditorWelcomeMessage(buf);
             }
-            else
+            else // This character is used to show a line after EOF
             {
                 AppendToBuffer(buf, "~", 1);
             }
         }
-        else
+        else // Append the data of the file lines
         {
             uint32_t len = cfg.row.size;
             if (len > cfg.screenCols)
@@ -132,11 +120,19 @@ int8_t StartEditor(char_t* filename)
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to get extended input protocol.");
-        return 1;
+        return -1;
     }
 
     InitEditorConfig();
-    EditorOpen(filename);
+    
+    if (filename != NULL)
+    {
+        int8_t res = EditorOpen(filename);
+        if (res != 0)
+        {
+            return res;
+        }
+    }
 
     // Keep reading and processing input until the editor is closed
     while (ProcessEditorInput(ConInEx));
@@ -151,9 +147,6 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
     EditorRefreshScreen();
 
     efi_key_data_t keyData = GetInputKeyData(ConInEx);
-    printf("scancode:%d char:%c", keyData.Key.ScanCode, keyData.Key.UnicodeChar);
-    printf("\n");
-    printf("shift:%d toggle:%d\n\n", keyData.KeyState.KeyShiftState - EFI_SHIFT_STATE_VALID, keyData.KeyState.KeyToggleState - EFI_TOGGLE_STATE_VALID);
 
     // Close the editor
     if (IsKeyPressedWithLCtrl(keyData, EDITOR_EXIT_KEY)) return FALSE;
@@ -203,8 +196,62 @@ static int8_t EditorOpen(char_t* filename)
         return errno;
     }
 
+    char_t* fileData = GetFileContent(filename);
+    char_t* fileDataCopy = fileData;
+
+    size_t linelen = 0;
+    char_t* delimPtr = strchr(fileDataCopy, '\n');
+    
+    // If a newline character wasn't found then the line length is the file size
+    if (delimPtr == NULL)
+    {
+        linelen = GetFileSize(fp);
+    }
+    else
+    {
+        linelen = delimPtr - fileDataCopy;
+    }
+
+    while (linelen > 0 && (fileDataCopy[linelen - 1] == '\n' || fileDataCopy[linelen - 1] == '\r'))
+    {
+        linelen--;
+    }
+
+    cfg.row.size = linelen;
+    cfg.row.chars = malloc(linelen + 1);
+    memcpy(cfg.row.chars, fileDataCopy, linelen);
+    cfg.row.chars[linelen] = CHAR_NULL;
+    cfg.numRows = 1;
+
+    BS->FreePool(fileData);
     fclose(fp);
     return 0;
+}
+
+static void AppendEditorWelcomeMessage(buffer_t* buf)
+{
+    // Add our welcome message into a buffer
+    char welcome[80];
+    uintn_t welcomelen = snprintf(welcome, sizeof(welcome), "EZBoot Editor");
+    if (welcomelen > cfg.screenCols)
+    {
+        welcomelen = cfg.screenCols;
+    }
+
+    // Add padding to center the welcome message
+    uintn_t padding = (cfg.screenCols - welcomelen) / 2;
+    if (padding)
+    {
+        AppendToBuffer(buf, "~", 1);
+        padding--;
+    }
+    while (padding--)
+    {
+        AppendToBuffer(buf, " ", 1);
+    }
+
+    // Append the entire message to the buffer
+    AppendToBuffer(buf, welcome, welcomelen);
 }
 
 // This function is pretty much the same as GetInputKey but using the extended input protocol

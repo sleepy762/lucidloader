@@ -114,6 +114,7 @@ efi_status_t GetFileInfo(efi_file_handle_t* fileHandle, efi_file_info_t* fileInf
 }
 
 // A bare-bones function that reads a file's content into a buffer
+// The buffer must be freed by the user
 efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char_t** buffer)
 {
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, fileSize, (void**)buffer);
@@ -123,6 +124,57 @@ efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char_t** 
         return status;
     }
     return fileHandle->Read(fileHandle, &fileSize, (*buffer));
+}
+
+// Returns the size of a file in bytes
+uint64_t GetFileSize(FILE* file)
+{
+    if (file == NULL)
+    {
+        return 0;
+    }
+
+    efi_file_info_t info;
+    efi_status_t status = GetFileInfo(file, &info);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to get file info when getting file size.");
+        return 0;
+    }
+
+    return info.FileSize;
+}
+
+// The function reads the file content into a dynamically allocated buffer
+// The buffer must be freed by the user
+char_t* GetFileContent(char_t* path)
+{
+    char_t* buffer = NULL;
+    FILE* file = fopen(path, "r");
+    if (file != NULL)
+    {
+        // Get file size
+        uint64_t fileSize = GetFileSize(file);
+
+        // Prevent a bug that happens when filesize is 0
+        if (fileSize == 0)
+        {
+            return "";
+        }
+
+        // Read the file data into a buffer
+        efi_status_t status = BS->AllocatePool(LIP->ImageDataType, fileSize + 1, (void**)&buffer);
+        if (EFI_ERROR(status))
+        {
+            Log(LL_ERROR, status, "Failed to allocate buffer when reading file %s.", path);
+            return NULL;
+        }
+
+        fread(buffer, fileSize, 1, file);
+        buffer[fileSize] = CHAR_NULL;
+        fclose(file);
+    }
+    return buffer;
 }
 
 efi_status_t RebootDevice(boolean_t rebootToFirmware)
