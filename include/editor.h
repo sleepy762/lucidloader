@@ -7,6 +7,9 @@
 
 #define EDITOR_EXIT_KEY ('q')
 
+#define EDITOR_STATUS_MSG_ARR_SIZE (80)
+#define EDITOR_WELCOME_MSG_ARR_SIZE (80)
+
 // How many spaces to replace TABs with
 #define EDITOR_TAB_SIZE (4)
 
@@ -48,6 +51,8 @@ typedef struct editor_config_t
     text_row_t* row;
     intn_t rowOffset;
     intn_t colOffset;
+
+    char_t* filename;
 } editor_config_t;
 
 typedef struct buffer_t

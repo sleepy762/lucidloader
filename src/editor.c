@@ -9,6 +9,7 @@ static void EditorRefreshScreen(void);
 static void EditorDrawRows(buffer_t* buf);
 static void EditorMoveCursor(uint16_t scancode);
 static void EditorScroll(void);
+static void EditorDrawStatusBar(void);
 static void EditorAppendRow(char_t* str, size_t len);
 static void EditorUpdateRow(text_row_t* row);
 static intn_t EditorRowCxToRx(text_row_t* row, intn_t cx);
@@ -61,6 +62,7 @@ static void InitEditorConfig(void)
         cfg.screenCols = 80;
         cfg.screenRows = 25;
     }
+    cfg.screenRows -= 1; // Making room for the status message
     cfg.cx = 0;
     cfg.cy = 0;
     cfg.rx = 0;
@@ -68,10 +70,14 @@ static void InitEditorConfig(void)
     cfg.rowOffset = 0;
     cfg.colOffset = 0;
     cfg.row = NULL;
+    cfg.filename = NULL;
 }
 
 static int8_t EditorOpenFile(char_t* filename)
 {
+    free(cfg.filename);
+    cfg.filename = strdup(filename);
+
     FILE* fp = fopen(filename, "r");
     if (fp == NULL)
     {
@@ -159,7 +165,7 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
 static void AppendEditorWelcomeMessage(buffer_t* buf)
 {
     // Add our welcome message into a buffer
-    char welcome[80];
+    char_t welcome[EDITOR_WELCOME_MSG_ARR_SIZE];
     int32_t welcomelen = snprintf(welcome, sizeof(welcome), "EZBoot Editor");
     if (welcomelen > cfg.screenCols)
     {
@@ -193,6 +199,7 @@ static void EditorRefreshScreen(void)
     ST->ConOut->EnableCursor(ST->ConOut, FALSE);
     ST->ConOut->ClearScreen(ST->ConOut);
     PrintBuffer(&buf);
+    EditorDrawStatusBar();
 
     // The offset must be subtracted from the cursor offset, otherwise the value refers to the position
     // of the cursor within the text file and not the position on screen
@@ -233,11 +240,7 @@ static void EditorDrawRows(buffer_t* buf)
             }
             AppendToBuffer(buf, &cfg.row[fileRow].render[cfg.colOffset], len);
         }
-
-        if (y < cfg.screenRows - 1)
-        {
-            AppendToBuffer(buf, "\n", 1);
-        }
+        AppendToBuffer(buf, "\n", 1);
     }
 }
 
@@ -318,6 +321,45 @@ static void EditorScroll(void)
     {
         cfg.colOffset = cfg.rx - cfg.screenCols + 1;
     }
+}
+
+static void EditorDrawStatusBar(void)
+{
+    // Sets the colors of the status bar
+    ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_BLACK, EFI_LIGHTGRAY));
+
+    // Format the first half of the status message
+    char_t status[EDITOR_STATUS_MSG_ARR_SIZE];
+    int32_t len =  snprintf(status, sizeof(status), "%s - %d lines",
+        cfg.filename ? cfg.filename : "[No Name]", cfg.numRows);
+
+    // Format the second half of the status message
+    char_t rstatus[EDITOR_STATUS_MSG_ARR_SIZE];
+    int32_t rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d",
+        cfg.cy + 1, cfg.numRows);
+
+    if (len >= cfg.screenCols)
+    {
+        len = cfg.screenCols - 1;
+    }
+    printf("%s", status); // First half of the status
+
+    while (len < cfg.screenCols - 1)
+    {
+        // Print the other half of the status (aligned to the right side)
+        if (cfg.screenCols - 1 - len == rlen)
+        {
+            printf("%s", rstatus);
+            break;
+        }
+        else // Print spaces to fill the entire line with the background color
+        {
+            ST->ConOut->OutputString(ST->ConOut, L" ");
+        }
+        len++;
+    }
+    // Reset the colors
+    ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
 }
 
 static void EditorAppendRow(char_t* str, size_t len)
