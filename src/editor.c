@@ -39,7 +39,7 @@ static void EditorDrawRows(buffer_t* buf)
             {
                 len = 0;
             }
-            if (len > cfg.screenCols)
+            if (len >= cfg.screenCols)
             {
                 len = cfg.screenCols - 1;
             }
