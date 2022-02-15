@@ -37,8 +37,9 @@ typedef struct editor_config_t
     uintn_t cy;
     
     // Stores the text of the opened file
-    uint32_t numRows;
+    uintn_t numRows;
     text_row_t* row;
+    uintn_t rowOffset;
 } editor_config_t;
 
 typedef struct buffer_t

@@ -6,18 +6,21 @@ static void EditorDrawRows(buffer_t* buf);
 static void EditorMoveCursor(uint16_t scancode);
 static void EditorRefreshScreen(void);
 static void InitEditorConfig(void);
-static int8_t EditorOpen(char_t* filename);
+static int8_t EditorOpenFile(char_t* filename);
 static void AppendEditorWelcomeMessage(buffer_t* buf);
 static void EditorAppendRow(char_t* str, size_t len);
+static void EditorScroll(void);
 
 static editor_config_t cfg;
 
 /* Renderers */
 static void EditorDrawRows(buffer_t* buf)
 {
-    for (uint16_t y = 0; y < cfg.screenRows; y++)
+    for (uintn_t y = 0; y < cfg.screenRows; y++)
     {
-        if (y >= cfg.numRows)
+        // Add offset to know what row of the file the user is currently at
+        uintn_t fileRow = y + cfg.rowOffset;
+        if (fileRow >= cfg.numRows)
         {
             // Write a welcome message if no file was loaded
             if (cfg.numRows == 0 && y == cfg.screenRows / 3)
@@ -31,12 +34,12 @@ static void EditorDrawRows(buffer_t* buf)
         }
         else // Append the data of the file lines
         {
-            uint32_t len = cfg.row[y].size;
+            uint32_t len = cfg.row[fileRow].size;
             if (len > cfg.screenCols)
             {
                 len = cfg.screenCols - 1;
             }
-            AppendToBuffer(buf, cfg.row[y].chars, len);
+            AppendToBuffer(buf, cfg.row[fileRow].chars, len);
         }
 
         if (y < cfg.screenRows - 1)
@@ -58,7 +61,7 @@ static void EditorMoveCursor(uint16_t scancode)
             }
             break;
         case DOWN_ARROW_SCANCODE:
-            if (cfg.cy != cfg.screenRows - 1)
+            if (cfg.cy < cfg.numRows)
             {
                 cfg.cy++;
             }
@@ -78,17 +81,33 @@ static void EditorMoveCursor(uint16_t scancode)
     }
 }
 
+static void EditorScroll(void)
+{
+    if (cfg.cy < cfg.rowOffset) // Scroll up
+    {
+        cfg.rowOffset = cfg.cy;
+    }
+    if (cfg.cy >= cfg.rowOffset + cfg.screenRows) // Scroll down
+    {
+        cfg.rowOffset = cfg.cy - cfg.screenRows + 1;
+    }
+}
+
 static void EditorRefreshScreen(void)
 {
     buffer_t buf = BUF_INIT;
 
-    ST->ConOut->EnableCursor(ST->ConOut, FALSE);
-    ST->ConOut->ClearScreen(ST->ConOut);
+    EditorScroll();
 
     EditorDrawRows(&buf);
+    
+    ST->ConOut->EnableCursor(ST->ConOut, FALSE);
+    ST->ConOut->ClearScreen(ST->ConOut);
     PrintBuffer(&buf);
 
-    ST->ConOut->SetCursorPosition(ST->ConOut, cfg.cx, cfg.cy);
+    // The row offset must be subtracted from cy, otherwise the value refers to the position
+    // of the cursor within the text file and not the position on screen
+    ST->ConOut->SetCursorPosition(ST->ConOut, cfg.cx, cfg.cy - cfg.rowOffset);
     ST->ConOut->EnableCursor(ST->ConOut, TRUE);
 
     FreeBuffer(&buf);
@@ -109,6 +128,7 @@ static void InitEditorConfig(void)
     cfg.cx = 0;
     cfg.cy = 0;
     cfg.numRows = 0;
+    cfg.rowOffset = 0;
     cfg.row = NULL;
 }
 
@@ -129,7 +149,7 @@ int8_t StartEditor(char_t* filename)
     
     if (filename != NULL)
     {
-        int8_t res = EditorOpen(filename);
+        int8_t res = EditorOpenFile(filename);
         if (res != 0)
         {
             return res;
@@ -190,7 +210,7 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
     return TRUE;
 }
 
-static int8_t EditorOpen(char_t* filename)
+static int8_t EditorOpenFile(char_t* filename)
 {
     FILE* fp = fopen(filename, "r");
     if (fp == NULL)
