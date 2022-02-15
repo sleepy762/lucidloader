@@ -7,6 +7,9 @@
 
 #define EDITOR_EXIT_KEY ('q')
 
+// How many spaces to replace TABs with
+#define EDITOR_TAB_SIZE (4)
+
 #define UP_ARROW_SCANCODE       (0x01)
 #define DOWN_ARROW_SCANCODE     (0x02)
 #define RIGHT_ARROW_SCANCODE    (0x03)
@@ -24,6 +27,9 @@ typedef struct text_row_t
 {
     int32_t size;
     char_t* chars;
+
+    int32_t rsize;
+    char_t* render;
 } text_row_t;
 
 typedef struct editor_config_t
@@ -35,6 +41,7 @@ typedef struct editor_config_t
     // The current cursor location
     intn_t cx;
     intn_t cy;
+    intn_t rx; // Location in the render buffer
     
     // Stores the text of the opened file
     intn_t numRows;
