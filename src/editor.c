@@ -34,12 +34,16 @@ static void EditorDrawRows(buffer_t* buf)
         }
         else // Append the data of the file lines
         {
-            uint32_t len = cfg.row[fileRow].size;
+            uint32_t len = cfg.row[fileRow].size - cfg.colOffset;
+            if (len <= 0)
+            {
+                len = 0;
+            }
             if (len > cfg.screenCols)
             {
                 len = cfg.screenCols - 1;
             }
-            AppendToBuffer(buf, cfg.row[fileRow].chars, len);
+            AppendToBuffer(buf, &cfg.row[fileRow].chars[cfg.colOffset], len);
         }
 
         if (y < cfg.screenRows - 1)
@@ -51,6 +55,9 @@ static void EditorDrawRows(buffer_t* buf)
 
 static void EditorMoveCursor(uint16_t scancode)
 {
+    // Used to limit scrolling to the right
+    text_row_t* row = (cfg.cy >= cfg.numRows) ? NULL : &cfg.row[cfg.cy];
+
     // Move the cursor while performing bounds checking
     switch (scancode)
     {
@@ -67,9 +74,14 @@ static void EditorMoveCursor(uint16_t scancode)
             }
             break;
         case RIGHT_ARROW_SCANCODE:
-            if (cfg.cx != cfg.screenCols - 1)
+            if (row != NULL && cfg.cx < row->size)
             {
                 cfg.cx++;
+            }
+            else if (row != NULL && cfg.cx == row->size) // Handle moving right at the end of a line
+            {
+                cfg.cy++;
+                cfg.cx = 0;
             }
             break;
         case LEFT_ARROW_SCANCODE:
@@ -77,7 +89,20 @@ static void EditorMoveCursor(uint16_t scancode)
             {
                 cfg.cx--;
             }
+            else if (cfg.cy > 0) // Handle moving left at the start of a line
+            {
+                cfg.cy--;
+                cfg.cx = cfg.row[cfg.cy].size;
+            }
             break;
+    }
+
+    // Used to correct the cursor's X position when moving down from a long line to a shorter one
+    row = (cfg.cy >= cfg.numRows) ? NULL : &cfg.row[cfg.cy];
+    uint32_t rowLen = row != NULL ? row->size : 0;
+    if (cfg.cx > rowLen)
+    {
+        cfg.cx = rowLen;
     }
 }
 
@@ -91,6 +116,15 @@ static void EditorScroll(void)
     {
         cfg.rowOffset = cfg.cy - cfg.screenRows + 1;
     }
+
+    if (cfg.cx < cfg.colOffset) // Scroll left
+    {
+        cfg.colOffset = cfg.cx;
+    }
+    if (cfg.cx >= cfg.colOffset + cfg.screenCols) // Scroll right
+    {
+        cfg.colOffset = cfg.cx - cfg.screenCols + 1;
+    }
 }
 
 static void EditorRefreshScreen(void)
@@ -100,14 +134,14 @@ static void EditorRefreshScreen(void)
     EditorScroll();
 
     EditorDrawRows(&buf);
-    
+
     ST->ConOut->EnableCursor(ST->ConOut, FALSE);
     ST->ConOut->ClearScreen(ST->ConOut);
     PrintBuffer(&buf);
 
-    // The row offset must be subtracted from cy, otherwise the value refers to the position
+    // The offset must be subtracted from the cursor offset, otherwise the value refers to the position
     // of the cursor within the text file and not the position on screen
-    ST->ConOut->SetCursorPosition(ST->ConOut, cfg.cx, cfg.cy - cfg.rowOffset);
+    ST->ConOut->SetCursorPosition(ST->ConOut, cfg.cx - cfg.colOffset, cfg.cy - cfg.rowOffset);
     ST->ConOut->EnableCursor(ST->ConOut, TRUE);
 
     FreeBuffer(&buf);
@@ -129,6 +163,7 @@ static void InitEditorConfig(void)
     cfg.cy = 0;
     cfg.numRows = 0;
     cfg.rowOffset = 0;
+    cfg.colOffset = 0;
     cfg.row = NULL;
 }
 
@@ -304,11 +339,11 @@ void AppendToBuffer(buffer_t* buf, const char_t* str, uint32_t len)
 {
     // Resize the string
     char* new = realloc(buf->b, buf->len + len);
-
     if (new == NULL)
     {
         return;
     }
+
     // Update the buffer struct with the new bigger string
     memcpy(&new[buf->len], str, len);
     buf->b = new;
@@ -324,9 +359,8 @@ void FreeBuffer(buffer_t* buf)
 void PrintBuffer(buffer_t* buf)
 {
     // This is a worse alternative to using write() which unfortunately doesn't exist here
-    char_t* b = buf->b;
     for (uint32_t i = 0; i < buf->len; i++)
     {
-        putchar(b[i]);
+        putchar(buf->b[i]);
     }
 }

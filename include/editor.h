@@ -40,6 +40,7 @@ typedef struct editor_config_t
     uintn_t numRows;
     text_row_t* row;
     uintn_t rowOffset;
+    uintn_t colOffset;
 } editor_config_t;
 
 typedef struct buffer_t
