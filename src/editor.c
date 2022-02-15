@@ -16,10 +16,10 @@ static editor_config_t cfg;
 /* Renderers */
 static void EditorDrawRows(buffer_t* buf)
 {
-    for (uintn_t y = 0; y < cfg.screenRows; y++)
+    for (intn_t y = 0; y < cfg.screenRows - 1; y++)
     {
         // Add offset to know what row of the file the user is currently at
-        uintn_t fileRow = y + cfg.rowOffset;
+        intn_t fileRow = y + cfg.rowOffset;
         if (fileRow >= cfg.numRows)
         {
             // Write a welcome message if no file was loaded
@@ -34,8 +34,8 @@ static void EditorDrawRows(buffer_t* buf)
         }
         else // Append the data of the file lines
         {
-            uint32_t len = cfg.row[fileRow].size - cfg.colOffset;
-            if (len <= 0)
+            int32_t len = cfg.row[fileRow].size - cfg.colOffset;
+            if (len < 0)
             {
                 len = 0;
             }
@@ -99,7 +99,7 @@ static void EditorMoveCursor(uint16_t scancode)
 
     // Used to correct the cursor's X position when moving down from a long line to a shorter one
     row = (cfg.cy >= cfg.numRows) ? NULL : &cfg.row[cfg.cy];
-    uint32_t rowLen = row != NULL ? row->size : 0;
+    int32_t rowLen = row != NULL ? row->size : 0;
     if (cfg.cx > rowLen)
     {
         cfg.cx = rowLen;
@@ -213,7 +213,7 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
         // Move the cursor to the top or the bottom of the screen
         case PAGEUP_KEY_SCANCODE:
         case PAGEDOWN_KEY_SCANCODE:
-            uint32_t times = cfg.screenRows;
+            int32_t times = cfg.screenRows;
             while (times--)
             {
                 EditorMoveCursor(keyData.Key.ScanCode == PAGEUP_KEY_SCANCODE ? 
@@ -276,7 +276,7 @@ static void EditorAppendRow(char_t* str, size_t len)
 {
     cfg.row = realloc(cfg.row, sizeof(text_row_t) * (cfg.numRows + 1));
 
-    uint32_t at = cfg.numRows;
+    int32_t at = cfg.numRows;
     cfg.row[at].size = len;
     cfg.row[at].chars = malloc(len + 1);
     memcpy(cfg.row[at].chars, str, len);
@@ -288,14 +288,14 @@ static void AppendEditorWelcomeMessage(buffer_t* buf)
 {
     // Add our welcome message into a buffer
     char welcome[80];
-    uintn_t welcomelen = snprintf(welcome, sizeof(welcome), "EZBoot Editor");
+    int32_t welcomelen = snprintf(welcome, sizeof(welcome), "EZBoot Editor");
     if (welcomelen > cfg.screenCols)
     {
         welcomelen = cfg.screenCols;
     }
 
     // Add padding to center the welcome message
-    uintn_t padding = (cfg.screenCols - welcomelen) / 2;
+    intn_t padding = (cfg.screenCols - welcomelen) / 2;
     if (padding)
     {
         AppendToBuffer(buf, "~", 1);
@@ -359,7 +359,7 @@ void FreeBuffer(buffer_t* buf)
 void PrintBuffer(buffer_t* buf)
 {
     // This is a worse alternative to using write() which unfortunately doesn't exist here
-    for (uint32_t i = 0; i < buf->len; i++)
+    for (int32_t i = 0; i < buf->len; i++)
     {
         putchar(buf->b[i]);
     }

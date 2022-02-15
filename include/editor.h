@@ -22,31 +22,31 @@
 
 typedef struct text_row_t
 {
-    uint32_t size;
+    int32_t size;
     char_t* chars;
 } text_row_t;
 
 typedef struct editor_config_t
 {
     // Size of the screen in rows and columns
-    uintn_t screenRows;
-    uintn_t screenCols;
+    intn_t screenRows;
+    intn_t screenCols;
 
     // The current cursor location
-    uintn_t cx;
-    uintn_t cy;
+    intn_t cx;
+    intn_t cy;
     
     // Stores the text of the opened file
-    uintn_t numRows;
+    intn_t numRows;
     text_row_t* row;
-    uintn_t rowOffset;
-    uintn_t colOffset;
+    intn_t rowOffset;
+    intn_t colOffset;
 } editor_config_t;
 
 typedef struct buffer_t
 {
     char_t* b;
-    uint32_t len;
+    int32_t len;
 } buffer_t;
 #define BUF_INIT {NULL, 0}
 
