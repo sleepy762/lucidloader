@@ -10,6 +10,9 @@
 #define EDITOR_STATUS_MSG_ARR_SIZE (80)
 #define EDITOR_WELCOME_MSG_ARR_SIZE (80)
 
+#define EDITOR_INITIAL_STATUS_MSG ("HELP: CTRL-Q = quit")
+#define EDITOR_STATUS_MSG_TIMEOUT (5)
+
 // How many spaces to replace TABs with
 #define EDITOR_TAB_SIZE (4)
 
@@ -52,7 +55,10 @@ typedef struct editor_config_t
     intn_t rowOffset;
     intn_t colOffset;
 
+    // Misc
     char_t* filename;
+    char_t* statusmsg[EDITOR_STATUS_MSG_ARR_SIZE];
+    time_t statusmsgTime;
 } editor_config_t;
 
 typedef struct buffer_t

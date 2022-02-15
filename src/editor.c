@@ -10,6 +10,8 @@ static void EditorDrawRows(buffer_t* buf);
 static void EditorMoveCursor(uint16_t scancode);
 static void EditorScroll(void);
 static void EditorDrawStatusBar(void);
+static void EditorSetStatusMessage(const char_t* fmt, ...);
+static void EditorDrawMessageBar(void);
 static void EditorAppendRow(char_t* str, size_t len);
 static void EditorUpdateRow(text_row_t* row);
 static intn_t EditorRowCxToRx(text_row_t* row, intn_t cx);
@@ -40,6 +42,8 @@ int8_t StartEditor(char_t* filename)
         }
     }
 
+    EditorSetStatusMessage(EDITOR_INITIAL_STATUS_MSG);
+
     // Keep reading and processing input until the editor is closed
     do
     {
@@ -62,7 +66,7 @@ static void InitEditorConfig(void)
         cfg.screenCols = 80;
         cfg.screenRows = 25;
     }
-    cfg.screenRows -= 1; // Making room for the status message
+    cfg.screenRows -= 2; // Making room for the status messages
     cfg.cx = 0;
     cfg.cy = 0;
     cfg.rx = 0;
@@ -71,6 +75,8 @@ static void InitEditorConfig(void)
     cfg.colOffset = 0;
     cfg.row = NULL;
     cfg.filename = NULL;
+    cfg.statusmsg[0] = CHAR_NULL;
+    cfg.statusmsgTime = 0;
 }
 
 static int8_t EditorOpenFile(char_t* filename)
@@ -193,13 +199,14 @@ static void EditorRefreshScreen(void)
     buffer_t buf = BUF_INIT;
 
     EditorScroll();
-
     EditorDrawRows(&buf);
 
     ST->ConOut->EnableCursor(ST->ConOut, FALSE);
     ST->ConOut->ClearScreen(ST->ConOut);
+
     PrintBuffer(&buf);
     EditorDrawStatusBar();
+    EditorDrawMessageBar();
 
     // The offset must be subtracted from the cursor offset, otherwise the value refers to the position
     // of the cursor within the text file and not the position on screen
@@ -360,6 +367,26 @@ static void EditorDrawStatusBar(void)
     }
     // Reset the colors
     ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
+    ST->ConOut->OutputString(ST->ConOut, L"\r\n");
+}
+
+static void EditorSetStatusMessage(const char_t* fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf((char_t*)cfg.statusmsg, sizeof(cfg.statusmsg), fmt, ap);
+    va_end(ap);
+    cfg.statusmsgTime = time(NULL);
+}
+
+static void EditorDrawMessageBar(void)
+{
+    // Remove the status message after 5 seconds
+    if (cfg.statusmsg[0] != CHAR_NULL &&
+        time(NULL) - cfg.statusmsgTime < EDITOR_STATUS_MSG_TIMEOUT)
+    {
+        printf("%s", cfg.statusmsg);
+    }
 }
 
 static void EditorAppendRow(char_t* str, size_t len)
