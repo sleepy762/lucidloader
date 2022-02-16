@@ -74,6 +74,7 @@ static void InitEditorConfig(void)
     cfg.rowOffset = 0;
     cfg.colOffset = 0;
     cfg.row = NULL;
+    cfg.fullFilePath = NULL;
     cfg.filename = NULL;
     cfg.statusmsg[0] = CHAR_NULL;
     cfg.statusmsgTime = 0;
@@ -81,8 +82,9 @@ static void InitEditorConfig(void)
 
 static int8_t EditorOpenFile(char_t* filename)
 {
-    free(cfg.filename);
-    cfg.filename = strdup(filename);
+    free(cfg.fullFilePath);
+    cfg.fullFilePath = strdup(filename);
+    cfg.filename = strrchr(cfg.fullFilePath, '\\') + 1; // Stores only the filename without the full path
 
     FILE* fp = fopen(filename, "r");
     if (fp == NULL)
@@ -339,8 +341,8 @@ static void EditorDrawStatusBar(void)
 
     // Format the first half of the status message
     char_t status[EDITOR_STATUS_MSG_ARR_SIZE];
-    int32_t len =  snprintf(status, sizeof(status), "%s - %d lines",
-        cfg.filename ? cfg.filename : "[No Name]", cfg.numRows);
+    int32_t len = snprintf(status, sizeof(status), "%s - %d lines",
+        cfg.filename != NULL ? cfg.filename : "[No Name]", cfg.numRows);
 
     // Format the second half of the status message
     char_t rstatus[EDITOR_STATUS_MSG_ARR_SIZE];

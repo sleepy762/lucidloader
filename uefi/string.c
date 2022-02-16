@@ -195,9 +195,9 @@ char_t *strrchr(const char_t *s, int c)
     char_t *e;
     if(s) {
         e = (char_t*)s + strlen(s) - 1;
-        while(s < e) {
+        while(s <= e) {
             if(*e == (char_t)c) return e;
-            s--;
+            e--;
         }
     }
     return NULL;

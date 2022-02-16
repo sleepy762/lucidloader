@@ -58,7 +58,8 @@ typedef struct editor_config_t
     intn_t colOffset;
 
     // Misc
-    char_t* filename;
+    char_t* fullFilePath; // The full path of the file
+    char_t* filename; // Rendered filename string
     char_t statusmsg[EDITOR_STATUS_MSG_ARR_SIZE];
     time_t statusmsgTime;
 } editor_config_t;
