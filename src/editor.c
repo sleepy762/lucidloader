@@ -94,6 +94,7 @@ static int8_t EditorOpenFile(char_t* filename)
     char_t* fileData = origDataPtr;
     char_t* token;
 
+    // Read the file line by line
     while ((token = strtok_r(fileData, "\n", &fileData)) != NULL)
     {
         size_t linelen = strlen(token);
@@ -375,8 +376,15 @@ static void EditorSetStatusMessage(const char_t* fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    vsnprintf((char_t*)cfg.statusmsg, sizeof(cfg.statusmsg), fmt, ap);
+    vsnprintf(cfg.statusmsg, sizeof(cfg.statusmsg), fmt, ap);
     va_end(ap);
+
+    // Ensure we don't go out of bounds
+    intn_t msglen = strlen(cfg.statusmsg);
+    if (msglen >= cfg.screenCols)
+    {
+        cfg.statusmsg[cfg.screenCols - 1] = CHAR_NULL;
+    }
     cfg.statusmsgTime = time(NULL);
 }
 
@@ -486,7 +494,7 @@ boolean_t IsKeyPressedWithLCtrl(efi_key_data_t keyData, char_t key)
 void AppendToBuffer(buffer_t* buf, const char_t* str, uint32_t len)
 {
     // Resize the string
-    char* new = realloc(buf->b, buf->len + len);
+    char* new = realloc(buf->b, buf->len + len + 1);
     if (new == NULL)
     {
         return;

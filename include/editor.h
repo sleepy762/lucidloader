@@ -59,7 +59,7 @@ typedef struct editor_config_t
 
     // Misc
     char_t* filename;
-    char_t* statusmsg[EDITOR_STATUS_MSG_ARR_SIZE];
+    char_t statusmsg[EDITOR_STATUS_MSG_ARR_SIZE];
     time_t statusmsgTime;
 } editor_config_t;
 
