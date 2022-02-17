@@ -158,6 +158,7 @@ char_t* GetFileContent(char_t* path)
         buffer[fileSize] = CHAR_NULL;
         fclose(file);
     }
+
     return buffer;
 }
 

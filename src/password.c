@@ -1,13 +1,20 @@
 #include "password.h"
 
-boolean_t CheckPassword(char_t password[])
+boolean_t CheckPassword()
 {
-    char_t* buffer = GetFileContent(PASS_FILE_PATH);
+    char_t password[MAX_PASS_LEN]= {0};
+    GetInputString(password, MAX_PASS_LEN, TRUE);
 
+    char_t* encPassword = GetFileContent(PASS_FILE_PATH);
+
+    if(encPassword == NULL)
+    {
+        return FALSE;
+    }
     //enc conventions we set(just use the msg as key)
     Enc((uint8_t*)password, (uint8_t*)password);
-    
-    if (strcmp(password, buffer) == 0)
+
+    if (strcmp(password, encPassword) == 0)
     {
         return TRUE;
     }

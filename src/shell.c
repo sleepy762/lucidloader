@@ -2,6 +2,12 @@
 
 int8_t StartShell(void)
 {
+    
+    if(CheckPassword() == FALSE)
+    {
+        return FALSE;
+    }
+
     Log(LL_INFO, 0, "Starting the shell.");
     ST->ConOut->ClearScreen(ST->ConOut);
     ST->ConOut->EnableCursor(ST->ConOut, TRUE);
