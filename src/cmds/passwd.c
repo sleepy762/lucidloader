@@ -12,25 +12,25 @@ uint8_t PasswdCmd(cmd_args_s** args, char_t** currPathPtr)
             return CMD_SUCCESS;
         }
     }
-    
+
     uint64_t fileSize;
     fseek(passFile, 0, SEEK_END);
     fileSize = ftell(passFile);
 
     if(fileSize != 0)
     {
-        printf("are you sure you wanna be dumb and overwrite the password you silly goone\n");
+        printf("A password already exists, do you want to overwrite it? (y/n) ");
         efi_input_key_t ans = GetInputKey();
         
+        printf("\n");
         if(ans.UnicodeChar != 'y' && ans.UnicodeChar != 'Y')
         {
-            printf("cool you are not a fucking bitch :)\n");
             return CMD_SUCCESS;
         }
     }
     fclose(passFile);
 
-    if (EnterPassword() == FALSE)
+    if (CreateShellPassword() == FALSE)
     {
         PrintCommandError("passwd", NULL, errno);
         return CMD_SUCCESS;

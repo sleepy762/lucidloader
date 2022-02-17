@@ -2,10 +2,10 @@
 
 int8_t StartShell(void)
 {
-    
-    if(CheckPassword() == FALSE)
+    if (ShellLoginWithPassword() == FALSE)
     {
-        return FALSE;
+        // Login failed
+        return 0;
     }
 
     Log(LL_INFO, 0, "Starting the shell.");
@@ -40,7 +40,7 @@ int8_t StartShell(void)
     BS->FreePool(currPath);
     ST->ConOut->EnableCursor(ST->ConOut, FALSE);
     ST->ConOut->ClearScreen(ST->ConOut);
-    return CMD_SUCCESS;
+    return 0;
 }
 
 int8_t ShellLoop(char_t** currPathPtr)
