@@ -2,6 +2,7 @@
 
 int8_t StartShell(void)
 {
+    // If the shell is password protected, ask to login
     if (ShellLoginWithPassword() == FALSE)
     {
         // Login failed

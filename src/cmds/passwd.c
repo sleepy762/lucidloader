@@ -2,6 +2,7 @@
 
 uint8_t PasswdCmd(cmd_args_s** args, char_t** currPathPtr)
 {
+    // Check if a password file already exists
     FILE* passFile = fopen(PASS_FILE_PATH, "r");
     if (passFile == NULL) // Open a file if it doesn't exist
     {
@@ -13,9 +14,7 @@ uint8_t PasswdCmd(cmd_args_s** args, char_t** currPathPtr)
         }
     }
 
-    uint64_t fileSize;
-    fseek(passFile, 0, SEEK_END);
-    fileSize = ftell(passFile);
+    uint64_t fileSize = GetFileSize(passFile);
     fclose(passFile);
     
     if(fileSize != 0)
