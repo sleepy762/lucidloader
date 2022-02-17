@@ -226,7 +226,7 @@ efi_input_key_t GetInputKey(void)
     return key;
 }
 
-void GetInputString(char_t buffer[], const uint32_t maxInputSize)
+void GetInputString(char_t buffer[], const uint32_t maxInputSize, boolean_t hideInput)
 {
     uint32_t index = 0;
     efi_input_key_t key;
@@ -259,7 +259,15 @@ void GetInputString(char_t buffer[], const uint32_t maxInputSize)
         {
             buffer[index] = key.UnicodeChar;
             index++;
-            printf("%c", key.UnicodeChar);
+
+            if (hideInput) // When entering a password
+            {
+                printf("*");
+            }
+            else
+            {
+                printf("%c", key.UnicodeChar);
+            }
         }
     }
 }

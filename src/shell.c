@@ -2,6 +2,12 @@
 
 int8_t StartShell(void)
 {
+    if (ShellLoginWithPassword() == FALSE)
+    {
+        // Login failed
+        return 0;
+    }
+
     Log(LL_INFO, 0, "Starting the shell.");
     ST->ConOut->ClearScreen(ST->ConOut);
     ST->ConOut->EnableCursor(ST->ConOut, TRUE);
@@ -34,7 +40,7 @@ int8_t StartShell(void)
     BS->FreePool(currPath);
     ST->ConOut->EnableCursor(ST->ConOut, FALSE);
     ST->ConOut->ClearScreen(ST->ConOut);
-    return CMD_SUCCESS;
+    return 0;
 }
 
 int8_t ShellLoop(char_t** currPathPtr)
@@ -44,7 +50,7 @@ int8_t ShellLoop(char_t** currPathPtr)
         char_t buffer[SHELL_MAX_INPUT] = {0};
         printf("> ");
 
-        GetInputString(buffer, SHELL_MAX_INPUT);
+        GetInputString(buffer, SHELL_MAX_INPUT, FALSE);
 
         if (strcmp(buffer, SHELL_EXIT_STR) == 0)
         {
