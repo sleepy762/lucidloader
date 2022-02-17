@@ -17,6 +17,17 @@ boolean_t CheckPassword(char_t password[])
 
 boolean_t EnterPassword()
 {
-    //need to do 
-    return 0;
+    boolean_t ans;
+    char_t buffer[MAX_PASS_LEN] = {0};
+    GetInputString(buffer, MAX_PASS_LEN, 1);
+
+    FILE *out = fopen(PASS_FILE_PATH,"w");
+	
+    Enc(buffer,buffer);
+    
+    ans = fwrite(buffer, 1, MAX_PASS_LEN,out);
+	
+    fclose(out);
+
+    return ans;
 }
