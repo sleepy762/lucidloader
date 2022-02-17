@@ -2,10 +2,6 @@
 
 uint8_t PasswdCmd(cmd_args_s** args, char_t** currPathPtr)
 {
-
-    efi_input_key_t ans;
-    cmd_args_s* arg = *args;
-
     FILE* passFile = fopen(PASS_FILE_PATH, "r");
     if (passFile == NULL) // Open a file if it doesn't exist
     {
@@ -24,7 +20,7 @@ uint8_t PasswdCmd(cmd_args_s** args, char_t** currPathPtr)
     if(fileSize != 0)
     {
         printf("are you sure you wanna be dumb and overwrite the password you silly goone\n");
-        ans = GetInputKey();
+        efi_input_key_t ans = GetInputKey();
         
         if(ans.UnicodeChar != 'y' && ans.UnicodeChar != 'Y')
         {

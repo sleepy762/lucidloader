@@ -2,15 +2,15 @@
 
 boolean_t CheckPassword()
 {
+    char_t* encPassword = GetFileContent(PASS_FILE_PATH);
+    if(encPassword == NULL)
+    {
+        return TRUE;
+    }
+
     char_t password[MAX_PASS_LEN]= {0};
     GetInputString(password, MAX_PASS_LEN, TRUE);
 
-    char_t* encPassword = GetFileContent(PASS_FILE_PATH);
-
-    if(encPassword == NULL)
-    {
-        return FALSE;
-    }
     //enc conventions we set(just use the msg as key)
     Enc((uint8_t*)password, (uint8_t*)password);
 
@@ -34,7 +34,7 @@ boolean_t EnterPassword()
         return FALSE;
     }
 	
-    Enc(buffer,buffer);
+    Enc((uint8_t*)buffer, (uint8_t*)buffer);
     
     ans = fwrite(buffer, 1, MAX_PASS_LEN, out);
     if (ans == 0)

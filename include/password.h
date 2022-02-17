@@ -1,6 +1,7 @@
 #pragma once
 #include <uefi.h>
 #include "bootutils.h"
+#include "shellutils.h"
 #include "encryption.h"
 
 #define MAX_PASS_LEN 16
