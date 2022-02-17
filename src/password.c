@@ -19,15 +19,23 @@ boolean_t EnterPassword()
 {
     boolean_t ans;
     char_t buffer[MAX_PASS_LEN] = {0};
-    GetInputString(buffer, MAX_PASS_LEN, 1);
+    GetInputString(buffer, MAX_PASS_LEN, TRUE);
 
     FILE *out = fopen(PASS_FILE_PATH,"w");
+    if (out == NULL)
+    {
+        return FALSE;
+    }
 	
     Enc(buffer,buffer);
     
-    ans = fwrite(buffer, 1, MAX_PASS_LEN,out);
+    ans = fwrite(buffer, 1, MAX_PASS_LEN, out);
+    if (ans == 0)
+    {
+        return FALSE;
+    }
 	
     fclose(out);
 
-    return ans;
+    return TRUE;
 }

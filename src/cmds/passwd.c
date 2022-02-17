@@ -7,10 +7,14 @@ uint8_t PasswdCmd(cmd_args_s** args, char_t** currPathPtr)
     cmd_args_s* arg = *args;
 
     FILE* passFile = fopen(PASS_FILE_PATH, "r");
-    if (passFile == NULL)
+    if (passFile == NULL) // Open a file if it doesn't exist
     {
-        PrintCommandError("passwd", NULL, CMD_GENERAL_FILE_OPENING_ERROR);
-        return CMD_SUCCESS;
+        passFile = fopen(PASS_FILE_PATH, "w");
+        if (passFile == NULL)
+        {
+            PrintCommandError("passwd", NULL, errno);
+            return CMD_SUCCESS;
+        }
     }
     
     uint64_t fileSize;
@@ -19,19 +23,24 @@ uint8_t PasswdCmd(cmd_args_s** args, char_t** currPathPtr)
 
     if(fileSize != 0)
     {
-        printf("are you sure you wanna be dumb and overwrite the password you silly goone\n")
+        printf("are you sure you wanna be dumb and overwrite the password you silly goone\n");
         ans = GetInputKey();
         
         if(ans.UnicodeChar != 'y' && ans.UnicodeChar != 'Y')
         {
-            printf("cool you are not a fucking bitch :)")
+            printf("cool you are not a fucking bitch :)\n");
+            return CMD_SUCCESS;
         }
     }
-
-
     fclose(passFile);
 
-    return EnterPassword();
+    if (EnterPassword() == FALSE)
+    {
+        PrintCommandError("passwd", NULL, errno);
+        return CMD_SUCCESS;
+    }
+
+    return CMD_SUCCESS;
 }
 
 const char_t* PasswdBrief(void)
