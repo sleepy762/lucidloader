@@ -15,6 +15,7 @@ const shell_cmd_s commands[] = {
 { "shutdown", ShutdownCmd, ShutdownBrief, NULL },
 { "rm",       RmCmd,       RmBrief,       RmLong },
 { "edit",     EditCmd,     EditBrief,     EditLong },
+{ "passwd",   PasswdCmd,   PasswdBrief,   PasswdLong },
 { "", NULL, NULL, NULL } // Has to be here in order to terminate the command counter
 };
 
