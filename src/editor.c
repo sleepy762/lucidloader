@@ -117,9 +117,14 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
 {
     efi_key_data_t keyData = GetInputKeyData(ConInEx);
 
+    // CONTROL KEYS
     // Close the editor
-    if (IsKeyPressedWithLCtrl(keyData, EDITOR_EXIT_KEY)) return FALSE;
+    if (IsKeyPressedWithLCtrl(keyData, EDITOR_EXIT_KEY)) 
+    {
+        return FALSE;
+    }
 
+    // EVERY OTHER KEY
     uint16_t scancode = keyData.Key.ScanCode;
     switch (scancode)
     {
@@ -152,7 +157,10 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
             cfg.cx = 0;
             break;
         case END_KEY_SCANCODE:
-            cfg.cx = cfg.row[cfg.cy].size;
+            if (cfg.cy < cfg.numRows)
+            {
+                cfg.cx = cfg.row[cfg.cy].size;
+            }
             break;
 
         case DELETE_KEY_SCANCODE:
