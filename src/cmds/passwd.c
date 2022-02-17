@@ -16,7 +16,8 @@ uint8_t PasswdCmd(cmd_args_s** args, char_t** currPathPtr)
     uint64_t fileSize;
     fseek(passFile, 0, SEEK_END);
     fileSize = ftell(passFile);
-
+    fclose(passFile);
+    
     if(fileSize != 0)
     {
         printf("A password already exists, do you want to overwrite it? (y/n) ");
@@ -28,7 +29,6 @@ uint8_t PasswdCmd(cmd_args_s** args, char_t** currPathPtr)
             return CMD_SUCCESS;
         }
     }
-    fclose(passFile);
 
     if (CreateShellPassword() == FALSE)
     {

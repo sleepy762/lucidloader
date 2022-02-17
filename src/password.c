@@ -8,7 +8,9 @@ boolean_t ShellLoginWithPassword()
     {
         return TRUE;
     }
+
     ST->ConOut->ClearScreen(ST->ConOut);
+    Log(LL_INFO, 0, "Asking for shell password...");
 
     PrintBootloaderVersion();
     printf("The shell is protected with a password.\n");
@@ -20,12 +22,14 @@ boolean_t ShellLoginWithPassword()
     //enc conventions we set(just use the msg as key)
     Enc((uint8_t*)password, (uint8_t*)password);
 
-    // The correct password was entered
     if (strcmp(password, encPassword) == 0)
     {
+        // The correct password was entered
+        Log(LL_INFO, 0, "Shell login succeeded.");
         return TRUE;
     }
 
+    Log(LL_INFO, 0, "Shell login failed with an incorrect password.");
     printf("\nIncorrect password.\n");
     sleep(SLEEP_LENGTH_FOR_BAD_PASS);
 

@@ -5,7 +5,7 @@
 #include "encryption.h"
 #include "bootmenu.h"
 
-#define MAX_PASS_LEN 16
+#define MAX_PASS_LEN (16)
 #define PASS_FILE_PATH ("EFI\\ezboot\\shell_passwd")
 #define SLEEP_LENGTH_FOR_BAD_PASS (2)
 
