@@ -11,6 +11,9 @@
 #define EDITOR_EXIT_KEY ('q')
 #define EDITOR_SAVE_KEY ('s')
 
+// How many times the user has to press the quit key to exit if the file has been modified
+#define EDITOR_QUIT_TIMES (3)
+
 #define EDITOR_STATUS_MSG_ARR_SIZE (80)
 #define EDITOR_WELCOME_MSG_ARR_SIZE (80)
 
@@ -65,6 +68,7 @@ typedef struct editor_config_t
     char_t* filename; // Rendered filename string
     char_t statusmsg[EDITOR_STATUS_MSG_ARR_SIZE];
     time_t statusmsgTime;
+    boolean_t dirty; // Modified without saving
 } editor_config_t;
 
 typedef struct buffer_t

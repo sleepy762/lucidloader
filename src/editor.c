@@ -94,6 +94,7 @@ static void InitEditorConfig(void)
     cfg.filename = NULL;
     cfg.statusmsg[0] = CHAR_NULL;
     cfg.statusmsgTime = 0;
+    cfg.dirty = FALSE;
 }
 
 static int8_t EditorOpenFile(char_t* filename)
@@ -122,6 +123,7 @@ static int8_t EditorOpenFile(char_t* filename)
         }
         EditorAppendRow(token, linelen);
     }
+    cfg.dirty = FALSE;
 
     BS->FreePool(origDataPtr);
     fclose(fp);
@@ -131,12 +133,24 @@ static int8_t EditorOpenFile(char_t* filename)
 // Return FALSE when we want to stop processing input
 static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx)
 {
+    static int32_t quitTimes = EDITOR_QUIT_TIMES;
+
     efi_key_data_t keyData = GetInputKeyData(ConInEx);
 
     // CONTROL KEYS
     if (IsKeyPressedWithLCtrl(keyData, EDITOR_EXIT_KEY)) 
     {
-        return FALSE;
+        if (cfg.dirty && quitTimes > 0)
+        {
+            EditorSetStatusMessage("WARNING!!! File has unsaved changes. "
+                "Press CTRL-Q %d more times to quit.", quitTimes);
+            quitTimes--;
+            return TRUE;
+        }
+        else
+        {
+            return FALSE;
+        }
     }
     else if (IsKeyPressedWithLCtrl(keyData, EDITOR_SAVE_KEY))
     {
@@ -213,6 +227,7 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
             }
             break;
     }
+    quitTimes = EDITOR_QUIT_TIMES;
     return TRUE;
 }
 
@@ -386,8 +401,9 @@ static void EditorDrawStatusBar(void)
 
     // Format the first half of the status message
     char_t status[EDITOR_STATUS_MSG_ARR_SIZE];
-    int32_t len = snprintf(status, sizeof(status), "%s - %d lines",
-        cfg.filename != NULL ? cfg.filename : "[No Name]", cfg.numRows);
+    int32_t len = snprintf(status, sizeof(status), "%s - %d lines %s",
+        cfg.filename != NULL ? cfg.filename : "[No Name]", cfg.numRows,
+        cfg.dirty ? "(modified)" : "");
 
     // Format the second half of the status message
     char_t rstatus[EDITOR_STATUS_MSG_ARR_SIZE];
@@ -460,6 +476,7 @@ static void EditorAppendRow(char_t* str, size_t len)
     EditorUpdateRow(&cfg.row[at]);
     
     cfg.numRows++;
+    cfg.dirty = TRUE;
 }
 
 static void EditorUpdateRow(text_row_t* row)
@@ -529,6 +546,7 @@ static void EditorRowInsertChar(text_row_t* row, int32_t at, char_t c)
     // row->chars[row->size] = CHAR_NULL;
 
     EditorUpdateRow(row);
+    cfg.dirty = TRUE;
 }
 
 static void EditorInsertChar(char_t c)
@@ -584,29 +602,24 @@ static void EditorSave(void)
     char_t* buf = EditorRowsToString(&len);
 
     FILE* fp = fopen(cfg.fullFilePath, "w");
-    if (fp == NULL)
+    if (fp != NULL)
     {
-        Log(LL_ERROR, 0, "Failed to open file %s for saving in editor: %s.", 
-            cfg.fullFilePath, GetCommandErrorInfo(errno));
-        EditorSetStatusMessage("Failed to save: %s", GetCommandErrorInfo(errno));
-        free(buf);
-        return;
-    }
+        size_t ret = fwrite(buf, 1, len, fp);
+        if (ret != 0)
+        {
+            EditorSetStatusMessage("%d bytes written to disk.", len);
+            cfg.dirty = FALSE;
 
-    // Write all the data into the file
-    size_t ret = fwrite(buf, 1, len, fp);
-    if (ret == 0)
-    {
-        Log(LL_ERROR, 0, "Failed to write data to file %s in editor: %s.",
-            cfg.fullFilePath, GetCommandErrorInfo(errno));
-        EditorSetStatusMessage("Failed to save: %s", GetCommandErrorInfo(errno));
+            fclose(fp);
+            free(buf);
+            return;
+        }
+        fclose(fp);
     }
-    else
-    {
-        EditorSetStatusMessage("%d bytes written to disk.", len);
-    }
+    Log(LL_ERROR, 0, "Failed to save file %s in editor: %s.", 
+        cfg.fullFilePath, GetCommandErrorInfo(errno));
+    EditorSetStatusMessage("Failed to save: %s", GetCommandErrorInfo(errno));
     free(buf);
-    fclose(fp);
 }
 
 // This function is pretty much the same as GetInputKey but using the extended input protocol
