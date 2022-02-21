@@ -1,22 +1,38 @@
 #include "editor.h"
 
-/* Static declarations */
-static void InitEditorConfig(void);
+/*** Static declarations ***/
+
+/* Row operations */
+static void EditorAppendRow(char_t* str, size_t len);
+static void EditorUpdateRow(text_row_t* row);
+static intn_t EditorRowCxToRx(text_row_t* row, intn_t cx);
+static void EditorRowInsertChar(text_row_t* row, int32_t at, char_t c);
+
+/* Editor operations */
+static void EditorInsertChar(char_t c);
+
+/* File I/O */
 static int8_t EditorOpenFile(char_t* filename);
-static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx);
+static char_t* EditorRowsToString(int32_t* buflen);
+static void EditorSave(void);
+
+/* Output */
 static void AppendEditorWelcomeMessage(buffer_t* buf);
 static void EditorRefreshScreen(void);
 static void EditorDrawRows(buffer_t* buf);
-static void EditorMoveCursor(uint16_t scancode);
 static void EditorScroll(void);
 static void EditorDrawStatusBar(void);
 static void EditorSetStatusMessage(const char_t* fmt, ...);
 static void EditorDrawMessageBar(void);
-static void EditorAppendRow(char_t* str, size_t len);
-static void EditorUpdateRow(text_row_t* row);
-static intn_t EditorRowCxToRx(text_row_t* row, intn_t cx);
 
+/* Input */
+static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx);
+static void EditorMoveCursor(uint16_t scancode);
+
+/* Init */
+static void InitEditorConfig(void);
 static editor_config_t cfg;
+
 
 int8_t StartEditor(char_t* filename)
 {
@@ -118,14 +134,20 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
     efi_key_data_t keyData = GetInputKeyData(ConInEx);
 
     // CONTROL KEYS
-    // Close the editor
     if (IsKeyPressedWithLCtrl(keyData, EDITOR_EXIT_KEY)) 
     {
         return FALSE;
     }
+    else if (IsKeyPressedWithLCtrl(keyData, EDITOR_SAVE_KEY))
+    {
+        EditorSave();
+        return TRUE;
+    }
 
     // EVERY OTHER KEY
     uint16_t scancode = keyData.Key.ScanCode;
+    char_t unicodechar = keyData.Key.UnicodeChar;
+    // In the outer switch we check SPECIAL KEYS (by checking the scancodes)
     switch (scancode)
     {
         // Scroll a page up/down
@@ -174,8 +196,23 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
         case LEFT_ARROW_SCANCODE:
             EditorMoveCursor(scancode);
             break;
-    }
 
+        default:
+            // In this inner switch we check the UNICODE CHARS
+            switch (unicodechar)
+            {
+                case CARRIAGE_RETURN:
+                    break;
+
+                case BACKSPACE:
+                    break;
+
+                default:
+                    EditorInsertChar(unicodechar);
+                    break;
+            }
+            break;
+    }
     return TRUE;
 }
 
@@ -474,6 +511,102 @@ static intn_t EditorRowCxToRx(text_row_t* row, intn_t cx)
         rx++;
     }
     return rx;
+}
+
+static void EditorRowInsertChar(text_row_t* row, int32_t at, char_t c)
+{
+    // Validate the index we want to insert a character at
+    if (at < 0 || at > row->size)
+    {
+        at = row->size;
+    }
+
+    // Make room for the character we want to insert
+    row->chars = realloc(row->chars, row->size + 1);
+    memmove(&row->chars[at + 1], &row->chars[at], row->size - at + 1);
+    row->size++;
+    row->chars[at] = c;
+    // row->chars[row->size] = CHAR_NULL;
+
+    EditorUpdateRow(row);
+}
+
+static void EditorInsertChar(char_t c)
+{
+    // Ignore key presses that return a NULL character (for instance escape or f1-f12, print screen, etc.)
+    if (c == CHAR_NULL)
+    {
+        return;
+    }
+    if (cfg.cy == cfg.numRows)
+    {
+        EditorAppendRow("", 0);
+    }
+    EditorRowInsertChar(&cfg.row[cfg.cy], cfg.cx, c);
+    cfg.cx++;
+}
+
+// The length parameter is an OUTPUT parameter
+static char_t* EditorRowsToString(int32_t* buflen)
+{
+    // Sum the lengths of each row of text
+    int32_t totlen = 0;
+    for (int32_t i = 0; i < cfg.numRows; i++)
+    {
+        // Adding 1 for each newline character which will be added to the end of each line
+        totlen += cfg.row[i].size + 1;
+    }
+    *buflen = totlen;
+
+    char_t* buf = malloc(totlen);
+    char_t* p = buf;
+    for (int32_t j = 0; j < cfg.numRows; j++)
+    {
+        // Copy the row contents into the buffer
+        memcpy(p, cfg.row[j].chars, cfg.row[j].size);
+        p += cfg.row[j].size;
+        *p = '\n';
+        p++;
+    }
+    return buf;
+}
+
+static void EditorSave(void)
+{
+    // If we didn't open a file, don't save anywhere
+    if (cfg.fullFilePath == NULL)
+    {
+        return;
+    }
+
+    // Convert the rows of text into one big string
+    int32_t len;
+    char_t* buf = EditorRowsToString(&len);
+
+    FILE* fp = fopen(cfg.fullFilePath, "w");
+    if (fp == NULL)
+    {
+        Log(LL_ERROR, 0, "Failed to open file %s for saving in editor: %s.", 
+            cfg.fullFilePath, GetCommandErrorInfo(errno));
+        EditorSetStatusMessage("Failed to save: %s", GetCommandErrorInfo(errno));
+        free(buf);
+        return;
+    }
+
+    // Write all the data into the file
+    size_t ret = fwrite(buf, 1, len, fp);
+    if (ret == 0)
+    {
+        Log(LL_ERROR, 0, "Failed to write data to file %s in editor: %s.",
+            cfg.fullFilePath, GetCommandErrorInfo(errno));
+        EditorSetStatusMessage("Failed to save: %s", GetCommandErrorInfo(errno));
+    }
+    else
+    {
+        EditorSetStatusMessage("%d bytes written to disk.", len);
+    }
+    free(buf);
+    fclose(fp);
 }
 
 // This function is pretty much the same as GetInputKey but using the extended input protocol
