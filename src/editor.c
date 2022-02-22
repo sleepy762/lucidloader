@@ -7,9 +7,11 @@ static void EditorAppendRow(char_t* str, size_t len);
 static void EditorUpdateRow(text_row_t* row);
 static intn_t EditorRowCxToRx(text_row_t* row, intn_t cx);
 static void EditorRowInsertChar(text_row_t* row, int32_t at, char_t c);
+static void EditorRowDeleteChar(text_row_t* row, int32_t at);
 
 /* Editor operations */
 static void EditorInsertChar(char_t c);
+static void EditorDeleteChar(void);
 
 /* File I/O */
 static int8_t EditorOpenFile(char_t* filename);
@@ -138,6 +140,7 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
     efi_key_data_t keyData = GetInputKeyData(ConInEx);
 
     // CONTROL KEYS
+    // Exit key
     if (IsKeyPressedWithLCtrl(keyData, EDITOR_EXIT_KEY)) 
     {
         if (cfg.dirty && quitTimes > 0)
@@ -152,6 +155,7 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
             return FALSE;
         }
     }
+    // Save key
     else if (IsKeyPressedWithLCtrl(keyData, EDITOR_SAVE_KEY))
     {
         EditorSave();
@@ -200,7 +204,7 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
             break;
 
         case DELETE_KEY_SCANCODE:
-            // Nothing for now
+            EditorDeleteChar();
             break;
 
         // Move the cursor one column/row
@@ -219,6 +223,7 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
                     break;
 
                 case BACKSPACE:
+                    EditorDeleteChar();
                     break;
 
                 default:
@@ -543,7 +548,20 @@ static void EditorRowInsertChar(text_row_t* row, int32_t at, char_t c)
     memmove(&row->chars[at + 1], &row->chars[at], row->size - at + 1);
     row->size++;
     row->chars[at] = c;
-    // row->chars[row->size] = CHAR_NULL;
+
+    EditorUpdateRow(row);
+    cfg.dirty = TRUE;
+}
+
+static void EditorRowDeleteChar(text_row_t* row, int32_t at)
+{
+    if (at < 0 || at >= row->size)
+    {
+        return;
+    }
+
+    memmove(&row->chars[at], &row->chars[at + 1], row->size - at);
+    row->size--;
 
     EditorUpdateRow(row);
     cfg.dirty = TRUE;
@@ -556,12 +574,31 @@ static void EditorInsertChar(char_t c)
     {
         return;
     }
+
+    // Append a new line if we write at the end of the file
     if (cfg.cy == cfg.numRows)
     {
         EditorAppendRow("", 0);
     }
+
     EditorRowInsertChar(&cfg.row[cfg.cy], cfg.cx, c);
     cfg.cx++;
+}
+
+static void EditorDeleteChar(void)
+{
+    // If the cursor is past the end of the file, there's nothing to delete
+    if (cfg.cy == cfg.numRows)
+    {
+        return;
+    }
+
+    text_row_t* row = &cfg.row[cfg.cy];
+    if (cfg.cx > 0)
+    {
+        EditorRowDeleteChar(row, cfg.cx - 1);
+        cfg.cx--;
+    }
 }
 
 // The length parameter is an OUTPUT parameter
@@ -616,9 +653,9 @@ static void EditorSave(void)
         }
         fclose(fp);
     }
-    Log(LL_ERROR, 0, "Failed to save file %s in editor: %s.", 
-        cfg.fullFilePath, GetCommandErrorInfo(errno));
-    EditorSetStatusMessage("Failed to save: %s", GetCommandErrorInfo(errno));
+    const char_t* errStr = GetCommandErrorInfo(errno);
+    Log(LL_ERROR, 0, "Failed to save file %s in editor: %s", cfg.fullFilePath, errStr);
+    EditorSetStatusMessage("Failed to save: %s", errStr);
     free(buf);
 }
 

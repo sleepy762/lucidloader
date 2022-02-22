@@ -33,7 +33,7 @@
 void *memcpy(void *dst, const void *src, size_t n)
 {
     uint8_t *a=(uint8_t*)dst,*b=(uint8_t*)src;
-    if(src && dst && n>0) {
+    if(src && dst && src != dst && n>0) {
         while(n--) *a++ = *b++;
     }
     return dst;
@@ -42,8 +42,8 @@ void *memcpy(void *dst, const void *src, size_t n)
 void *memmove(void *dst, const void *src, size_t n)
 {
     uint8_t *a=(uint8_t*)dst,*b=(uint8_t*)src;
-    if(src && dst && n>0) {
-        if((a<b && a+n>b) || (b<a && b+n>a)) {
+    if(src && dst && src != dst && n>0) {
+        if(a>b && a<b+n) {
             a+=n-1; b+=n-1; while(n-->0) *a--=*b--;
         } else {
             while(n--) *a++ = *b++;
@@ -64,7 +64,7 @@ void *memset(void *s, int c, size_t n)
 int memcmp(const void *s1, const void *s2, size_t n)
 {
     uint8_t *a=(uint8_t*)s1,*b=(uint8_t*)s2;
-    if(s1 && s2 && n>0) {
+    if(s1 && s2 && s1 != s2 && n>0) {
         while(n--) {
             if(*a != *b) return *a - *b;
             a++; b++;
@@ -118,7 +118,7 @@ void *memrmem(const void *haystack, size_t hl, const void *needle, size_t nl)
 
 char_t *strcpy(char_t *dst, const char_t *src)
 {
-    if(src && dst) {
+    if(src && dst && src != dst) {
         while(*src) {*dst++=*src++;} *dst=0;
     }
     return dst;
@@ -127,7 +127,7 @@ char_t *strcpy(char_t *dst, const char_t *src)
 char_t *strncpy(char_t *dst, const char_t *src, size_t n)
 {
     const char_t *e = src+n;
-    if(src && dst && n>0) {
+    if(src && dst && src != dst && n>0) {
         while(*src && src<e) {*dst++=*src++;} *dst=0;
     }
     return dst;
