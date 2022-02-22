@@ -168,7 +168,7 @@ char_t* MakeFullPath(char_t* args, char_t* currPathPtr, boolean_t* isDynamicMemo
 
 boolean_t isspace(char_t c)
 {
-    return (c == ' ' || c == '\t');
+    return (c == ' ' || c == CHAR_TAB);
 }
 
 char_t* TrimSpaces(char_t* str)
@@ -237,14 +237,14 @@ void GetInputString(char_t buffer[], const uint32_t maxInputSize, boolean_t hide
         key = GetInputKey();
 
         // When enter is pressed, leave the loop to process the input
-        if (key.UnicodeChar == CARRIAGE_RETURN) 
+        if (key.UnicodeChar == CHAR_CARRIAGE_RETURN) 
         {
             printf("\n");
             break;
         }
 
         // Handling backspace
-        if (key.UnicodeChar == BACKSPACE)
+        if (key.UnicodeChar == CHAR_BACKSPACE)
         {
             if (index > 0) // Dont delete when the buffer is empty
             {

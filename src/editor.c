@@ -8,6 +8,9 @@ static void EditorUpdateRow(text_row_t* row);
 static intn_t EditorRowCxToRx(text_row_t* row, intn_t cx);
 static void EditorRowInsertChar(text_row_t* row, int32_t at, char_t c);
 static void EditorRowDeleteChar(text_row_t* row, int32_t at);
+static void EditorFreeRow(text_row_t* row);
+static void EditorDeleteRow(int32_t at);
+static void EditorRowAppendString(text_row_t* row, char_t* str, size_t len);
 
 /* Editor operations */
 static void EditorInsertChar(char_t c);
@@ -219,10 +222,10 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
             // In this inner switch we check the UNICODE CHARS
             switch (unicodechar)
             {
-                case CARRIAGE_RETURN:
+                case CHAR_CARRIAGE_RETURN:
                     break;
 
-                case BACKSPACE:
+                case CHAR_BACKSPACE:
                     EditorDeleteChar();
                     break;
 
@@ -490,7 +493,7 @@ static void EditorUpdateRow(text_row_t* row)
     int32_t tabs = 0;
     for (int32_t i = 0; i < row->size; i++)
     {
-        if (row->chars[i] == '\t')
+        if (row->chars[i] == CHAR_TAB)
         {
             tabs++;
         }
@@ -503,7 +506,7 @@ static void EditorUpdateRow(text_row_t* row)
     for (int32_t j = 0; j < row->size; j++)
     {
         // When we reach a tab, add 1 space and then append spaces until a tab stop
-        if (row->chars[j] == '\t')
+        if (row->chars[j] == CHAR_TAB)
         {
             row->render[idx++] = ' ';
             while (idx % EDITOR_TAB_SIZE != 0)
@@ -526,7 +529,7 @@ static intn_t EditorRowCxToRx(text_row_t* row, intn_t cx)
     intn_t rx = 0;
     for (int i = 0; i < cx; i++)
     {
-        if (row->chars[i] == '\t')
+        if (row->chars[i] == CHAR_TAB)
         {
             rx += (EDITOR_TAB_SIZE - 1) - (rx % EDITOR_TAB_SIZE);
         }
@@ -567,6 +570,36 @@ static void EditorRowDeleteChar(text_row_t* row, int32_t at)
     cfg.dirty = TRUE;
 }
 
+static void EditorFreeRow(text_row_t* row)
+{
+    free(row->render);
+    free(row->chars);
+}
+
+static void EditorDeleteRow(int32_t at)
+{
+    if (at < 0 || at >= cfg.numRows)
+    {
+        return;
+    }
+
+    EditorFreeRow(&cfg.row[at]);
+    memmove(&cfg.row[at], &cfg.row[at + 1], sizeof(text_row_t) * (cfg.numRows - at - 1));
+    cfg.numRows--;
+    cfg.dirty = TRUE;
+}
+
+static void EditorRowAppendString(text_row_t* row, char_t* str, size_t len)
+{
+    row->chars = realloc(row->chars, row->size + len + 1);
+    memcpy(&row->chars[row->size], str, len);
+    row->size += len;
+    row->chars[row->size] = CHAR_NULL;
+
+    EditorUpdateRow(row);
+    cfg.dirty = TRUE;
+}
+
 static void EditorInsertChar(char_t c)
 {
     // Ignore key presses that return a NULL character (for instance escape or f1-f12, print screen, etc.)
@@ -592,12 +625,24 @@ static void EditorDeleteChar(void)
     {
         return;
     }
+    // If the cursor is at the very beginning of the file, there's nothing to delete
+    if (cfg.cx == 0 && cfg.cy == 0)
+    {
+        return;
+    }
 
     text_row_t* row = &cfg.row[cfg.cy];
     if (cfg.cx > 0)
     {
         EditorRowDeleteChar(row, cfg.cx - 1);
         cfg.cx--;
+    }
+    else // Handle deleting a character at the beginning of the line
+    {
+        cfg.cx = cfg.row[cfg.cy - 1].size;
+        EditorRowAppendString(&cfg.row[cfg.cy - 1], row->chars, row->size);
+        EditorDeleteRow(cfg.cy);
+        cfg.cy--;
     }
 }
 

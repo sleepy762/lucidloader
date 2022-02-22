@@ -5,9 +5,6 @@
 #include "shellerr.h"
 #include "commanddefs.h"
 
-#define CARRIAGE_RETURN ('\r')  // The "character" when you press the enter key
-#define BACKSPACE ('\b')
-
 #define DIRECTORY_DELIM ('\\')
 #define DIRECTORY_DELIM_STR ("\\")
 #define CURRENT_DIR (".")

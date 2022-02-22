@@ -10,14 +10,10 @@
 #define CFG_ENTRY_DELIMITER ("\n\n")
 #define CFG_KEY_VALUE_DELIMITER ('=')
 
-// General struct which applies to any type of booting
-// The mainPath variable depends on the boot type -
-// When chainloading, it holds the path to the image to be chainloaded
-// With Linux, it holds the path to the kernel to be loaded
 typedef struct boot_entry_s
 {
-    char_t* name;
-    char_t* mainPath;
+    char_t* name; // Name in the menu
+    char_t* mainPath; // Holds a path to the file to load
     char_t* imgArgs; // Used if the image needs args
     struct boot_entry_s* next;
 } boot_entry_s;
