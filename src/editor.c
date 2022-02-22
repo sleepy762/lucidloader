@@ -3,7 +3,7 @@
 /*** Static declarations ***/
 
 /* Row operations */
-static void EditorAppendRow(char_t* str, size_t len);
+static void EditorInsertRow(int32_t at, char_t* str, size_t len);
 static void EditorUpdateRow(text_row_t* row);
 static intn_t EditorRowCxToRx(text_row_t* row, intn_t cx);
 static void EditorRowInsertChar(text_row_t* row, int32_t at, char_t c);
@@ -15,6 +15,7 @@ static void EditorRowAppendString(text_row_t* row, char_t* str, size_t len);
 /* Editor operations */
 static void EditorInsertChar(char_t c);
 static void EditorDeleteChar(void);
+static void EditorInsertNewline(void);
 
 /* File I/O */
 static int8_t EditorOpenFile(char_t* filename);
@@ -126,7 +127,7 @@ static int8_t EditorOpenFile(char_t* filename)
         {
             linelen--;
         }
-        EditorAppendRow(token, linelen);
+        EditorInsertRow(cfg.numRows, token, linelen);
     }
     cfg.dirty = FALSE;
 
@@ -223,6 +224,7 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
             switch (unicodechar)
             {
                 case CHAR_CARRIAGE_RETURN:
+                    EditorInsertNewline();
                     break;
 
                 case CHAR_BACKSPACE:
@@ -469,11 +471,18 @@ static void EditorDrawMessageBar(void)
     }
 }
 
-static void EditorAppendRow(char_t* str, size_t len)
+static void EditorInsertRow(int32_t at, char_t* str, size_t len)
 {
-    cfg.row = realloc(cfg.row, sizeof(text_row_t) * (cfg.numRows + 1));
+    if (at < 0 || at > cfg.numRows)
+    {
+        return;
+    }
 
-    int32_t at = cfg.numRows;
+    // Make room for a new row
+    cfg.row = realloc(cfg.row, sizeof(text_row_t) * (cfg.numRows + 1));
+    memmove(&cfg.row[at + 1], &cfg.row[at], sizeof(text_row_t) * (cfg.numRows - at));
+
+    // Create the row
     cfg.row[at].size = len;
     cfg.row[at].chars = malloc(len + 1);
     memcpy(cfg.row[at].chars, str, len);
@@ -611,7 +620,7 @@ static void EditorInsertChar(char_t c)
     // Append a new line if we write at the end of the file
     if (cfg.cy == cfg.numRows)
     {
-        EditorAppendRow("", 0);
+        EditorInsertRow(cfg.numRows, "", 0);
     }
 
     EditorRowInsertChar(&cfg.row[cfg.cy], cfg.cx, c);
@@ -644,6 +653,27 @@ static void EditorDeleteChar(void)
         EditorDeleteRow(cfg.cy);
         cfg.cy--;
     }
+}
+
+static void EditorInsertNewline(void)
+{
+    // Insert a new line if we are at the beginning of a line
+    if (cfg.cx == 0)
+    {
+        EditorInsertRow(cfg.cy, "", 0);
+    }
+    else // Split the line we're on into two rows
+    {
+        text_row_t* row = &cfg.row[cfg.cy];
+        EditorInsertRow(cfg.cy + 1, &row->chars[cfg.cx], row->size - cfg.cx);
+
+        row = &cfg.row[cfg.cy];
+        row->size = cfg.cx;
+        row->chars[row->size] = CHAR_NULL;
+        EditorUpdateRow(row);
+    }
+    cfg.cy++;
+    cfg.cx = 0;
 }
 
 // The length parameter is an OUTPUT parameter
