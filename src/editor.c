@@ -142,33 +142,42 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
     static int32_t quitTimes = EDITOR_QUIT_TIMES;
 
     efi_key_data_t keyData = GetInputKeyData(ConInEx);
+    char_t unicodechar = keyData.Key.UnicodeChar;
+    uint32_t shiftstate = keyData.KeyState.KeyShiftState;
 
     // CONTROL KEYS
-    // Exit key
-    if (IsKeyPressedWithLCtrl(keyData, EDITOR_EXIT_KEY)) 
+    if ((shiftstate & (EFI_SHIFT_STATE_VALID | EFI_LEFT_CONTROL_PRESSED)) 
+            == (EFI_SHIFT_STATE_VALID | EFI_LEFT_CONTROL_PRESSED) ||
+        (shiftstate & (EFI_SHIFT_STATE_VALID | EFI_RIGHT_CONTROL_PRESSED))
+            == (EFI_SHIFT_STATE_VALID | EFI_RIGHT_CONTROL_PRESSED))
     {
-        if (cfg.dirty && quitTimes > 0)
+        switch (unicodechar)
         {
-            EditorSetStatusMessage("WARNING!!! File has unsaved changes. "
-                "Press CTRL-Q %d more times to quit.", quitTimes);
-            quitTimes--;
-            return TRUE;
+            case EDITOR_EXIT_KEY:
+                // Don't exit from modified files immediately
+                if (cfg.dirty && quitTimes > 0)
+                {
+                    EditorSetStatusMessage("WARNING!!! File has unsaved changes. "
+                        "Press CTRL-Q %d more times to quit.", quitTimes);
+                    quitTimes--;
+                }
+                else
+                {
+                    return FALSE;
+                }
+                break;
+            case EDITOR_SAVE_KEY:
+                EditorSave();
+                break;
+            default:
+                // Nothing, ignore unmapped control keys
+                break;
         }
-        else
-        {
-            return FALSE;
-        }
-    }
-    // Save key
-    else if (IsKeyPressedWithLCtrl(keyData, EDITOR_SAVE_KEY))
-    {
-        EditorSave();
         return TRUE;
     }
 
     // EVERY OTHER KEY
     uint16_t scancode = keyData.Key.ScanCode;
-    char_t unicodechar = keyData.Key.UnicodeChar;
     // In the outer switch we check SPECIAL KEYS (by checking the scancodes)
     switch (scancode)
     {
@@ -751,12 +760,6 @@ efi_key_data_t GetInputKeyData(efi_simple_text_input_ex_protocol_t* ConInEx)
     EnableWatchdogTimer(DEFAULT_WATCHDOG_TIMEOUT);
 
     return keyData;
-}
-
-boolean_t IsKeyPressedWithLCtrl(efi_key_data_t keyData, char_t key)
-{
-    return (keyData.KeyState.KeyShiftState == EFI_SHIFT_STATE_VALID + EFI_LEFT_CONTROL_PRESSED 
-        && keyData.Key.UnicodeChar == key);
 }
 
 void AppendToBuffer(buffer_t* buf, const char_t* str, uint32_t len)

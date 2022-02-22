@@ -78,8 +78,6 @@ typedef struct buffer_t
 } buffer_t;
 #define BUF_INIT {NULL, 0}
 
-boolean_t IsKeyPressedWithLCtrl(efi_key_data_t keyData, char_t key);
-
 int8_t StartEditor(char_t* filename);
 efi_key_data_t GetInputKeyData(efi_simple_text_input_ex_protocol_t* ConInEx);
 

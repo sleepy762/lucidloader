@@ -255,7 +255,8 @@ void GetInputString(char_t buffer[], const uint32_t maxInputSize, boolean_t hide
         }
         // Add the character to the buffer as long as there is enough space and if its a valid character
         // The character in the last index must be null to terminate the string
-        else if (index < maxInputSize - 1 && key.UnicodeChar != CHAR_NULL)
+        else if (index < maxInputSize - 1 && 
+            key.UnicodeChar >= ' ' && key.UnicodeChar <= '~')
         {
             buffer[index] = key.UnicodeChar;
             index++;
