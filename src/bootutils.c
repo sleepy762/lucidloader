@@ -126,6 +126,25 @@ efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char_t** 
     return fileHandle->Read(fileHandle, &fileSize, (*buffer));
 }
 
+// Returns the size of a file in bytes
+uint64_t GetFileSize(FILE* file)
+{
+    if (file == NULL)
+    {
+        return 0;
+    }
+
+    efi_file_info_t info;
+    efi_status_t status = GetFileInfo(file, &info);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to get file info when getting file size.");
+        return 0;
+    }
+
+    return info.FileSize;
+}
+
 // The function reads the file content into a dynamically allocated buffer
 // The buffer must be freed by the user
 char_t* GetFileContent(char_t* path)
@@ -135,30 +154,18 @@ char_t* GetFileContent(char_t* path)
     if (file != NULL)
     {
         // Get file size
-        int64_t fileSize;
-        fseek(file, 0, SEEK_END);
-        fileSize = ftell(file);
-        fseek(file, 0, SEEK_SET);
+        uint64_t fileSize = GetFileSize(file);
 
-        // Prevent a bug that happens when filesize is 0
-        if (fileSize == 0)
-        {
-            return "";
-        }
-
-        // Read the file data into a buffer
-        efi_status_t status = BS->AllocatePool(LIP->ImageDataType, fileSize + 1, (void**)&buffer);
+        efi_status_t status = ReadFile(file, fileSize, &buffer);
         if (EFI_ERROR(status))
         {
-            Log(LL_ERROR, status, "Failed to allocate buffer when reading file %s.", path);
+            Log(LL_ERROR, status, "Failed to read file %s.", path);
             return NULL;
         }
 
-        fread(buffer, fileSize, 1, file);
         buffer[fileSize] = CHAR_NULL;
         fclose(file);
     }
-
     return buffer;
 }
 
@@ -173,7 +180,7 @@ efi_status_t RebootDevice(boolean_t rebootToFirmware)
         uint64_t* currOsIndications = NULL;
         
         // Get the size required to store the variable (oiSize is an output parameter)
-        RT->GetVariable(u"OsIndications", &global, NULL, &oiSize, NULL);
+        RT->GetVariable(L"OsIndications", &global, NULL, &oiSize, NULL);
 
         // Create a buffer with the appropriate size
         status = BS->AllocatePool(LIP->ImageDataType, oiSize, (void**)&currOsIndications);
@@ -183,7 +190,7 @@ efi_status_t RebootDevice(boolean_t rebootToFirmware)
         }
 
         // Get the actual data
-        RT->GetVariable(u"OsIndications", &global, NULL, &oiSize, (void*)currOsIndications);
+        RT->GetVariable(L"OsIndications", &global, NULL, &oiSize, (void*)currOsIndications);
         if (currOsIndications == NULL)
         {
             Log(LL_ERROR, 0, "Failed to get OsIndications environment variable.");
@@ -196,7 +203,7 @@ efi_status_t RebootDevice(boolean_t rebootToFirmware)
         }
 
         // Setting the variable with the firmware reboot bit
-        status = RT->SetVariable(u"OsIndications", &global, 
+        status = RT->SetVariable(L"OsIndications", &global, 
         (EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS), 
         sizeof(newOsIndications), (void*)&newOsIndications);
         if (EFI_ERROR(status))

@@ -15,6 +15,7 @@
 #include "cmds/reboot.h"
 #include "cmds/shutdown.h"
 #include "cmds/rm.h"
+#include "cmds/edit.h"
 #include "cmds/passwd.h"
 
 // The only command in this file because it has to access the list of all commands

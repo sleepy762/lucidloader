@@ -4,7 +4,7 @@
 boolean_t ShellLoginWithPassword()
 {
     char_t* encPassword = GetFileContent(PASS_FILE_PATH);
-    if(encPassword == NULL) // Password doesn't exist
+    if(encPassword == NULL && errno == ENOENT) // Password doesn't exist
     {
         return TRUE;
     }

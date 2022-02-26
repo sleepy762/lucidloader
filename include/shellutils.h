@@ -5,9 +5,6 @@
 #include "shellerr.h"
 #include "commanddefs.h"
 
-#define CARRIAGE_RETURN ('\r')  // The "character" when you press the enter key
-#define BACKSPACE ('\b')
-
 #define DIRECTORY_DELIM ('\\')
 #define DIRECTORY_DELIM_STR ("\\")
 #define CURRENT_DIR (".")
@@ -21,6 +18,7 @@ char_t* MakeFullPath(char_t* args, char_t* currPathPtr, boolean_t* isDynamicMemo
 efi_input_key_t GetInputKey(void);
 void GetInputString(char_t buffer[], const uint32_t maxInputSize, boolean_t hideInput);
 
+boolean_t IsPrintableChar(char_t c);
 boolean_t isspace(char_t c);
 char_t* TrimSpaces(char_t* str);
 void RemoveRepeatedChars(char_t* str, char_t toRemove);
