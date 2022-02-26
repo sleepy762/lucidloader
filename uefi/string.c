@@ -214,10 +214,10 @@ char_t *_strtok_r(char_t *s, const char_t *d, char_t **p)
     char_t *tok, *sp;
 
     if(d == NULL || (s == NULL && (s=*p) == NULL)) return NULL;
-
+again:
     c = *s++;
     for(sp = (char_t *)d; (sc=*sp++)!=0;) {
-        if(c == sc) { *p=s; *(s-1)=0; return s-1; }
+        if(c == sc) goto again;
     }
 
     if (c == 0) { *p=NULL; return NULL; }
@@ -239,7 +239,7 @@ char_t *_strtok_r(char_t *s, const char_t *d, char_t **p)
 
 char_t *strtok(char_t *s, const char_t *delim)
 {
-    char_t *p = s;
+    static char_t *p;
     return _strtok_r (s, delim, &p);
 }
 
