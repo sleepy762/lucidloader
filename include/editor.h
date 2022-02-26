@@ -37,6 +37,8 @@
 
 #define DELETE_KEY_SCANCODE     (0x08)
 
+#define ESCAPE_KEY_SCANCODE     (0x17)
+
 // Struct specific to the editor
 typedef struct text_row_t
 {

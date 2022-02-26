@@ -166,6 +166,11 @@ char_t* MakeFullPath(char_t* args, char_t* currPathPtr, boolean_t* isDynamicMemo
     return fullPath;
 }
 
+boolean_t IsPrintableChar(char_t c)
+{
+    return (c  >= ' ' && c <= '~');
+}
+
 boolean_t isspace(char_t c)
 {
     return (c == ' ' || c == CHAR_TAB);
@@ -235,16 +240,17 @@ void GetInputString(char_t buffer[], const uint32_t maxInputSize, boolean_t hide
     {
         // Continuously read input
         key = GetInputKey();
+        char_t unicodechar = key.UnicodeChar;
 
         // When enter is pressed, leave the loop to process the input
-        if (key.UnicodeChar == CHAR_CARRIAGE_RETURN) 
+        if (unicodechar == CHAR_CARRIAGE_RETURN) 
         {
             printf("\n");
             break;
         }
 
         // Handling backspace
-        if (key.UnicodeChar == CHAR_BACKSPACE)
+        if (unicodechar == CHAR_BACKSPACE)
         {
             if (index > 0) // Dont delete when the buffer is empty
             {
@@ -255,10 +261,9 @@ void GetInputString(char_t buffer[], const uint32_t maxInputSize, boolean_t hide
         }
         // Add the character to the buffer as long as there is enough space and if its a valid character
         // The character in the last index must be null to terminate the string
-        else if (index < maxInputSize - 1 && 
-            key.UnicodeChar >= ' ' && key.UnicodeChar <= '~')
+        else if (index < maxInputSize - 1 && IsPrintableChar(unicodechar))
         {
-            buffer[index] = key.UnicodeChar;
+            buffer[index] = unicodechar;
             index++;
 
             if (hideInput) // When entering a password
@@ -267,7 +272,7 @@ void GetInputString(char_t buffer[], const uint32_t maxInputSize, boolean_t hide
             }
             else
             {
-                printf("%c", key.UnicodeChar);
+                printf("%c", unicodechar);
             }
         }
     }

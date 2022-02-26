@@ -34,6 +34,7 @@ static void EditorDrawMessageBar(void);
 /* Input */
 static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx);
 static void EditorMoveCursor(uint16_t scancode);
+static char_t* EditorPrompt(const char_t* prompt);
 
 /* Init */
 static void InitEditorConfig(void);
@@ -107,12 +108,17 @@ static int8_t EditorOpenFile(char_t* filename)
 {
     free(cfg.fullFilePath);
     cfg.fullFilePath = strdup(filename);
-    cfg.filename = strrchr(cfg.fullFilePath, '\\') + 1; // Stores only the filename without the full path
+
+    // Stores only the filename without the full path, we add 1 to pass the delimiter
+    cfg.filename = strrchr(cfg.fullFilePath, '\\') + 1;
 
     FILE* fp = fopen(filename, "r");
     if (fp == NULL)
     {
-        return errno;
+        // Don't create the file yet if it doesn't exist, but let the user know it's "modified"
+        // When the user saves, the file will be created with all the content
+        cfg.dirty = TRUE;
+        return 0;
     }
 
     char_t* origDataPtr = GetFileContent(filename);
@@ -381,6 +387,61 @@ static void EditorMoveCursor(uint16_t scancode)
     if (cfg.cx > rowLen)
     {
         cfg.cx = rowLen;
+    }
+}
+
+static char_t* EditorPrompt(const char_t* prompt)
+{
+    size_t bufsize = 64;
+    char_t* buf = malloc(bufsize);
+
+    size_t buflen = 0;
+    buf[0] = CHAR_NULL;
+
+    while (TRUE)
+    {
+        EditorSetStatusMessage(prompt, buf);
+        EditorRefreshScreen();
+
+        efi_input_key_t key = GetInputKey();
+        char_t unicodechar = key.UnicodeChar;
+        uint16_t scancode = key.ScanCode;
+
+        // Append character to buffer (any printable character)
+        if (IsPrintableChar(unicodechar))
+        {
+            if (buflen == bufsize - 1)
+            {
+                bufsize *= 2;
+                buf = realloc(buf, bufsize);
+            }
+            buf[buflen++] = unicodechar;
+            buf[buflen] = CHAR_NULL;
+        }
+        // Remove the last character from the buffer (backspace key)
+        else if (scancode == DELETE_KEY_SCANCODE || unicodechar == CHAR_BACKSPACE)
+        {
+            if (buflen != 0)
+            {
+                buf[--buflen] = CHAR_NULL;
+            }
+        }
+        // Stop reading input and return the buffer (enter key)
+        else if (unicodechar == CHAR_CARRIAGE_RETURN)
+        {   
+            if (buflen != 0)
+            {
+                EditorSetStatusMessage("");
+                return buf;
+            }
+        }
+        // Stop reading input and return NULL (escape key)
+        else if (scancode == ESCAPE_KEY_SCANCODE)
+        {
+            EditorSetStatusMessage("");
+            free(buf);
+            return NULL;
+        }
     }
 }
 
@@ -710,15 +771,29 @@ static char_t* EditorRowsToString(int32_t* buflen)
 
 static void EditorSave(void)
 {
-    // If we didn't open a file, don't save anywhere
+    // If we didn't open a file, ask for a file path
     if (cfg.fullFilePath == NULL)
     {
-        return;
+        cfg.fullFilePath = EditorPrompt("Save as: \\%s");
+        if (cfg.fullFilePath == NULL)
+        {
+            EditorSetStatusMessage("Save aborted.");
+            return;
+        }
+
+        // Store only the filename, see in EditorOpenFile
+        char_t* shortFileName = strrchr(cfg.fullFilePath, '\\');
+        cfg.filename = shortFileName != NULL ? shortFileName + 1 : cfg.fullFilePath;
     }
 
     // Convert the rows of text into one big string
     int32_t len;
     char_t* buf = EditorRowsToString(&len);
+    if (len == 0)
+    {
+        EditorSetStatusMessage("Unable to save empty file.");
+        return;
+    }
 
     FILE* fp = fopen(cfg.fullFilePath, "w");
     if (fp != NULL)
