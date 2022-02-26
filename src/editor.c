@@ -1,5 +1,8 @@
 #include "editor.h"
 
+// Editor implementation inspired by snaptoken's kilo
+// https://github.com/snaptoken/kilo-src
+
 /*** Static declarations ***/
 
 /* Row operations */
