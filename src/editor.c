@@ -143,13 +143,9 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
 
     efi_key_data_t keyData = GetInputKeyData(ConInEx);
     char_t unicodechar = keyData.Key.UnicodeChar;
-    uint32_t shiftstate = keyData.KeyState.KeyShiftState;
 
     // CONTROL KEYS
-    if ((shiftstate & (EFI_SHIFT_STATE_VALID | EFI_LEFT_CONTROL_PRESSED)) 
-            == (EFI_SHIFT_STATE_VALID | EFI_LEFT_CONTROL_PRESSED) ||
-        (shiftstate & (EFI_SHIFT_STATE_VALID | EFI_RIGHT_CONTROL_PRESSED))
-            == (EFI_SHIFT_STATE_VALID | EFI_RIGHT_CONTROL_PRESSED))
+    if (IsCtrlPressed(keyData.KeyState.KeyShiftState))
     {
         switch (unicodechar)
         {
@@ -166,9 +162,11 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
                     return FALSE;
                 }
                 break;
+
             case EDITOR_SAVE_KEY:
                 EditorSave();
                 break;
+
             default:
                 // Nothing, ignore unmapped control keys
                 break;
@@ -178,7 +176,7 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
 
     // EVERY OTHER KEY
     uint16_t scancode = keyData.Key.ScanCode;
-    // In the outer switch we check SPECIAL KEYS (by checking the scancodes)
+    // In the outer switch we check SPECIAL KEYS (by checking the scancode)
     switch (scancode)
     {
         // Scroll a page up/down
@@ -741,6 +739,15 @@ static void EditorSave(void)
     Log(LL_ERROR, 0, "Failed to save file %s in editor: %s", cfg.fullFilePath, errStr);
     EditorSetStatusMessage("Failed to save: %s", errStr);
     free(buf);
+}
+
+// The shiftstate is in efi_key_data_t, therefore GetInputKeyData must be used
+boolean_t IsCtrlPressed(uint32_t shiftstate)
+{
+    return ((shiftstate & (EFI_SHIFT_STATE_VALID | EFI_LEFT_CONTROL_PRESSED)) 
+                == (EFI_SHIFT_STATE_VALID | EFI_LEFT_CONTROL_PRESSED) ||
+            (shiftstate & (EFI_SHIFT_STATE_VALID | EFI_RIGHT_CONTROL_PRESSED))
+                == (EFI_SHIFT_STATE_VALID | EFI_RIGHT_CONTROL_PRESSED));
 }
 
 // This function is pretty much the same as GetInputKey but using the extended input protocol

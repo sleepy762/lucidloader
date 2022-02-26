@@ -37,6 +37,7 @@
 
 #define DELETE_KEY_SCANCODE     (0x08)
 
+// Struct specific to the editor
 typedef struct text_row_t
 {
     int32_t size;
@@ -46,6 +47,7 @@ typedef struct text_row_t
     char_t* render;
 } text_row_t;
 
+// Struct specific to the editor
 typedef struct editor_config_t
 {
     // Size of the screen in rows and columns
@@ -71,15 +73,19 @@ typedef struct editor_config_t
     boolean_t dirty; // Modified without saving
 } editor_config_t;
 
+// Generic buffer struct
 typedef struct buffer_t
 {
     char_t* b;
     int32_t len;
 } buffer_t;
-#define BUF_INIT {NULL, 0}
+#define BUF_INIT {NULL, 0} // Used for initializing the buffer
 
 int8_t StartEditor(char_t* filename);
+
 efi_key_data_t GetInputKeyData(efi_simple_text_input_ex_protocol_t* ConInEx);
+
+boolean_t IsCtrlPressed(uint32_t shiftstate);
 
 void AppendToBuffer(buffer_t* buf, const char_t* str, uint32_t len);
 void PrintBuffer(buffer_t* buf);

@@ -180,7 +180,7 @@ efi_status_t RebootDevice(boolean_t rebootToFirmware)
         uint64_t* currOsIndications = NULL;
         
         // Get the size required to store the variable (oiSize is an output parameter)
-        RT->GetVariable(u"OsIndications", &global, NULL, &oiSize, NULL);
+        RT->GetVariable(L"OsIndications", &global, NULL, &oiSize, NULL);
 
         // Create a buffer with the appropriate size
         status = BS->AllocatePool(LIP->ImageDataType, oiSize, (void**)&currOsIndications);
@@ -190,7 +190,7 @@ efi_status_t RebootDevice(boolean_t rebootToFirmware)
         }
 
         // Get the actual data
-        RT->GetVariable(u"OsIndications", &global, NULL, &oiSize, (void*)currOsIndications);
+        RT->GetVariable(L"OsIndications", &global, NULL, &oiSize, (void*)currOsIndications);
         if (currOsIndications == NULL)
         {
             Log(LL_ERROR, 0, "Failed to get OsIndications environment variable.");
@@ -203,7 +203,7 @@ efi_status_t RebootDevice(boolean_t rebootToFirmware)
         }
 
         // Setting the variable with the firmware reboot bit
-        status = RT->SetVariable(u"OsIndications", &global, 
+        status = RT->SetVariable(L"OsIndications", &global, 
         (EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS), 
         sizeof(newOsIndications), (void*)&newOsIndications);
         if (EFI_ERROR(status))
