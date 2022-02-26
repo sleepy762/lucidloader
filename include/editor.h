@@ -8,8 +8,9 @@
 /* Some editor configuration macros */
 
 // Keys in combination with LCTRL
-#define EDITOR_EXIT_KEY ('q')
-#define EDITOR_SAVE_KEY ('s')
+#define EDITOR_EXIT_KEY     ('q')
+#define EDITOR_SAVE_KEY     ('s')
+#define EDITOR_SEARCH_KEY   ('f')
 
 // How many times the user has to press the quit key to exit if the file has been modified
 #define EDITOR_QUIT_TIMES (3)
@@ -17,7 +18,7 @@
 #define EDITOR_STATUS_MSG_ARR_SIZE (80)
 #define EDITOR_WELCOME_MSG_ARR_SIZE (80)
 
-#define EDITOR_INITIAL_STATUS_MSG ("HELP: CTRL-Q = quit | CTRL-S = save")
+#define EDITOR_INITIAL_STATUS_MSG ("HELP: CTRL-Q = quit | CTRL-S = save | CTRL-F = search")
 #define EDITOR_STATUS_MSG_TIMEOUT (5)
 
 // How many spaces to replace TABs with

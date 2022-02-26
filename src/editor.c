@@ -6,6 +6,7 @@
 static void EditorInsertRow(int32_t at, char_t* str, size_t len);
 static void EditorUpdateRow(text_row_t* row);
 static intn_t EditorRowCxToRx(text_row_t* row, intn_t cx);
+static intn_t EditorRowRxToCx(text_row_t* row, intn_t rx);
 static void EditorRowInsertChar(text_row_t* row, int32_t at, char_t c);
 static void EditorRowDeleteChar(text_row_t* row, int32_t at);
 static void EditorFreeRow(text_row_t* row);
@@ -21,6 +22,9 @@ static void EditorInsertNewline(void);
 static int8_t EditorOpenFile(char_t* filename);
 static char_t* EditorRowsToString(int32_t* buflen);
 static void EditorSave(void);
+
+/* Search */
+static void EditorFind(void);
 
 /* Output */
 static void AppendEditorWelcomeMessage(buffer_t* buf);
@@ -171,6 +175,10 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
 
             case EDITOR_SAVE_KEY:
                 EditorSave();
+                break;
+
+            case EDITOR_SEARCH_KEY:
+                EditorFind();
                 break;
 
             default:
@@ -615,6 +623,25 @@ static intn_t EditorRowCxToRx(text_row_t* row, intn_t cx)
     return rx;
 }
 
+static intn_t EditorRowRxToCx(text_row_t* row, intn_t rx)
+{
+    intn_t curRx = 0;
+    int32_t cx;
+    for (cx = 0; cx < row->size; cx++)
+    {
+        if (row->chars[cx] == CHAR_TAB)
+        {
+            curRx += (EDITOR_TAB_SIZE - 1) - (curRx % EDITOR_TAB_SIZE);
+        }
+        curRx++;
+        if (curRx > rx)
+        {
+            return cx;
+        }
+    }
+    return cx;
+}
+
 static void EditorRowInsertChar(text_row_t* row, int32_t at, char_t c)
 {
     // Validate the index we want to insert a character at
@@ -814,6 +841,30 @@ static void EditorSave(void)
     Log(LL_ERROR, 0, "Failed to save file %s in editor: %s", cfg.fullFilePath, errStr);
     EditorSetStatusMessage("Failed to save: %s", errStr);
     free(buf);
+}
+
+static void EditorFind(void)
+{
+    char_t* query = EditorPrompt("Search: %s (ESC to cancel)");
+    if (query == NULL)
+    {
+        return;
+    }
+
+    for (intn_t i = 0; i < cfg.numRows; i++)
+    {
+        text_row_t* row = &cfg.row[i];
+        char_t* match = strstr(row->render, query);
+
+        if (match != NULL)
+        {
+            cfg.cy = i;
+            cfg.cx = EditorRowRxToCx(row, match - row->render);
+            cfg.rowOffset = cfg.numRows;
+            break;
+        }
+    }
+    free(query);
 }
 
 // The shiftstate is in efi_key_data_t, therefore GetInputKeyData must be used
