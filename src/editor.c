@@ -25,6 +25,7 @@ static void EditorSave(void);
 
 /* Search */
 static void EditorFind(void);
+static void EditorFindCallback(char_t* query, efi_input_key_t key);
 
 /* Output */
 static void AppendEditorWelcomeMessage(buffer_t* buf);
@@ -38,12 +39,13 @@ static void EditorDrawMessageBar(void);
 /* Input */
 static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx);
 static void EditorMoveCursor(uint16_t scancode);
-static char_t* EditorPrompt(const char_t* prompt);
+static char_t* EditorPrompt(const char_t* prompt, void (*callback)(char_t*, efi_input_key_t));
 
 /* Init */
 static void InitEditorConfig(void);
 static editor_config_t cfg;
 
+static void FreeEditorMemory(void);
 
 int8_t StartEditor(char_t* filename)
 {
@@ -77,8 +79,27 @@ int8_t StartEditor(char_t* filename)
         EditorRefreshScreen();
     } while (ProcessEditorInput(ConInEx));
     
+    FreeEditorMemory();
     ST->ConOut->ClearScreen(ST->ConOut);
     return 0;
+}
+
+// Free all the dynamically allocated memory
+static void FreeEditorMemory(void)
+{
+    if (cfg.fullFilePath != NULL)
+    {
+        free(cfg.fullFilePath);
+    }
+    if (cfg.row != NULL)
+    {
+        for (intn_t i = 0; i < cfg.numRows; i++)
+        {
+            free(cfg.row[i].chars);
+            free(cfg.row[i].render);
+        }
+        free(cfg.row);
+    }
 }
 
 static void InitEditorConfig(void)
@@ -398,7 +419,7 @@ static void EditorMoveCursor(uint16_t scancode)
     }
 }
 
-static char_t* EditorPrompt(const char_t* prompt)
+static char_t* EditorPrompt(const char_t* prompt, void (*callback)(char_t*, efi_input_key_t))
 {
     size_t bufsize = 64;
     char_t* buf = malloc(bufsize);
@@ -440,6 +461,10 @@ static char_t* EditorPrompt(const char_t* prompt)
             if (buflen != 0)
             {
                 EditorSetStatusMessage("");
+                if (callback != NULL)
+                {
+                    callback(buf, key);
+                }
                 return buf;
             }
         }
@@ -447,8 +472,17 @@ static char_t* EditorPrompt(const char_t* prompt)
         else if (scancode == ESCAPE_KEY_SCANCODE)
         {
             EditorSetStatusMessage("");
+            if (callback != NULL)
+            {
+                callback(buf, key);
+            }
             free(buf);
             return NULL;
+        }
+
+        if (callback != NULL)
+        {
+            callback(buf, key);
         }
     }
 }
@@ -801,7 +835,7 @@ static void EditorSave(void)
     // If we didn't open a file, ask for a file path
     if (cfg.fullFilePath == NULL)
     {
-        cfg.fullFilePath = EditorPrompt("Save as: \\%s");
+        cfg.fullFilePath = EditorPrompt("Save as: \\%s", NULL);
         if (cfg.fullFilePath == NULL)
         {
             EditorSetStatusMessage("Save aborted.");
@@ -845,26 +879,85 @@ static void EditorSave(void)
 
 static void EditorFind(void)
 {
-    char_t* query = EditorPrompt("Search: %s (ESC to cancel)");
-    if (query == NULL)
+    intn_t savedCx = cfg.cx;
+    intn_t savedCy = cfg.cy;
+    intn_t savedColOff = cfg.colOffset;
+    intn_t savedRowOff = cfg.rowOffset;
+
+    char_t* query = EditorPrompt("Search: %s (Use ESC/Arrows/Enter)", EditorFindCallback);
+    if (query != NULL)
     {
+        free(query);
+    }
+    else // Restore the cursor position before starting the search
+    {
+        cfg.cx = savedCx;
+        cfg.cy = savedCy;
+        cfg.colOffset = savedColOff;
+        cfg.rowOffset = savedRowOff;
+    }
+}
+
+static void EditorFindCallback(char_t* query, efi_input_key_t key)
+{
+    // Used to move forward and backward when searching
+    static int32_t lastMatch = -1;
+    static int32_t direction = 1;
+
+    char_t unicodechar = key.UnicodeChar;
+    uint16_t scancode = key.ScanCode;
+    if (unicodechar == CHAR_CARRIAGE_RETURN || scancode == ESCAPE_KEY_SCANCODE)
+    {
+        lastMatch = -1;
+        direction = 1;
         return;
     }
+    else if (scancode == RIGHT_ARROW_SCANCODE || scancode == DOWN_ARROW_SCANCODE)
+    {
+        direction = 1;
+    }
+    else if (scancode == LEFT_ARROW_SCANCODE || scancode == UP_ARROW_SCANCODE)
+    {
+        direction = -1;
+    }
+    else
+    {
+        lastMatch = -1;
+        direction = 1;
+    }
+
+    if (lastMatch == -1)
+    {
+        direction = 1;
+    }
+    // Index of the current row we are searching
+    int32_t current = lastMatch;
 
     for (intn_t i = 0; i < cfg.numRows; i++)
     {
-        text_row_t* row = &cfg.row[i];
+        current += direction;
+        // if...else if to wrap around the end of the file to the beginning
+        if (current == -1)
+        {
+            current = cfg.numRows - 1;
+        }
+        else if (current == cfg.numRows)
+        {
+            current = 0;
+        }
+
+        text_row_t* row = &cfg.row[current];
         char_t* match = strstr(row->render, query);
 
         if (match != NULL)
         {
-            cfg.cy = i;
+            lastMatch = current;
+            cfg.cy = current;
             cfg.cx = EditorRowRxToCx(row, match - row->render);
             cfg.rowOffset = cfg.numRows;
             break;
         }
     }
-    free(query);
 }
 
 // The shiftstate is in efi_key_data_t, therefore GetInputKeyData must be used
