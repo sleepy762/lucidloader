@@ -27,7 +27,7 @@ Arch GNU/Linux (pacman): `mtools` `qemu` `ovmf` `xorriso`
 Debian GNU/Linux (apt): `mtools` `qemu-system-x86` `ovmf` `xorriso`
 
 Gentoo GNU/Linux (emerge): `sys-fs/mtools` `app-emulation/qemu` `sys-firmware/edk2-ovmf` `dev-libs/libisoburn`
-
+#
 Copy `OVMF.fd` in the OVMF directory installed on your pc into a directory with the name `ovmf`.
 
 The OVMF files can be found in these paths:
