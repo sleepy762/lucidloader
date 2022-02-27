@@ -25,9 +25,9 @@ int8_t StartShell(void)
     Log(LL_INFO, 0, "Starting the shell.");
     ST->ConOut->ClearScreen(ST->ConOut);
     ST->ConOut->EnableCursor(ST->ConOut, TRUE);
-    printf("Welcome to the bootloader shell!\n");
-    printf("Type `help` to get a list of commands.\n");
-    printf("Type `help cmd` for info on a command.\n\n");
+    printf("Welcome to the bootloader shell!\n"
+           "Type `help` to get a list of commands.\n"
+           "Type `help cmd` for info on a command.\n\n");
 
     char_t* currPath = NULL;
     // 2 is the initial size for the root dir "\" and null string terminator

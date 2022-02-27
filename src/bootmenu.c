@@ -65,9 +65,10 @@ static void SuccessMenu(boot_entry_s* head)
 
         // Printing info before booting
         ST->ConOut->ClearScreen(ST->ConOut);
-        printf("Booting `%s`...\n", curr->name);
-        printf("- path: `%s`\n", curr->mainPath);
-        printf("- args: `%s`\n\n", curr->imgArgs);
+        printf("Booting `%s`...\n"
+               "- path: `%s`\n"
+               "- args: `%s`\n",
+               curr->name, curr->mainPath, curr->imgArgs);
 
         ChainloadImage(curr->mainPath, curr->imgArgs);
 
@@ -86,11 +87,11 @@ static void FailMenu(const char_t* errorMsg)
 
         PrintBootloaderVersion();
         printf("%s\n\n", errorMsg);
-        printf("1) Open shell    (fix/change configuration file)\n");
-        printf("2) Show log\n");
-        printf("3) Shutdown\n");
-        printf("4) Restart\n");
-        printf("5) Return to main menu\n");
+        printf("1) Open shell    (fix/change configuration file)\n"
+               "2) Show log\n"
+               "3) Shutdown\n"
+               "4) Restart\n"
+               "5) Return to main menu\n");
         
         //clear buffer and read key stroke
         ST->ConIn->Reset(ST->ConIn, 0);    
