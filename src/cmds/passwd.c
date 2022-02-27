@@ -1,7 +1,8 @@
 #include "cmds/passwd.h"
 
-uint8_t PasswdCmd(cmd_args_s** args, char_t** currPathPtr)
+boolean_t PasswdCmd(cmd_args_s** args, char_t** currPathPtr)
 {
+    cmd_args_s* cmdArg = *args;
     // Check if a password file already exists
     FILE* passFile = fopen(PASS_FILE_PATH, "r");
     if (passFile == NULL) // Open a file if it doesn't exist
@@ -9,8 +10,8 @@ uint8_t PasswdCmd(cmd_args_s** args, char_t** currPathPtr)
         passFile = fopen(PASS_FILE_PATH, "w");
         if (passFile == NULL)
         {
-            PrintCommandError("passwd", NULL, errno);
-            return CMD_SUCCESS;
+            PrintCommandError(cmdArg->argString, NULL, errno);
+            return FALSE;
         }
     }
 
@@ -25,17 +26,16 @@ uint8_t PasswdCmd(cmd_args_s** args, char_t** currPathPtr)
         printf("\n");
         if(ans.UnicodeChar != 'y' && ans.UnicodeChar != 'Y')
         {
-            return CMD_SUCCESS;
+            return TRUE;
         }
     }
 
     if (CreateShellPassword() == FALSE)
     {
-        PrintCommandError("passwd", NULL, errno);
-        return CMD_SUCCESS;
+        PrintCommandError(cmdArg->argString, NULL, errno);
+        return FALSE;
     }
-
-    return CMD_SUCCESS;
+    return TRUE;
 }
 
 const char_t* PasswdBrief(void)

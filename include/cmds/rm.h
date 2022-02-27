@@ -7,7 +7,7 @@
 
 #define RECURSIVE_FLAG ("-r")
 
-uint8_t RmCmd(cmd_args_s** args, char_t** currPathPtr);
+boolean_t RmCmd(cmd_args_s** args, char_t** currPathPtr);
 const char_t* RmBrief(void);
 const char_t* RmLong(void);
 

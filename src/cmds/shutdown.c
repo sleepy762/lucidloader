@@ -1,9 +1,12 @@
 #include "cmds/shutdown.h"
 
-uint8_t ShutdownCmd(cmd_args_s** args, char_t** currPathPtr)
+boolean_t ShutdownCmd(cmd_args_s** args, char_t** currPathPtr)
 {
     ShutdownDevice();
-    return CMD_SHUTDOWN_FAIL;
+
+    cmd_args_s* cmdArg = *args;
+    PrintCommandError(cmdArg->argString, NULL, CMD_SHUTDOWN_FAIL);
+    return FALSE;
 }
 
 const char_t* ShutdownBrief(void)

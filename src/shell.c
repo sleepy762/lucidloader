@@ -67,14 +67,13 @@ int8_t ShellLoop(char_t** currPathPtr)
 
 int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
 {
-    char_t* cmd = NULL;
-    char_t* args = NULL;
+    buffer = TrimSpaces(buffer);
 
-    // Store the command and arguments in separate pointers
-    ParseInput(buffer, &cmd, &args);
+    char_t* args = buffer;
+    char_t* cmd = GetCommandFromBuffer(buffer);
     if (cmd == NULL)
     {
-        return CMD_SUCCESS;
+        return 0;
     }
 
     // Parse the arguments into a linked list (if there are any)
@@ -90,14 +89,13 @@ int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
     }
 
     const uint8_t totalCmds = CommandCount();
-    uint8_t commandReturn = 0;
     for (uint8_t i = 0; i < totalCmds; i++)
     {   
         // Find the right command and execute the command function
         if (strcmp(cmd, commands[i].commandName) == 0)
         {
             // Pass a pointer to the head of the linked list because it may be modified
-            commandReturn = commands[i].CommandFunction(&cmdArgs, currPathPtr);
+            commands[i].CommandFunction(&cmdArgs, currPathPtr);
             break;
         }
         else if (i + 1 == totalCmds)
@@ -106,49 +104,35 @@ int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
         }
     }
 
-    // Let the user know if any error has occurred
-    if (commandReturn != CMD_SUCCESS)
-    {
-        PrintCommandError(cmd, args, commandReturn);
-    }
-
+    free(cmd);
     FreeArgs(cmdArgs);
     return CMD_SUCCESS;
 }
 
-// Splits the buffer at the delimiter (space) and stores pointers in *cmd and *args
-// without using dynamically allocated memory and copying strings
-void ParseInput(char_t buffer[], char_t** cmd, char_t** args)
+char_t* GetCommandFromBuffer(char_t buffer[])
 {
     size_t bufferLen = strlen(buffer);
     if (bufferLen == 0)
     {
-        return;
+        return NULL;
     }
 
-    buffer = TrimSpaces(buffer);
-    int32_t argsOffset = GetValueOffset(buffer, SPACE);
-
-    // Use the argsOffset if there are args present
-    size_t cmdSize;
-    if (argsOffset != -1)
+    int32_t cmdLen;
+    int32_t cmdOffset = GetValueOffset(buffer, ' ');
+    if (cmdOffset == -1)
     {
-        cmdSize = argsOffset - 1;
+        cmdLen = bufferLen + 1;
     }
     else
     {
-        cmdSize = bufferLen + 1;
+        cmdLen = cmdOffset;
     }
 
-    *cmd = buffer;
-    buffer[cmdSize] = 0; // Terminate the string at the delimiter
+    char_t* cmd = malloc(cmdLen);
+    memcpy(cmd, buffer, cmdLen);
+    cmd[cmdLen - 1] = CHAR_NULL;
 
-    // If there are arguments present...
-    if (argsOffset != -1)
-    {
-        // Store the pointer after the delimiter (it's already null terminated)
-        *args = buffer + argsOffset;
-    }
+    return cmd;
 }
 
 int8_t ParseArgs(char_t* inputArgs, cmd_args_s** outputArgs)

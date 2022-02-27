@@ -1,14 +1,19 @@
 #include "cmds/cat.h"
 
-uint8_t CatCmd(cmd_args_s** args, char_t** currPathPtr)
+boolean_t CatCmd(cmd_args_s** args, char_t** currPathPtr)
 {
-    if (*args == NULL)
+    cmd_args_s* cmdArg = *args;
+    cmd_args_s* arg = cmdArg->next;
+
+    if (arg == NULL)
     {
-        return CMD_NO_FILE_SPECIFIED;
+        PrintCommandError(cmdArg->argString, NULL, CMD_NO_FILE_SPECIFIED);
+        return FALSE;
     }
 
+    boolean_t cmdSuccess = TRUE;
+
     // Print the content of each file in the arguments
-    cmd_args_s* arg = *args;
     while(arg != NULL)
     {
         boolean_t isDynamicMemory = FALSE;
@@ -16,13 +21,15 @@ uint8_t CatCmd(cmd_args_s** args, char_t** currPathPtr)
         char_t* filePath = MakeFullPath(arg->argString, *currPathPtr, &isDynamicMemory);
         if (filePath == NULL)
         {
-            return CMD_NO_FILE_SPECIFIED;
+            PrintCommandError(cmdArg->argString, NULL, CMD_NO_FILE_SPECIFIED);
+            return FALSE;
         }
 
-        uint8_t res = PrintFileContent(filePath);
+        int32_t res = PrintFileContent(filePath);
         if (res != CMD_SUCCESS)
         {
-            PrintCommandError("cat", arg->argString, res);
+            PrintCommandError(cmdArg->argString, arg->argString, res);
+            cmdSuccess = FALSE;
         }
         
         if (isDynamicMemory)
@@ -31,10 +38,10 @@ uint8_t CatCmd(cmd_args_s** args, char_t** currPathPtr)
         }
         arg = arg->next;
     }
-    return CMD_SUCCESS;
+    return cmdSuccess;
 }
 
-uint8_t PrintFileContent(char_t* path)
+int32_t PrintFileContent(char_t* path)
 {
     char_t* buffer = GetFileContent(path);
     if (buffer == NULL)

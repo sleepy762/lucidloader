@@ -2,54 +2,65 @@
 
 uint8_t LsCmd(cmd_args_s** args, char_t** currPathPtr)
 {
-    if (*args == NULL) // If no arguments were passed
+    cmd_args_s* cmdArg = *args;
+    cmd_args_s* arg = cmdArg->next;
+    if (arg == NULL) // If no arguments were passed
     {
-        return ListDir(*currPathPtr);
-    }
-    else
-    {
-        // Print each directory in the arguments
-        cmd_args_s* arg = *args;
-        while (arg != NULL)
+        int32_t ret = ListDir(*currPathPtr);
+        if (ret != CMD_SUCCESS)
         {
-            boolean_t isDynamicMemory = FALSE;
-
-            char_t* dirToList = MakeFullPath(arg->argString, *currPathPtr, &isDynamicMemory);
-            if (dirToList != NULL)
-            {
-                uint8_t normalizationResult = NormalizePath(&dirToList);
-                if (normalizationResult != CMD_SUCCESS)
-                {
-                    return normalizationResult;
-                }
-            }
-            else
-            {
-                return CMD_OUT_OF_MEMORY;
-            }
-
-            uint8_t res = ListDir(dirToList);
-            if (res != CMD_SUCCESS)
-            {
-                PrintCommandError("ls", arg->argString, res);
-            }
-            else
-            {
-                printf("\n");
-            }
-
-            if (isDynamicMemory) 
-            {
-                BS->FreePool(dirToList);
-            }
-            arg = arg->next;
+            PrintCommandError(cmdArg->argString, NULL, ret);
+            return FALSE;
+        }
+        else
+        {
+            return TRUE;
         }
     }
 
-    return CMD_SUCCESS;
+    boolean_t cmdSuccess = TRUE;
+    // Print each directory in the arguments
+    while (arg != NULL)
+    {
+        boolean_t isDynamicMemory = FALSE;
+
+        char_t* dirToList = MakeFullPath(arg->argString, *currPathPtr, &isDynamicMemory);
+        if (dirToList != NULL)
+        {
+            uint8_t normalizationResult = NormalizePath(&dirToList);
+            if (normalizationResult != CMD_SUCCESS)
+            {
+                PrintCommandError(cmdArg->argString, arg->argString, normalizationResult);
+                return FALSE;
+            }
+        }
+        else
+        {
+            PrintCommandError(cmdArg->argString, NULL, CMD_NO_DIR_SPEFICIED);
+            return FALSE;
+        }
+
+        int32_t res = ListDir(dirToList);
+        if (res != CMD_SUCCESS)
+        {
+            PrintCommandError(cmdArg->argString, arg->argString, res);
+            cmdSuccess = FALSE;
+        }
+        else
+        {
+            printf("\n");
+        }
+
+        if (isDynamicMemory)
+        {
+            BS->FreePool(dirToList);
+        }
+        arg = arg->next;
+    }
+    return cmdSuccess;
 }
 
-uint8_t ListDir(char_t* path)
+int32_t ListDir(char_t* path)
 {
     DIR* dir = opendir(path);
     if (dir != NULL)

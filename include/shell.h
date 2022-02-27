@@ -15,7 +15,7 @@
 int8_t StartShell(void);
 int8_t ShellLoop(char_t** currPathPtr);
 
-void ParseInput(char_t buffer[], char_t** cmd, char_t** args);
+char_t* GetCommandFromBuffer(char_t buffer[]);
 
 int8_t ParseArgs(char_t* inputArgs, cmd_args_s** outputArgs);
 int8_t SplitArgsString(char_t buffer[], cmd_args_s** outputArgs);

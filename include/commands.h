@@ -18,7 +18,7 @@
 #include "cmds/passwd.h"
 
 // The only command in this file because it has to access the list of all commands
-uint8_t HelpCmd(cmd_args_s** args, char_t** currPathPtr);
+boolean_t HelpCmd(cmd_args_s** args, char_t** currPathPtr);
 const char_t* HelpBrief(void);
 const char_t* HelpLong(void);
 

@@ -1,14 +1,17 @@
 #include "cmds/mkdir.h"
 
-uint8_t MkdirCmd(cmd_args_s** args, char_t** currPathPtr)
+boolean_t MkdirCmd(cmd_args_s** args, char_t** currPathPtr)
 {
-    if (*args == NULL)
+    cmd_args_s* cmdArg = *args;
+    cmd_args_s* arg = cmdArg->next;
+    if (arg == NULL)
     {
-        return CMD_NO_DIR_SPEFICIED;
+        PrintCommandError(cmdArg->argString, NULL, CMD_NO_DIR_SPEFICIED);
+        return FALSE;
     }
 
+    boolean_t cmdSuccess = TRUE;
     // Create each directory in the arguments
-    cmd_args_s* arg = *args;
     while (arg != NULL)
     {
         boolean_t isDynamicMemory = FALSE;
@@ -16,13 +19,15 @@ uint8_t MkdirCmd(cmd_args_s** args, char_t** currPathPtr)
         char_t* path = MakeFullPath(arg->argString, *currPathPtr, &isDynamicMemory);
         if (path == NULL)
         {
-            return CMD_NO_DIR_SPEFICIED;
+            PrintCommandError(cmdArg->argString, NULL, CMD_NO_DIR_SPEFICIED);
+            return FALSE;
         }
 
-        uint8_t res = ReadDirectory(path);
+        int32_t res = ReadDirectory(path);
         if (res != CMD_SUCCESS)
         {
-            PrintCommandError("mkdir", arg->argString, res);
+            PrintCommandError(cmdArg->argString, arg->argString, res);
+            cmdSuccess = FALSE;
         }
         
         if (isDynamicMemory) 
@@ -31,11 +36,10 @@ uint8_t MkdirCmd(cmd_args_s** args, char_t** currPathPtr)
         }
         arg = arg->next;
     }
-
-    return CMD_SUCCESS;
+    return cmdSuccess;
 }
 
-uint8_t ReadDirectory(char_t* path)
+int32_t ReadDirectory(char_t* path)
 {
     DIR* dir = opendir(path);
     if (dir != NULL)

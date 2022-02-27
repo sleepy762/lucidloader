@@ -1,27 +1,36 @@
 #include "cmds/edit.h"
 
-uint8_t EditCmd(cmd_args_s** args, char_t** currPathPtr)
+boolean_t EditCmd(cmd_args_s** args, char_t** currPathPtr)
 {
-    boolean_t isDynamicMemory = FALSE;
+    cmd_args_s* cmdArg = *args;
+    cmd_args_s* arg = cmdArg->next;
 
+    boolean_t isDynamicMemory = FALSE;
     char_t* filePath = NULL;
-    if (*args != NULL)
+
+    if (arg != NULL)
     {
-        filePath = MakeFullPath((*args)->argString, *currPathPtr, &isDynamicMemory);
+        filePath = MakeFullPath(arg->argString, *currPathPtr, &isDynamicMemory);
         if (filePath == NULL)
         {
-            return CMD_NO_FILE_SPECIFIED;
+            PrintCommandError(cmdArg->argString, NULL, CMD_NO_FILE_SPECIFIED);
+            return FALSE;
         }
     }
 
     int8_t res = StartEditor(filePath);
+    if (res == -1)
+    {
+        PrintCommandError(cmdArg->argString, arg->argString, CMD_EFI_FAIL);
+        return FALSE;
+    }
 
     if (isDynamicMemory)
     {
         BS->FreePool(filePath);
     }
 
-    return res;
+    return TRUE;
 }
 
 const char_t* EditBrief(void)

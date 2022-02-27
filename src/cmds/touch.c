@@ -1,14 +1,17 @@
 #include "cmds/touch.h"
 
-uint8_t TouchCmd(cmd_args_s** args, char_t** currPathPtr)
+boolean_t TouchCmd(cmd_args_s** args, char_t** currPathPtr)
 {
-    if (*args == NULL)
+    cmd_args_s* cmdArg = *args;
+    cmd_args_s* arg = cmdArg->next;
+    if (arg == NULL)
     {
-        return CMD_NO_FILE_SPECIFIED;
+        PrintCommandError(cmdArg->argString, NULL, CMD_NO_FILE_SPECIFIED);
+        return FALSE;
     }
 
+    boolean_t cmdSuccess = TRUE;
     // Create each file in the arguments
-    cmd_args_s* arg = *args;
     while (arg != NULL)
     {
         boolean_t isDynamicMemory = FALSE;
@@ -16,13 +19,15 @@ uint8_t TouchCmd(cmd_args_s** args, char_t** currPathPtr)
         char_t* path = MakeFullPath(arg->argString, *currPathPtr, &isDynamicMemory);
         if (path == NULL)
         {
-            return CMD_NO_FILE_SPECIFIED;
+            PrintCommandError(cmdArg->argString, NULL, CMD_NO_FILE_SPECIFIED);
+            return FALSE;
         }
 
-        uint8_t res = CreateFile(path);
+        int32_t res = CreateFile(path);
         if (res != CMD_SUCCESS)
         {
-            PrintCommandError("touch", arg->argString, res);
+            PrintCommandError(cmdArg->argString, arg->argString, res);
+            cmdSuccess = FALSE;
         }
 
         if (isDynamicMemory) 
@@ -31,11 +36,10 @@ uint8_t TouchCmd(cmd_args_s** args, char_t** currPathPtr)
         }
         arg = arg->next;
     }
-    
-    return CMD_SUCCESS;
+    return cmdSuccess;
 }
 
-uint8_t CreateFile(char_t* path)
+int32_t CreateFile(char_t* path)
 {
     // Prevent overriding an existing file
     FILE* fp = fopen(path, "r");

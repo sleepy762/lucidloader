@@ -5,7 +5,7 @@
 typedef struct shell_cmd_s
 {
     const char_t* commandName;
-    uint8_t (*CommandFunction)();
+    boolean_t (*CommandFunction)();
     const char_t* (*BriefHelp)();
     const char_t* (*LongHelp)();
 } shell_cmd_s;

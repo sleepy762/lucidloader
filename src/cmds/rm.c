@@ -1,22 +1,26 @@
 #include "cmds/rm.h"
 
-uint8_t RmCmd(cmd_args_s** args, char_t** currPathPtr)
+boolean_t RmCmd(cmd_args_s** args, char_t** currPathPtr)
 {
-    if (*args == NULL)
+    cmd_args_s* cmdArg = *args;
+    cmd_args_s* arg = cmdArg->next;
+    if (arg == NULL)
     {
-        return CMD_NO_FILE_SPECIFIED;
+        PrintCommandError(cmdArg->argString, NULL, CMD_NO_FILE_SPECIFIED);
+        return FALSE;
     }
 
     boolean_t recursiveFlag = FindFlagAndDelete(args, RECURSIVE_FLAG);
 
-    cmd_args_s* arg = *args;
+    boolean_t cmdSuccess = TRUE;
     while (arg != NULL)
     {
         // Refuse to remove '.' or '..' directories
         if (strcmp(arg->argString, ".") == 0 || strcmp(arg->argString, "..") == 0)
         {
-            PrintCommandError("rm", arg->argString, CMD_REFUSE_REMOVE);
+            PrintCommandError(cmdArg->argString, arg->argString, CMD_REFUSE_REMOVE);
             arg = arg->next;
+            cmdSuccess = FALSE;
             continue;
         }
 
@@ -25,7 +29,8 @@ uint8_t RmCmd(cmd_args_s** args, char_t** currPathPtr)
         char_t* filePath = MakeFullPath(arg->argString, *currPathPtr, &isDynamicMemory);
         if (filePath == NULL)
         {
-            return CMD_NO_FILE_SPECIFIED;
+            PrintCommandError(cmdArg->argString, NULL, CMD_NO_FILE_SPECIFIED);
+            return FALSE;
         }
 
         int32_t res;
@@ -40,7 +45,8 @@ uint8_t RmCmd(cmd_args_s** args, char_t** currPathPtr)
 
         if (res != 0)
         {
-            PrintCommandError("rm", arg->argString, errno);
+            PrintCommandError(cmdArg->argString, arg->argString, errno);
+            cmdSuccess = FALSE;
         }
 
         if (isDynamicMemory)
@@ -49,8 +55,7 @@ uint8_t RmCmd(cmd_args_s** args, char_t** currPathPtr)
         }
         arg = arg->next;
     }
-
-    return CMD_SUCCESS;
+    return cmdSuccess;
 }
 
 uint8_t RemoveDirRecursively(char_t* mainPath)

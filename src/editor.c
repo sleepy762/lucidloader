@@ -22,7 +22,7 @@ static void EditorDeleteChar(void);
 static void EditorInsertNewline(void);
 
 /* File I/O */
-static int8_t EditorOpenFile(char_t* filename);
+static void EditorOpenFile(char_t* filename);
 static char_t* EditorRowsToString(int32_t* buflen);
 static void EditorSave(void);
 
@@ -67,11 +67,7 @@ int8_t StartEditor(char_t* filename)
     
     if (filename != NULL)
     {
-        int8_t res = EditorOpenFile(filename);
-        if (res != 0)
-        {
-            return res;
-        }
+        EditorOpenFile(filename);
     }
 
     EditorSetStatusMessage(EDITOR_INITIAL_STATUS_MSG);
@@ -132,7 +128,7 @@ static void InitEditorConfig(void)
     cfg.dirty = FALSE;
 }
 
-static int8_t EditorOpenFile(char_t* filename)
+static void EditorOpenFile(char_t* filename)
 {
     free(cfg.fullFilePath);
     cfg.fullFilePath = strdup(filename);
@@ -146,7 +142,7 @@ static int8_t EditorOpenFile(char_t* filename)
         // Don't create the file yet if it doesn't exist, but let the user know it's "modified"
         // When the user saves, the file will be created with all the content
         cfg.dirty = TRUE;
-        return 0;
+        return;
     }
 
     char_t* origDataPtr = GetFileContent(filename);
@@ -167,7 +163,6 @@ static int8_t EditorOpenFile(char_t* filename)
 
     BS->FreePool(origDataPtr);
     fclose(fp);
-    return 0;
 }
 
 // Return FALSE when we want to stop processing input
