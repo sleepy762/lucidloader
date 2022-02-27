@@ -3,7 +3,6 @@
 // List of all the commands
 const shell_cmd_s commands[] = {
 { "help",     HelpCmd,     HelpBrief,     HelpLong },
-{ "echo",     EchoCmd,     EchoBrief,     EchoLong },
 { "pwd",      PwdCmd,      PwdBrief,      NULL },
 { "ls",       LsCmd,       LsBrief,       LsLong },
 { "cd",       CdCmd,       CdBrief,       CdLong },
@@ -31,17 +30,20 @@ uint8_t CommandCount(void)
     return totalCmds;
 }
 
-uint8_t HelpCmd(cmd_args_s** args, char_t** currPathPtr)
+boolean_t HelpCmd(cmd_args_s** args, char_t** currPathPtr)
 {
     uint8_t totalCmds = CommandCount();
 
+    cmd_args_s* cmdArg = *args;
+    cmd_args_s* arg = cmdArg->next;
+
     // This command only uses the first argument
-    if (*args != NULL)
+    if (arg != NULL)
     {
         // If an arg(command name) was passed, find help for it
         for (uint8_t i = 0; i < totalCmds; i++)
         {
-            if (strcmp((*args)->argString, commands[i].commandName) == 0)
+            if (strcmp(arg->argString, commands[i].commandName) == 0)
             {
                 if (commands[i].LongHelp != NULL)
                 {
@@ -49,12 +51,14 @@ uint8_t HelpCmd(cmd_args_s** args, char_t** currPathPtr)
                 }
                 else
                 {
-                    return CMD_LONG_HELP_NOT_AVAILABLE;
+                    PrintCommandError(cmdArg->argString, arg->argString, CMD_LONG_HELP_NOT_AVAILABLE);
+                    return FALSE;
                 }
-                return CMD_SUCCESS; // The command was found and we can leave
+                return TRUE; // The command was found and we can leave
             }
         }
-        return CMD_NOT_FOUND;
+        PrintCommandError(cmdArg->argString, arg->argString, CMD_NOT_FOUND);
+        return FALSE;
     }
     else
     {
@@ -74,7 +78,7 @@ uint8_t HelpCmd(cmd_args_s** args, char_t** currPathPtr)
             printf("\n");
         }
     }
-    return CMD_SUCCESS;
+    return TRUE;
 }
 
 const char_t* HelpBrief(void)

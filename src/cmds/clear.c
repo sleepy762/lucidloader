@@ -1,9 +1,9 @@
 #include "cmds/clear.h"
 
-uint8_t ClearCmd(cmd_args_s** args, char_t** currPathPtr)
+boolean_t ClearCmd(cmd_args_s** args, char_t** currPathPtr)
 {
     ST->ConOut->ClearScreen(ST->ConOut);
-    return CMD_SUCCESS;
+    return TRUE;
 }
 
 const char_t* ClearBrief(void)

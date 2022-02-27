@@ -13,8 +13,8 @@ boolean_t ShellLoginWithPassword()
     Log(LL_INFO, 0, "Asking for shell password...");
 
     PrintBootloaderVersion();
-    printf("The shell is protected with a password.\n");
-    printf("Enter the shell password: ");
+    printf("The shell is protected with a password.\n"
+           "Enter the shell password: ");
 
     char_t password[MAX_PASS_LEN]= {0};
     GetInputString(password, MAX_PASS_LEN, TRUE);

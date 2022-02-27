@@ -1,9 +1,11 @@
 #include "cmds/reboot.h"
 
-uint8_t RebootCmd(cmd_args_s** args, char_t** currPathPtr)
+boolean_t RebootCmd(cmd_args_s** args, char_t** currPathPtr)
 {
-    // Reboot into firmware setup or do a normal cold reboot
-    if (*args != NULL && strcmp((*args)->argString, REBOOT_TO_FW) == 0)
+    cmd_args_s* cmdArg = *args;
+    cmd_args_s* arg = cmdArg->next;
+    // Reboot into firmware setup or do a normal reboot
+    if (arg != NULL && strcmp(arg->argString, REBOOT_TO_FW) == 0)
     {
         RebootDevice(TRUE);
     }
@@ -11,7 +13,9 @@ uint8_t RebootCmd(cmd_args_s** args, char_t** currPathPtr)
     {
         RebootDevice(FALSE);
     }
-    return CMD_REBOOT_FAIL;
+
+    PrintCommandError(cmdArg->argString, NULL, CMD_REBOOT_FAIL);
+    return FALSE;
 }
 
 const char_t* RebootBrief(void)

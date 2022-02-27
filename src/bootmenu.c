@@ -1,5 +1,9 @@
 #include "bootmenu.h"
 
+static void SuccessMenu(boot_entry_s* head);
+static void FailMenu(const char_t* errorMsg);
+static boot_entry_s * GetCurrOS(uint8_t numOfPartition, boot_entry_s * head);
+
 void PrintBootloaderVersion(void)
 {
     printf("%s v%s\n\n", BOOTLOADER_NAME_STR, BOOTLOADER_VERSION);
@@ -23,7 +27,7 @@ void MainMenu(void)
     }
 }
 
-void SuccessMenu(boot_entry_s* head)
+static void SuccessMenu(boot_entry_s* head)
 {
     while (TRUE)
     {
@@ -61,9 +65,10 @@ void SuccessMenu(boot_entry_s* head)
 
         // Printing info before booting
         ST->ConOut->ClearScreen(ST->ConOut);
-        printf("Booting `%s`...\n", curr->name);
-        printf("- path: `%s`\n", curr->mainPath);
-        printf("- args: `%s`\n\n", curr->imgArgs);
+        printf("Booting `%s`...\n"
+               "- path: `%s`\n"
+               "- args: `%s`\n",
+               curr->name, curr->mainPath, curr->imgArgs);
 
         ChainloadImage(curr->mainPath, curr->imgArgs);
 
@@ -73,7 +78,7 @@ void SuccessMenu(boot_entry_s* head)
     FailMenu(FAILED_BOOT_ERR_MSG);
 }
 
-void FailMenu(const char_t* errorMsg)
+static void FailMenu(const char_t* errorMsg)
 {
     boolean_t returnToMainMenu = FALSE;
     while (!returnToMainMenu)
@@ -82,11 +87,11 @@ void FailMenu(const char_t* errorMsg)
 
         PrintBootloaderVersion();
         printf("%s\n\n", errorMsg);
-        printf("1) Open shell    (fix/change configuration file)\n");
-        printf("2) Show log\n");
-        printf("3) Shutdown\n");
-        printf("4) Restart\n");
-        printf("5) Return to main menu\n");
+        printf("1) Open shell    (fix/change configuration file)\n"
+               "2) Show log\n"
+               "3) Shutdown\n"
+               "4) Restart\n"
+               "5) Return to main menu\n");
         
         //clear buffer and read key stroke
         ST->ConIn->Reset(ST->ConIn, 0);    
@@ -136,7 +141,7 @@ void ShowLogFile(void)
     GetInputKey();
 }
 
-boot_entry_s * GetCurrOS(uint8_t numOfPartition, boot_entry_s * head)
+static boot_entry_s * GetCurrOS(uint8_t numOfPartition, boot_entry_s * head)
 {
     uint8_t  i = 0;
     boot_entry_s * curr = head;

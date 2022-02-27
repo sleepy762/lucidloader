@@ -1,5 +1,18 @@
 #include "shell.h"
 
+/* Main shell functions */
+static int8_t ShellLoop(char_t** currPathPtr);
+static int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr);
+
+/* Command and argument processing */
+static char_t* GetCommandFromBuffer(char_t buffer[]);
+static int8_t ParseArgs(char_t* inputArgs, cmd_args_s** outputArgs);
+static int8_t SplitArgsString(char_t buffer[], cmd_args_s** outputArgs);
+static cmd_args_s* InitializeArgsNode(void);
+static void AppendArgsNode(cmd_args_s* head, cmd_args_s* node);
+static void FreeArgs(cmd_args_s* args);
+
+
 int8_t StartShell(void)
 {
     // If the shell is password protected, ask to login
@@ -12,9 +25,9 @@ int8_t StartShell(void)
     Log(LL_INFO, 0, "Starting the shell.");
     ST->ConOut->ClearScreen(ST->ConOut);
     ST->ConOut->EnableCursor(ST->ConOut, TRUE);
-    printf("Welcome to the bootloader shell!\n");
-    printf("Type `help` to get a list of commands.\n");
-    printf("Type `help cmd` for info on a command.\n\n");
+    printf("Welcome to the bootloader shell!\n"
+           "Type `help` to get a list of commands.\n"
+           "Type `help cmd` for info on a command.\n\n");
 
     char_t* currPath = NULL;
     // 2 is the initial size for the root dir "\" and null string terminator
@@ -44,7 +57,7 @@ int8_t StartShell(void)
     return 0;
 }
 
-int8_t ShellLoop(char_t** currPathPtr)
+static int8_t ShellLoop(char_t** currPathPtr)
 {
     while (TRUE)
     {
@@ -65,16 +78,15 @@ int8_t ShellLoop(char_t** currPathPtr)
     return CMD_SUCCESS;
 }
 
-int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
+static int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
 {
-    char_t* cmd = NULL;
-    char_t* args = NULL;
+    buffer = TrimSpaces(buffer);
 
-    // Store the command and arguments in separate pointers
-    ParseInput(buffer, &cmd, &args);
+    char_t* args = buffer;
+    char_t* cmd = GetCommandFromBuffer(buffer);
     if (cmd == NULL)
     {
-        return CMD_SUCCESS;
+        return 0;
     }
 
     // Parse the arguments into a linked list (if there are any)
@@ -90,14 +102,13 @@ int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
     }
 
     const uint8_t totalCmds = CommandCount();
-    uint8_t commandReturn = 0;
     for (uint8_t i = 0; i < totalCmds; i++)
     {   
         // Find the right command and execute the command function
         if (strcmp(cmd, commands[i].commandName) == 0)
         {
             // Pass a pointer to the head of the linked list because it may be modified
-            commandReturn = commands[i].CommandFunction(&cmdArgs, currPathPtr);
+            commands[i].CommandFunction(&cmdArgs, currPathPtr);
             break;
         }
         else if (i + 1 == totalCmds)
@@ -106,52 +117,38 @@ int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
         }
     }
 
-    // Let the user know if any error has occurred
-    if (commandReturn != CMD_SUCCESS)
-    {
-        PrintCommandError(cmd, args, commandReturn);
-    }
-
+    free(cmd);
     FreeArgs(cmdArgs);
     return CMD_SUCCESS;
 }
 
-// Splits the buffer at the delimiter (space) and stores pointers in *cmd and *args
-// without using dynamically allocated memory and copying strings
-void ParseInput(char_t buffer[], char_t** cmd, char_t** args)
+static char_t* GetCommandFromBuffer(char_t buffer[])
 {
     size_t bufferLen = strlen(buffer);
     if (bufferLen == 0)
     {
-        return;
+        return NULL;
     }
 
-    buffer = TrimSpaces(buffer);
-    int32_t argsOffset = GetValueOffset(buffer, SPACE);
-
-    // Use the argsOffset if there are args present
-    size_t cmdSize;
-    if (argsOffset != -1)
+    int32_t cmdLen;
+    int32_t cmdOffset = GetValueOffset(buffer, ' ');
+    if (cmdOffset == -1)
     {
-        cmdSize = argsOffset - 1;
+        cmdLen = bufferLen + 1;
     }
     else
     {
-        cmdSize = bufferLen + 1;
+        cmdLen = cmdOffset;
     }
 
-    *cmd = buffer;
-    buffer[cmdSize] = 0; // Terminate the string at the delimiter
+    char_t* cmd = malloc(cmdLen);
+    memcpy(cmd, buffer, cmdLen);
+    cmd[cmdLen - 1] = CHAR_NULL;
 
-    // If there are arguments present...
-    if (argsOffset != -1)
-    {
-        // Store the pointer after the delimiter (it's already null terminated)
-        *args = buffer + argsOffset;
-    }
+    return cmd;
 }
 
-int8_t ParseArgs(char_t* inputArgs, cmd_args_s** outputArgs)
+static int8_t ParseArgs(char_t* inputArgs, cmd_args_s** outputArgs)
 {
     if (inputArgs == NULL)
     {
@@ -231,7 +228,7 @@ int8_t ParseArgs(char_t* inputArgs, cmd_args_s** outputArgs)
     return CMD_SUCCESS;
 }
 
-int8_t SplitArgsString(char_t buffer[], cmd_args_s** outputArgs)
+static int8_t SplitArgsString(char_t buffer[], cmd_args_s** outputArgs)
 {
     // If the buffer is empty don't do anything
     if (buffer[0] == CHAR_NULL)
@@ -270,7 +267,7 @@ int8_t SplitArgsString(char_t buffer[], cmd_args_s** outputArgs)
     return CMD_SUCCESS;
 }
 
-cmd_args_s* InitializeArgsNode(void)
+static cmd_args_s* InitializeArgsNode(void)
 {
     cmd_args_s* node = NULL;
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, sizeof(cmd_args_s), (void**)&node);
@@ -287,7 +284,7 @@ cmd_args_s* InitializeArgsNode(void)
 }
 
 // Add a new node to the end of the linked list
-void AppendArgsNode(cmd_args_s* head, cmd_args_s* node)
+static void AppendArgsNode(cmd_args_s* head, cmd_args_s* node)
 {
     cmd_args_s* copy = head;
     while (copy->next != NULL)
@@ -298,7 +295,7 @@ void AppendArgsNode(cmd_args_s* head, cmd_args_s* node)
 }
 
 // Freeing args without recursion
-void FreeArgs(cmd_args_s* args)
+static void FreeArgs(cmd_args_s* args)
 {
     while (args != NULL)
     {

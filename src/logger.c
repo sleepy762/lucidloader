@@ -38,9 +38,10 @@ void Log(log_level_t loglevel, efi_status_t status, const char_t* fmtMessage, ..
     fprintf(log, "[%04ds] [%s] ", GetSecondsSinceInit(), LogLevelString(loglevel));
 
     // Print the string and add formatting (if there is any)
-    __builtin_va_list args;
-    __builtin_va_start(args, fmtMessage);
+    va_list args;
+    va_start(args, fmtMessage);
     vfprintf(log, fmtMessage, args);
+    va_end(args);
 
     // Append a UEFI error message if the status argument is an error status
     if (EFI_ERROR(status))

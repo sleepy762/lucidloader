@@ -4,5 +4,5 @@
 #include "commanddefs.h"
 #include "bootutils.h"
 
-uint8_t ShutdownCmd(cmd_args_s** args, char_t** currPathPtr);
+boolean_t ShutdownCmd(cmd_args_s** args, char_t** currPathPtr);
 const char_t* ShutdownBrief(void);

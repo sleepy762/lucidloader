@@ -7,23 +7,27 @@ This bootloader is being developed using the [POSIX-UEFI](https://gitlab.com/bzt
 
 ## Dependencies
 
-Arch GNU/Linux (pacman): **`make`** ***`clang`*** ***`lld`*** **`efibootmgr`** `mtools` `qemu` `ovmf` `xorriso`
+Arch GNU/Linux (pacman): `make` `clang` `lld` `efibootmgr`
 
-Debian GNU/Linux (apt): **`make`** ***`clang`*** ***`lld`*** **`efibootmgr`** `mtools` `qemu-system-x86` `ovmf` `xorriso`
+Debian GNU/Linux (apt): `make` `clang` `lld` `efibootmgr`
 
-Gentoo GNU/Linux (emerge): **`sys-devel/make`** ***`sys-devel/clang`*** ***`sys-devel/lld`*** **`sys-boot/efibootmgr`** `sys-fs/mtools` `app-emulation/qemu` `sys-firmware/edk2-ovmf` `dev-libs/libisoburn`
+Gentoo GNU/Linux (emerge): `sys-devel/make` `sys-devel/clang` `sys-devel/lld` `sys-boot/efibootmgr`
 
-The non-bold dependencies are optional (used for emulation in QEMU) and they are not required for building and installing.
-
-***Bold Italicized*** - The Makefile will prefer clang+lld over gcc+ld, but if clang isn't installed then gcc will be used.
+The Makefile will prefer clang+lld over gcc+ld, but if clang isn't installed then gcc will be used.
 
 
 ## Emulating
 
-Emulation is used to quickly test code changes.
+Emulation is used to test code changes quickly.
 
-Installing your distro's OVMF package and QEMU is required for this part.
+#### Additional Dependencies
 
+Arch GNU/Linux (pacman): `mtools` `qemu` `ovmf` `xorriso`
+
+Debian GNU/Linux (apt): `mtools` `qemu-system-x86` `ovmf` `xorriso`
+
+Gentoo GNU/Linux (emerge): `sys-fs/mtools` `app-emulation/qemu` `sys-firmware/edk2-ovmf` `dev-libs/libisoburn`
+#
 Copy `OVMF.fd` in the OVMF directory installed on your pc into a directory with the name `ovmf`.
 
 The OVMF files can be found in these paths:

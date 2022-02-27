@@ -3,14 +3,13 @@
 #include "shellutils.h"
 #include "shellerr.h"
 #include "logger.h"
-#include "efiextendedinput.h"
 
 /* Some editor configuration macros */
 
-// Keys in combination with LCTRL
-#define EDITOR_EXIT_KEY     ('q')
-#define EDITOR_SAVE_KEY     ('s')
-#define EDITOR_SEARCH_KEY   ('f')
+// Control keys
+#define EDITOR_EXIT_CTRL_KEY     (0x11)
+#define EDITOR_SAVE_CTRL_KEY     (0x13)
+#define EDITOR_SEARCH_CTRL_KEY   (0x06)
 
 // How many times the user has to press the quit key to exit if the file has been modified
 #define EDITOR_QUIT_TIMES (3)
@@ -86,10 +85,9 @@ typedef struct buffer_t
 
 int8_t StartEditor(char_t* filename);
 
-efi_key_data_t GetInputKeyData(efi_simple_text_input_ex_protocol_t* ConInEx);
-
-boolean_t IsCtrlPressed(uint32_t shiftstate);
-
 void AppendToBuffer(buffer_t* buf, const char_t* str, uint32_t len);
 void PrintBuffer(buffer_t* buf);
 void FreeBuffer(buffer_t* buf);
+
+// Similar to strtok but returns an empty string between multiple appearances of a delimiter
+char_t* strtok_r_with_empty_str(char_t *s, const char_t *d, char_t **p);

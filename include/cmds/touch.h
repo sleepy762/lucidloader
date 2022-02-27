@@ -5,8 +5,6 @@
 #include "shellerr.h"
 #include "commanddefs.h"
 
-uint8_t TouchCmd(cmd_args_s** args, char_t** currPathPtr);
+boolean_t TouchCmd(cmd_args_s** args, char_t** currPathPtr);
 const char_t* TouchBrief(void);
 const char_t* TouchLong(void);
-
-uint8_t CreateFile(char_t* path);

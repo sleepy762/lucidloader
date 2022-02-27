@@ -1,25 +1,30 @@
 #include "cmds/cd.h"
 
-uint8_t CdCmd(cmd_args_s** args, char_t** currPathPtr)
+boolean_t CdCmd(cmd_args_s** args, char_t** currPathPtr)
 {
-    // This command only uses the first argument
-    if (*args == NULL)
+    cmd_args_s* cmdArg = *args;
+    cmd_args_s* arg = cmdArg->next;
+
+    if (arg == NULL)
     {
-        return CMD_NO_DIR_SPEFICIED;
+        PrintCommandError(cmdArg->argString, NULL, CMD_NO_DIR_SPEFICIED);
+        return FALSE;
     }
 
     boolean_t isDynamicMemory = FALSE;
 
-    char_t* dirToChangeTo = MakeFullPath((*args)->argString, *currPathPtr, &isDynamicMemory);
+    char_t* dirToChangeTo = MakeFullPath(arg->argString, *currPathPtr, &isDynamicMemory);
     if (dirToChangeTo == NULL)
     {
-        return CMD_NO_DIR_SPEFICIED;
+        PrintCommandError(cmdArg->argString, arg->argString, CMD_NO_DIR_SPEFICIED);
+        return FALSE;
     }
 
     uint8_t normalizationResult = NormalizePath(&dirToChangeTo);
     if (normalizationResult != CMD_SUCCESS)
     {
-        return normalizationResult;
+        PrintCommandError(cmdArg->argString, arg->argString, normalizationResult);
+        return FALSE;    
     }
 
     // Try to open the directory to make sure it exists
@@ -39,16 +44,18 @@ uint8_t CdCmd(cmd_args_s** args, char_t** currPathPtr)
             efi_status_t status = BS->AllocatePool(LIP->ImageDataType, newDirLen + 1, (void**)currPathPtr);
             if (EFI_ERROR(status))
             {
-                return CMD_OUT_OF_MEMORY;
+                PrintCommandError(cmdArg->argString, arg->argString, CMD_OUT_OF_MEMORY);
+                return FALSE;
             }
             memcpy(*currPathPtr, dirToChangeTo, newDirLen + 1);
         }
     }
     else
     {
-        return errno;
+        PrintCommandError(cmdArg->argString, arg->argString, errno);
+        return FALSE;
     }
-    return CMD_SUCCESS;
+    return TRUE;
 }
 
 const char_t* CdBrief(void)

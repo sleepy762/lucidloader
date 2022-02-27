@@ -22,7 +22,7 @@ static void EditorDeleteChar(void);
 static void EditorInsertNewline(void);
 
 /* File I/O */
-static int8_t EditorOpenFile(char_t* filename);
+static void EditorOpenFile(char_t* filename);
 static char_t* EditorRowsToString(int32_t* buflen);
 static void EditorSave(void);
 
@@ -40,7 +40,7 @@ static void EditorSetStatusMessage(const char_t* fmt, ...);
 static void EditorDrawMessageBar(void);
 
 /* Input */
-static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx);
+static boolean_t ProcessEditorInput(void);
 static void EditorMoveCursor(uint16_t scancode);
 static char_t* EditorPrompt(const char_t* prompt, void (*callback)(char_t*, efi_input_key_t));
 
@@ -52,26 +52,11 @@ static void FreeEditorMemory(void);
 
 int8_t StartEditor(char_t* filename)
 {
-    // We need to get the extended text input protocol in order to get more data about key presses
-    // for example, to tell if the left control key was pressed with another key 
-    efi_simple_text_input_ex_protocol_t* ConInEx;
-    efi_guid_t extendedInputGuid = EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL_GUID;
-    efi_status_t status = BS->LocateProtocol(&extendedInputGuid, NULL, (void**)&ConInEx);
-    if (EFI_ERROR(status))
-    {
-        Log(LL_ERROR, status, "Failed to get extended input protocol.");
-        return -1;
-    }
-
     InitEditorConfig();
     
     if (filename != NULL)
     {
-        int8_t res = EditorOpenFile(filename);
-        if (res != 0)
-        {
-            return res;
-        }
+        EditorOpenFile(filename);
     }
 
     EditorSetStatusMessage(EDITOR_INITIAL_STATUS_MSG);
@@ -80,7 +65,7 @@ int8_t StartEditor(char_t* filename)
     do
     {
         EditorRefreshScreen();
-    } while (ProcessEditorInput(ConInEx));
+    } while (ProcessEditorInput());
     
     FreeEditorMemory();
     ST->ConOut->ClearScreen(ST->ConOut);
@@ -132,7 +117,7 @@ static void InitEditorConfig(void)
     cfg.dirty = FALSE;
 }
 
-static int8_t EditorOpenFile(char_t* filename)
+static void EditorOpenFile(char_t* filename)
 {
     free(cfg.fullFilePath);
     cfg.fullFilePath = strdup(filename);
@@ -146,7 +131,7 @@ static int8_t EditorOpenFile(char_t* filename)
         // Don't create the file yet if it doesn't exist, but let the user know it's "modified"
         // When the user saves, the file will be created with all the content
         cfg.dirty = TRUE;
-        return 0;
+        return;
     }
 
     char_t* origDataPtr = GetFileContent(filename);
@@ -154,7 +139,7 @@ static int8_t EditorOpenFile(char_t* filename)
     char_t* token;
 
     // Read the file line by line
-    while ((token = strtok_r(fileData, "\n", &fileData)) != NULL)
+    while ((token = strtok_r_with_empty_str(fileData, "\n", &fileData)) != NULL)
     {
         size_t linelen = strlen(token);
         while (linelen > 0 && (token[linelen - 1] == '\n' || token[linelen - 1] == '\r'))
@@ -167,53 +152,18 @@ static int8_t EditorOpenFile(char_t* filename)
 
     BS->FreePool(origDataPtr);
     fclose(fp);
-    return 0;
 }
 
 // Return FALSE when we want to stop processing input
-static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx)
+static boolean_t ProcessEditorInput(void)
 {
     static int32_t quitTimes = EDITOR_QUIT_TIMES;
 
-    efi_key_data_t keyData = GetInputKeyData(ConInEx);
-    char_t unicodechar = keyData.Key.UnicodeChar;
-
-    // CONTROL KEYS
-    if (IsCtrlPressed(keyData.KeyState.KeyShiftState))
-    {
-        switch (unicodechar)
-        {
-            case EDITOR_EXIT_KEY:
-                // Don't exit from modified files immediately
-                if (cfg.dirty && quitTimes > 0)
-                {
-                    EditorSetStatusMessage("WARNING!!! File has unsaved changes. "
-                        "Press CTRL-Q %d more times to quit.", quitTimes);
-                    quitTimes--;
-                }
-                else
-                {
-                    return FALSE;
-                }
-                break;
-
-            case EDITOR_SAVE_KEY:
-                EditorSave();
-                break;
-
-            case EDITOR_SEARCH_KEY:
-                EditorFind();
-                break;
-
-            default:
-                // Nothing, ignore unmapped control keys
-                break;
-        }
-        return TRUE;
-    }
+    efi_input_key_t key = GetInputKey();
 
     // EVERY OTHER KEY
-    uint16_t scancode = keyData.Key.ScanCode;
+    char_t unicodechar = key.UnicodeChar;
+    uint16_t scancode = key.ScanCode;
     // In the outer switch we check SPECIAL KEYS (by checking the scancode)
     switch (scancode)
     {
@@ -268,6 +218,30 @@ static boolean_t ProcessEditorInput(efi_simple_text_input_ex_protocol_t* ConInEx
             // In this inner switch we check the UNICODE CHARS
             switch (unicodechar)
             {
+                // CONTROL KEYS
+                case EDITOR_EXIT_CTRL_KEY:
+                    // Don't exit from modified files immediately
+                    if (cfg.dirty && quitTimes > 0)
+                    {
+                        EditorSetStatusMessage("WARNING!!! File has unsaved changes. "
+                            "Press CTRL-Q %d more times to quit.", quitTimes);
+                        quitTimes--;
+                        return TRUE;
+                    }
+                    else
+                    {
+                        return FALSE;
+                    }
+                    break;
+
+                case EDITOR_SAVE_CTRL_KEY:
+                    EditorSave();
+                    break;
+
+                case EDITOR_SEARCH_CTRL_KEY:
+                    EditorFind();
+                    break;
+
                 case CHAR_CARRIAGE_RETURN:
                     EditorInsertNewline();
                     break;
@@ -963,34 +937,6 @@ static void EditorFindCallback(char_t* query, efi_input_key_t key)
     }
 }
 
-// The shiftstate is in efi_key_data_t, therefore GetInputKeyData must be used
-boolean_t IsCtrlPressed(uint32_t shiftstate)
-{
-    return ((shiftstate & (EFI_SHIFT_STATE_VALID | EFI_LEFT_CONTROL_PRESSED)) 
-                == (EFI_SHIFT_STATE_VALID | EFI_LEFT_CONTROL_PRESSED) ||
-            (shiftstate & (EFI_SHIFT_STATE_VALID | EFI_RIGHT_CONTROL_PRESSED))
-                == (EFI_SHIFT_STATE_VALID | EFI_RIGHT_CONTROL_PRESSED));
-}
-
-// This function is pretty much the same as GetInputKey but using the extended input protocol
-efi_key_data_t GetInputKeyData(efi_simple_text_input_ex_protocol_t* ConInEx)
-{
-    uintn_t idx;
-
-    DisableWatchdogTimer();
-    BS->WaitForEvent(1, &ConInEx->WaitForKeyEx, &idx);
-
-    efi_key_data_t keyData = {0};
-    efi_status_t status = ConInEx->ReadKeyStrokeEx(ConInEx, &keyData);
-    if (EFI_ERROR(status) && status != EFI_NOT_READY)
-    {
-        Log(LL_ERROR, status, "Failed to read keystroke.");
-    }
-    EnableWatchdogTimer(DEFAULT_WATCHDOG_TIMEOUT);
-
-    return keyData;
-}
-
 void AppendToBuffer(buffer_t* buf, const char_t* str, uint32_t len)
 {
     // Resize the string
@@ -1015,4 +961,34 @@ void FreeBuffer(buffer_t* buf)
 void PrintBuffer(buffer_t* buf)
 {
     printf("%s", buf->b);
+}
+
+// Taken straight from POSIX-UEFI (differs from current strtok_r)
+char_t* strtok_r_with_empty_str(char_t *s, const char_t *d, char_t **p)
+{
+    int c, sc;
+    char_t *tok, *sp;
+
+    if(d == NULL || (s == NULL && (s=*p) == NULL)) return NULL;
+
+    c = *s++;
+    for(sp = (char_t *)d; (sc=*sp++)!=0;) {
+        if(c == sc) { *p=s; *(s-1)=0; return s-1; }
+    }
+
+    if (c == 0) { *p=NULL; return NULL; }
+    tok = s-1;
+    while(1) {
+        c = *s++;
+        sp = (char_t *)d;
+        do {
+            if((sc=*sp++) == c) {
+                if(c == 0) s = NULL;
+                else *(s-1) = 0;
+                *p = s;
+                return tok;
+            }
+        } while(sc != 0);
+    }
+    return NULL;
 }

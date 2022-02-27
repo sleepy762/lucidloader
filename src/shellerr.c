@@ -164,6 +164,9 @@ const char_t* GetCommandErrorInfo(const uint8_t error)
         case CMD_REFUSE_REMOVE:
         return "refusing to remove '.' or '..' directory.";
 
+        case CMD_EFI_FAIL:
+        return "efi call failed.";
+
         default:
         return "unknown error.";
     }
