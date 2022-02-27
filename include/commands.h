@@ -4,7 +4,6 @@
 #include "shellerr.h"
 #include "commanddefs.h"
 
-#include "cmds/echo.h"
 #include "cmds/pwd.h"
 #include "cmds/ls.h"
 #include "cmds/cd.h"

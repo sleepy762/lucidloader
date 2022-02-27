@@ -3,7 +3,6 @@
 // List of all the commands
 const shell_cmd_s commands[] = {
 { "help",     HelpCmd,     HelpBrief,     HelpLong },
-{ "echo",     EchoCmd,     EchoBrief,     EchoLong },
 { "pwd",      PwdCmd,      PwdBrief,      NULL },
 { "ls",       LsCmd,       LsBrief,       LsLong },
 { "cd",       CdCmd,       CdBrief,       CdLong },
