@@ -156,7 +156,7 @@ char_t* GetFileContent(char_t* path)
         // Get file size
         uint64_t fileSize = GetFileSize(file);
 
-        efi_status_t status = ReadFile(file, fileSize, &buffer);
+        efi_status_t status = ReadFile(file, fileSize + 1, &buffer);
         if (EFI_ERROR(status))
         {
             Log(LL_ERROR, status, "Failed to read file %s.", path);

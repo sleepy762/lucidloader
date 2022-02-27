@@ -16,7 +16,7 @@ boolean_t ShellLoginWithPassword()
     printf("The shell is protected with a password.\n"
            "Enter the shell password: ");
 
-    char_t password[MAX_PASS_LEN]= {0};
+    char_t password[MAX_PASS_LEN + 1] = {0};
     GetInputString(password, MAX_PASS_LEN, TRUE);
 
     //enc conventions we set(just use the msg as key)
