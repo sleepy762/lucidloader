@@ -1,5 +1,7 @@
 #include "cmds/touch.h"
 
+static int32_t CreateFileNoOverride(char_t* path);
+
 boolean_t TouchCmd(cmd_args_s** args, char_t** currPathPtr)
 {
     cmd_args_s* cmdArg = *args;
@@ -23,7 +25,7 @@ boolean_t TouchCmd(cmd_args_s** args, char_t** currPathPtr)
             return FALSE;
         }
 
-        int32_t res = CreateFile(path);
+        int32_t res = CreateFileNoOverride(path);
         if (res != CMD_SUCCESS)
         {
             PrintCommandError(cmdArg->argString, arg->argString, res);
@@ -39,7 +41,7 @@ boolean_t TouchCmd(cmd_args_s** args, char_t** currPathPtr)
     return cmdSuccess;
 }
 
-int32_t CreateFile(char_t* path)
+static int32_t CreateFileNoOverride(char_t* path)
 {
     // Prevent overriding an existing file
     FILE* fp = fopen(path, "r");

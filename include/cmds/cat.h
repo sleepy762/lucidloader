@@ -7,5 +7,3 @@
 boolean_t CatCmd(cmd_args_s** args, char_t** currPathPtr);
 const char_t* CatBrief(void);
 const char_t* CatLong(void);
-
-int32_t PrintFileContent(char_t* path);

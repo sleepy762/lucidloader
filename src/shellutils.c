@@ -330,6 +330,19 @@ boolean_t FindFlagAndDelete(cmd_args_s** argsHead, const char* flagStr)
         prev = args;
         args = args->next;
     }
-
     return FALSE;
+}
+
+int32_t PrintFileContent(char_t* path)
+{
+    char_t* buffer = GetFileContent(path);
+    if (buffer == NULL)
+    {
+        return errno;
+    }
+
+    printf("%s\n", buffer);
+    BS->FreePool(buffer);
+    
+    return 0;
 }

@@ -8,5 +8,3 @@
 boolean_t LsCmd(cmd_args_s** args, char_t** currPathPtr);
 const char_t* LsBrief(void);
 const char_t* LsLong(void);
-
-int32_t ListDir(char_t* path);

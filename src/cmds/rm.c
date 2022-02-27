@@ -1,5 +1,7 @@
 #include "cmds/rm.h"
 
+static uint8_t RemoveDirRecursively(char_t* mainPath, cmd_args_s* cmdArg);
+
 boolean_t RmCmd(cmd_args_s** args, char_t** currPathPtr)
 {
     cmd_args_s* cmdArg = *args;
@@ -36,7 +38,7 @@ boolean_t RmCmd(cmd_args_s** args, char_t** currPathPtr)
         int32_t res;
         if (recursiveFlag)
         {
-            res = RemoveDirRecursively(filePath);
+            res = RemoveDirRecursively(filePath, cmdArg);
         }
         else
         {
@@ -58,7 +60,7 @@ boolean_t RmCmd(cmd_args_s** args, char_t** currPathPtr)
     return cmdSuccess;
 }
 
-uint8_t RemoveDirRecursively(char_t* mainPath)
+static uint8_t RemoveDirRecursively(char_t* mainPath, cmd_args_s* cmdArg)
 {
     DIR* dir = opendir(mainPath);
     // Allow deleting normal files with the recursive flag on
@@ -89,7 +91,7 @@ uint8_t RemoveDirRecursively(char_t* mainPath)
         // If we find a directory, we descend into it and delete everything in it
         if (de->d_type == DT_DIR)
         {
-            res = RemoveDirRecursively(filePath);
+            res = RemoveDirRecursively(filePath, cmdArg);
         }
         else
         {
@@ -98,7 +100,7 @@ uint8_t RemoveDirRecursively(char_t* mainPath)
 
         if (res != 0)
         {
-            PrintCommandError("rm", filePath, errno);
+            PrintCommandError(cmdArg->argString, filePath, errno);
         }
 
         if (isDynamicMemory)

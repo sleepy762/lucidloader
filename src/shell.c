@@ -1,5 +1,18 @@
 #include "shell.h"
 
+/* Main shell functions */
+static int8_t ShellLoop(char_t** currPathPtr);
+static int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr);
+
+/* Command and argument processing */
+static char_t* GetCommandFromBuffer(char_t buffer[]);
+static int8_t ParseArgs(char_t* inputArgs, cmd_args_s** outputArgs);
+static int8_t SplitArgsString(char_t buffer[], cmd_args_s** outputArgs);
+static cmd_args_s* InitializeArgsNode(void);
+static void AppendArgsNode(cmd_args_s* head, cmd_args_s* node);
+static void FreeArgs(cmd_args_s* args);
+
+
 int8_t StartShell(void)
 {
     // If the shell is password protected, ask to login
@@ -44,7 +57,7 @@ int8_t StartShell(void)
     return 0;
 }
 
-int8_t ShellLoop(char_t** currPathPtr)
+static int8_t ShellLoop(char_t** currPathPtr)
 {
     while (TRUE)
     {
@@ -65,7 +78,7 @@ int8_t ShellLoop(char_t** currPathPtr)
     return CMD_SUCCESS;
 }
 
-int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
+static int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
 {
     buffer = TrimSpaces(buffer);
 
@@ -109,7 +122,7 @@ int8_t ProcessCommand(char_t buffer[], char_t** currPathPtr)
     return CMD_SUCCESS;
 }
 
-char_t* GetCommandFromBuffer(char_t buffer[])
+static char_t* GetCommandFromBuffer(char_t buffer[])
 {
     size_t bufferLen = strlen(buffer);
     if (bufferLen == 0)
@@ -135,7 +148,7 @@ char_t* GetCommandFromBuffer(char_t buffer[])
     return cmd;
 }
 
-int8_t ParseArgs(char_t* inputArgs, cmd_args_s** outputArgs)
+static int8_t ParseArgs(char_t* inputArgs, cmd_args_s** outputArgs)
 {
     if (inputArgs == NULL)
     {
@@ -215,7 +228,7 @@ int8_t ParseArgs(char_t* inputArgs, cmd_args_s** outputArgs)
     return CMD_SUCCESS;
 }
 
-int8_t SplitArgsString(char_t buffer[], cmd_args_s** outputArgs)
+static int8_t SplitArgsString(char_t buffer[], cmd_args_s** outputArgs)
 {
     // If the buffer is empty don't do anything
     if (buffer[0] == CHAR_NULL)
@@ -254,7 +267,7 @@ int8_t SplitArgsString(char_t buffer[], cmd_args_s** outputArgs)
     return CMD_SUCCESS;
 }
 
-cmd_args_s* InitializeArgsNode(void)
+static cmd_args_s* InitializeArgsNode(void)
 {
     cmd_args_s* node = NULL;
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, sizeof(cmd_args_s), (void**)&node);
@@ -271,7 +284,7 @@ cmd_args_s* InitializeArgsNode(void)
 }
 
 // Add a new node to the end of the linked list
-void AppendArgsNode(cmd_args_s* head, cmd_args_s* node)
+static void AppendArgsNode(cmd_args_s* head, cmd_args_s* node)
 {
     cmd_args_s* copy = head;
     while (copy->next != NULL)
@@ -282,7 +295,7 @@ void AppendArgsNode(cmd_args_s* head, cmd_args_s* node)
 }
 
 // Freeing args without recursion
-void FreeArgs(cmd_args_s* args)
+static void FreeArgs(cmd_args_s* args)
 {
     while (args != NULL)
     {

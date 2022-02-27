@@ -1,5 +1,14 @@
 #include "config.h"
 
+/* Parsing */
+static int8_t ValidateEntry(boot_entry_s newEntry, boot_entry_s** head);
+static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry);
+static int8_t ParseLine(boot_entry_s* entry, char_t* token);
+
+/* Linked list modification */
+static boot_entry_s* InitializeEntry(void);
+static void AppendEntry(boot_entry_s* head, boot_entry_s* entry);
+
 // Returns a pointer to the head of a linked list of boot entries
 // Every pointer in the linked list was allocated dynamically
 boot_entry_s* ParseConfig(void)
@@ -97,7 +106,7 @@ boot_entry_s* ParseConfig(void)
 
 // If the entry is valid then it is added to the entry linked list
 // Return value 1 is fatal, otherwise it can be ignored.
-int8_t ValidateEntry(boot_entry_s newEntry, boot_entry_s** head)
+static int8_t ValidateEntry(boot_entry_s newEntry, boot_entry_s** head)
 {
     if (strlen(newEntry.name) == 0)
     {
@@ -130,7 +139,7 @@ int8_t ValidateEntry(boot_entry_s newEntry, boot_entry_s** head)
     return 0;
 }
 
-void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry)
+static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry)
 {
     if (strcmp(key, "name") == 0)
     {
@@ -152,7 +161,7 @@ void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry)
 
 // Stores the key and value in separate strings
 // Return value 1 is fatal, otherwise it can be ignored
-int8_t ParseLine(boot_entry_s* entry, char_t* token)
+static int8_t ParseLine(boot_entry_s* entry, char_t* token)
 {
     efi_status_t status;
     int32_t valueOffset = GetValueOffset(token, CFG_KEY_VALUE_DELIMITER);
@@ -191,7 +200,7 @@ int8_t ParseLine(boot_entry_s* entry, char_t* token)
 }
 
 // Creates a new entry pointer
-boot_entry_s* InitializeEntry(void)
+static boot_entry_s* InitializeEntry(void)
 {
     boot_entry_s* entry = NULL;
     efi_status_t status = BS->AllocatePool(LIP->ImageDataType, sizeof(boot_entry_s), (void**)&entry);
@@ -210,7 +219,7 @@ boot_entry_s* InitializeEntry(void)
 }
 
 // Adds an entry to the end of the entry linked list
-void AppendEntry(boot_entry_s* head, boot_entry_s* entry)
+static void AppendEntry(boot_entry_s* head, boot_entry_s* entry)
 {
     boot_entry_s* copy = head;
     while (copy->next != NULL)
@@ -218,23 +227,4 @@ void AppendEntry(boot_entry_s* head, boot_entry_s* entry)
         copy = copy->next;
     }
     copy->next = entry;
-}
-
-// Frees the memory taken by the boot entries and the pointers the struct holds
-void FreeBootEntries(boot_entry_s* head)
-{
-    while (head != NULL)
-    {
-        boot_entry_s* next = head->next;
-
-        if (head->imgArgs) 
-        {
-            BS->FreePool(head->imgArgs);
-        }
-        BS->FreePool(head->name);
-        BS->FreePool(head->mainPath);
-        BS->FreePool(head);
-
-        head = next;
-    }
 }

@@ -1,5 +1,9 @@
 #include "bootmenu.h"
 
+static void SuccessMenu(boot_entry_s* head);
+static void FailMenu(const char_t* errorMsg);
+static boot_entry_s * GetCurrOS(uint8_t numOfPartition, boot_entry_s * head);
+
 void PrintBootloaderVersion(void)
 {
     printf("%s v%s\n\n", BOOTLOADER_NAME_STR, BOOTLOADER_VERSION);
@@ -23,7 +27,7 @@ void MainMenu(void)
     }
 }
 
-void SuccessMenu(boot_entry_s* head)
+static void SuccessMenu(boot_entry_s* head)
 {
     while (TRUE)
     {
@@ -73,7 +77,7 @@ void SuccessMenu(boot_entry_s* head)
     FailMenu(FAILED_BOOT_ERR_MSG);
 }
 
-void FailMenu(const char_t* errorMsg)
+static void FailMenu(const char_t* errorMsg)
 {
     boolean_t returnToMainMenu = FALSE;
     while (!returnToMainMenu)
@@ -136,7 +140,7 @@ void ShowLogFile(void)
     GetInputKey();
 }
 
-boot_entry_s * GetCurrOS(uint8_t numOfPartition, boot_entry_s * head)
+static boot_entry_s * GetCurrOS(uint8_t numOfPartition, boot_entry_s * head)
 {
     uint8_t  i = 0;
     boot_entry_s * curr = head;

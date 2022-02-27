@@ -1,5 +1,7 @@
 #include "cmds/mkdir.h"
 
+static int32_t ReadDirectory(char_t* path);
+
 boolean_t MkdirCmd(cmd_args_s** args, char_t** currPathPtr)
 {
     cmd_args_s* cmdArg = *args;
@@ -39,7 +41,7 @@ boolean_t MkdirCmd(cmd_args_s** args, char_t** currPathPtr)
     return cmdSuccess;
 }
 
-int32_t ReadDirectory(char_t* path)
+static int32_t ReadDirectory(char_t* path)
 {
     DIR* dir = opendir(path);
     if (dir != NULL)

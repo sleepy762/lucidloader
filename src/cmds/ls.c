@@ -1,5 +1,7 @@
 #include "cmds/ls.h"
 
+static int32_t ListDir(char_t* path);
+
 uint8_t LsCmd(cmd_args_s** args, char_t** currPathPtr)
 {
     cmd_args_s* cmdArg = *args;
@@ -60,7 +62,7 @@ uint8_t LsCmd(cmd_args_s** args, char_t** currPathPtr)
     return cmdSuccess;
 }
 
-int32_t ListDir(char_t* path)
+static int32_t ListDir(char_t* path)
 {
     DIR* dir = opendir(path);
     if (dir != NULL)

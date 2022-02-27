@@ -25,3 +25,5 @@ void RemoveRepeatedChars(char_t* str, char_t toRemove);
 int32_t GetValueOffset(char_t* line, const char_t delimiter);
 
 boolean_t FindFlagAndDelete(cmd_args_s** argsHead, const char* flagStr);
+
+int32_t PrintFileContent(char_t* path);

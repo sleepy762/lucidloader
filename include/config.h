@@ -19,10 +19,3 @@ typedef struct boot_entry_s
 } boot_entry_s;
 
 boot_entry_s* ParseConfig(void);
-int8_t ValidateEntry(boot_entry_s newEntry, boot_entry_s** head);
-void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry);
-int8_t ParseLine(boot_entry_s* entry, char_t* token);
-
-boot_entry_s* InitializeEntry(void);
-void AppendEntry(boot_entry_s* head, boot_entry_s* entry);
-void FreeBootEntries(boot_entry_s* head);
