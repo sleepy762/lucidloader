@@ -88,3 +88,6 @@ int8_t StartEditor(char_t* filename);
 void AppendToBuffer(buffer_t* buf, const char_t* str, uint32_t len);
 void PrintBuffer(buffer_t* buf);
 void FreeBuffer(buffer_t* buf);
+
+// Similar to strtok but returns an empty string between multiple appearances of a delimiter
+char_t* strtok_r_with_empty_str(char_t *s, const char_t *d, char_t **p);

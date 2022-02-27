@@ -139,7 +139,7 @@ static void EditorOpenFile(char_t* filename)
     char_t* token;
 
     // Read the file line by line
-    while ((token = strtok_r(fileData, "\n", &fileData)) != NULL)
+    while ((token = strtok_r_with_empty_str(fileData, "\n", &fileData)) != NULL)
     {
         size_t linelen = strlen(token);
         while (linelen > 0 && (token[linelen - 1] == '\n' || token[linelen - 1] == '\r'))
@@ -961,4 +961,34 @@ void FreeBuffer(buffer_t* buf)
 void PrintBuffer(buffer_t* buf)
 {
     printf("%s", buf->b);
+}
+
+// Taken straight from POSIX-UEFI (differs from current strtok_r)
+char_t* strtok_r_with_empty_str(char_t *s, const char_t *d, char_t **p)
+{
+    int c, sc;
+    char_t *tok, *sp;
+
+    if(d == NULL || (s == NULL && (s=*p) == NULL)) return NULL;
+
+    c = *s++;
+    for(sp = (char_t *)d; (sc=*sp++)!=0;) {
+        if(c == sc) { *p=s; *(s-1)=0; return s-1; }
+    }
+
+    if (c == 0) { *p=NULL; return NULL; }
+    tok = s-1;
+    while(1) {
+        c = *s++;
+        sp = (char_t *)d;
+        do {
+            if((sc=*sp++) == c) {
+                if(c == 0) s = NULL;
+                else *(s-1) = 0;
+                *p = s;
+                return tok;
+            }
+        } while(sc != 0);
+    }
+    return NULL;
 }
