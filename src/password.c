@@ -3,7 +3,7 @@
 // Returns TRUE if the login succeeded, FALSE otherwise
 boolean_t ShellLoginWithPassword()
 {
-    char_t* encPassword = GetFileContent(PASS_FILE_PATH);
+    char_t* encPassword = GetFileContent(PASS_FILE_PATH, NULL);
     if(encPassword == NULL && errno == ENOENT) // Password doesn't exist
     {
         return TRUE;

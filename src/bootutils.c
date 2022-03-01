@@ -147,7 +147,8 @@ uint64_t GetFileSize(FILE* file)
 
 // The function reads the file content into a dynamically allocated buffer
 // The buffer must be freed by the user
-char_t* GetFileContent(char_t* path)
+// outFileSize is an optional parameter, it will contain the file size
+char_t* GetFileContent(char_t* path, uint64_t* outFileSize)
 {
     char_t* buffer = NULL;
     FILE* file = fopen(path, "r");
@@ -155,6 +156,10 @@ char_t* GetFileContent(char_t* path)
     {
         // Get file size
         uint64_t fileSize = GetFileSize(file);
+        if (outFileSize != NULL)
+        {
+            *outFileSize = fileSize;
+        }
 
         efi_status_t status = ReadFile(file, fileSize + 1, &buffer);
         if (EFI_ERROR(status))
@@ -171,6 +176,8 @@ char_t* GetFileContent(char_t* path)
 
 efi_status_t RebootDevice(boolean_t rebootToFirmware)
 {
+    ST->ConOut->ClearScreen(ST->ConOut);
+    
     efi_status_t status = 0;
     if (rebootToFirmware)
     {
@@ -227,6 +234,8 @@ efi_status_t RebootDevice(boolean_t rebootToFirmware)
 
 efi_status_t ShutdownDevice(void)
 {
+    ST->ConOut->ClearScreen(ST->ConOut);
+
     Log(LL_INFO, 0, "Shutting down device...");
     efi_status_t status = RT->ResetSystem(EfiResetShutdown, EFI_SUCCESS, 0, NULL);
 

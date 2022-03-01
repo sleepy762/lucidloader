@@ -134,7 +134,7 @@ static void EditorOpenFile(char_t* filename)
         return;
     }
 
-    char_t* origDataPtr = GetFileContent(filename);
+    char_t* origDataPtr = GetFileContent(filename, NULL);
     char_t* fileData = origDataPtr;
     char_t* token;
 
@@ -960,7 +960,11 @@ void FreeBuffer(buffer_t* buf)
 
 void PrintBuffer(buffer_t* buf)
 {
-    printf("%s", buf->b);
+    // Printing this way allows printing of binary files
+    for (int32_t i = 0; i < buf->len; i++)
+    {
+        putchar(buf->b[i]);
+    }
 }
 
 // Taken straight from POSIX-UEFI (differs from current strtok_r)
