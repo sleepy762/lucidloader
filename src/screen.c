@@ -4,8 +4,8 @@ boolean_t SetMaxConsoleSize(void)
 {
     int32_t maxMode = ST->ConOut->Mode->MaxMode - 1;
 
-    uintn_t maxModeCols = 0;
-    uintn_t maxModeRows = 0;
+    uintn_t maxModeCols;
+    uintn_t maxModeRows;
     efi_status_t status = ST->ConOut->QueryMode(ST->ConOut, maxMode, &maxModeCols, &maxModeRows);
     if (EFI_ERROR(status))
     {
