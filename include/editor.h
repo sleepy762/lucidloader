@@ -4,20 +4,16 @@
 #include "shellerr.h"
 #include "logger.h"
 
-/* Some editor configuration macros */
+#define EDITOR_STATUS_MSG_ARR_SIZE (80)
+#define EDITOR_WELCOME_MSG_ARR_SIZE (80)
 
-// Control keys
-#define EDITOR_EXIT_CTRL_KEY     (0x11)
-#define EDITOR_SAVE_CTRL_KEY     (0x13)
-#define EDITOR_SEARCH_CTRL_KEY   (0x06)
+/* Some editor configuration macros */
 
 // How many times the user has to press the quit key to exit if the file has been modified
 #define EDITOR_QUIT_TIMES (3)
 
-#define EDITOR_STATUS_MSG_ARR_SIZE (80)
-#define EDITOR_WELCOME_MSG_ARR_SIZE (80)
-
-#define EDITOR_INITIAL_STATUS_MSG ("HELP: CTRL-Q = quit | CTRL-S = save | CTRL-F = search")
+// Status bar
+#define EDITOR_INITIAL_STATUS_MSG ("HELP: ESC = quit | F1 = save | F2 = find")
 #define EDITOR_STATUS_MSG_TIMEOUT (5)
 
 // How many spaces to replace TABs with
@@ -38,6 +34,14 @@
 #define DELETE_KEY_SCANCODE     (0x08)
 
 #define ESCAPE_KEY_SCANCODE     (0x17)
+
+#define F1_KEY_SCANCODE         (0x0B)
+#define F2_KEY_SCANCODE         (0x0C)
+
+// Keys with special functionality
+#define EDITOR_EXIT_KEY         (ESCAPE_KEY_SCANCODE)
+#define EDITOR_SAVE_KEY         (F1_KEY_SCANCODE)
+#define EDITOR_SEARCH_KEY       (F2_KEY_SCANCODE)
 
 // Struct specific to the editor
 typedef struct text_row_t

@@ -12,6 +12,8 @@ void PrintBootloaderVersion(void)
 void MainMenu(void)
 {
     ST->ConOut->ClearScreen(ST->ConOut);
+    ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
+    
     boot_entry_s* headConfig = ParseConfig();
     
     while (TRUE)

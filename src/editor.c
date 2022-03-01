@@ -167,6 +167,30 @@ static boolean_t ProcessEditorInput(void)
     // In the outer switch we check SPECIAL KEYS (by checking the scancode)
     switch (scancode)
     {
+        // SPECIAL FUNCTION KEYS
+        case EDITOR_EXIT_KEY:
+            // Don't exit from modified files immediately
+            if (cfg.dirty && quitTimes > 0)
+            {
+                EditorSetStatusMessage("WARNING!!! File has unsaved changes. "
+                    "Press ESC %d more times to quit.", quitTimes);
+                quitTimes--;
+                return TRUE;
+            }
+            else
+            {
+                return FALSE;
+            }
+            break;
+
+        case EDITOR_SAVE_KEY:
+            EditorSave();
+            break;
+
+        case EDITOR_SEARCH_KEY:
+            EditorFind();
+            break;
+
         // Scroll a page up/down
         case PAGEUP_KEY_SCANCODE:
         case PAGEDOWN_KEY_SCANCODE:
@@ -218,30 +242,6 @@ static boolean_t ProcessEditorInput(void)
             // In this inner switch we check the UNICODE CHARS
             switch (unicodechar)
             {
-                // CONTROL KEYS
-                case EDITOR_EXIT_CTRL_KEY:
-                    // Don't exit from modified files immediately
-                    if (cfg.dirty && quitTimes > 0)
-                    {
-                        EditorSetStatusMessage("WARNING!!! File has unsaved changes. "
-                            "Press CTRL-Q %d more times to quit.", quitTimes);
-                        quitTimes--;
-                        return TRUE;
-                    }
-                    else
-                    {
-                        return FALSE;
-                    }
-                    break;
-
-                case EDITOR_SAVE_CTRL_KEY:
-                    EditorSave();
-                    break;
-
-                case EDITOR_SEARCH_CTRL_KEY:
-                    EditorFind();
-                    break;
-
                 case CHAR_CARRIAGE_RETURN:
                     EditorInsertNewline();
                     break;
@@ -717,8 +717,8 @@ static void EditorRowAppendString(text_row_t* row, char_t* str, size_t len)
 
 static void EditorInsertChar(char_t c)
 {
-    // Ignore key presses that return a NULL character (for instance escape or f1-f12, print screen, etc.)
-    if (c == CHAR_NULL)
+    // Ignore unprintable characters (control chars, excluding tabs)
+    if (!IsPrintableChar(c) && c != CHAR_TAB)
     {
         return;
     }
