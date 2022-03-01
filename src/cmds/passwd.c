@@ -23,7 +23,7 @@ boolean_t PasswdCmd(cmd_args_s** args, char_t** currPathPtr)
         printf("A password already exists, do you want to overwrite it? (y/n) ");
         efi_input_key_t ans = GetInputKey();
         
-        printf("\n");
+        putchar('\n');
         if(ans.UnicodeChar != 'y' && ans.UnicodeChar != 'Y')
         {
             return TRUE;

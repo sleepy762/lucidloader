@@ -50,7 +50,7 @@ uint8_t LsCmd(cmd_args_s** args, char_t** currPathPtr)
         }
         else
         {
-            printf("\n");
+            putchar('\n');
         }
 
         if (isDynamicMemory)

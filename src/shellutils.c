@@ -215,17 +215,18 @@ void RemoveRepeatedChars(char_t* str, char_t toRemove)
 
 efi_input_key_t GetInputKey(void)
 {
-    uintn_t idx;
+    efi_status_t status;
+    efi_input_key_t key;
 
     DisableWatchdogTimer();
-    BS->WaitForEvent(1, &ST->ConIn->WaitForKey, &idx);
 
-    efi_input_key_t key = { 0 };
-    efi_status_t status = ST->ConIn->ReadKeyStroke(ST->ConIn, &key);
-    if (EFI_ERROR(status) && status != EFI_NOT_READY)
+    // Make sure we are not returning 0 values in the key struct
+    do
     {
-        Log(LL_ERROR, status, "Failed to read keystroke.");
-    }
+        uintn_t idx;
+        BS->WaitForEvent(1, &ST->ConIn->WaitForKey, &idx);
+        status = ST->ConIn->ReadKeyStroke(ST->ConIn, &key);
+    } while (EFI_ERROR(status));
 
     EnableWatchdogTimer(DEFAULT_WATCHDOG_TIMEOUT);
     return key;
@@ -245,7 +246,7 @@ void GetInputString(char_t buffer[], const uint32_t maxInputSize, boolean_t hide
         // When enter is pressed, leave the loop to process the input
         if (unicodechar == CHAR_CARRIAGE_RETURN) 
         {
-            printf("\n");
+            putchar('\n');
             break;
         }
 
@@ -268,11 +269,11 @@ void GetInputString(char_t buffer[], const uint32_t maxInputSize, boolean_t hide
 
             if (hideInput) // When entering a password
             {
-                printf("*");
+                putchar('*');
             }
             else
             {
-                printf("%c", unicodechar);
+                putchar(unicodechar);
             }
         }
     }
@@ -335,13 +336,20 @@ boolean_t FindFlagAndDelete(cmd_args_s** argsHead, const char* flagStr)
 
 int32_t PrintFileContent(char_t* path)
 {
-    char_t* buffer = GetFileContent(path);
+    uint64_t fileSize;
+    char_t* buffer = GetFileContent(path, &fileSize);
     if (buffer == NULL)
     {
         return errno;
     }
 
-    printf("%s\n", buffer);
+    // Printing the file like this in order to prevent possible issues when reading binary files
+    for (uint64_t i = 0; i < fileSize; i++)
+    {
+        putchar(buffer[i]);
+    }
+    putchar('\n');
+
     BS->FreePool(buffer);
     
     return 0;

@@ -75,7 +75,7 @@ boolean_t HelpCmd(cmd_args_s** args, char_t** currPathPtr)
             {
                 printf("no description available.");
             }
-            printf("\n");
+            putchar('\n');
         }
     }
     return TRUE;
