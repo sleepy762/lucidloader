@@ -8,7 +8,6 @@
 #include "logger.h"
 #include "version.h"
 
-#define CHAR_INT 48 // to convert from unicode to regular numbers
 #define SHELL_CHAR 'c'
 
 #define BAD_CONFIGURATION_ERR_MSG ("Configuration file is incorrect or doesn't exist.")
