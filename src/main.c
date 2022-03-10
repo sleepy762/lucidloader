@@ -12,7 +12,7 @@ int main(int argc, char** argv)
     
     SetMaxConsoleSize();
 
-    MainMenu();
+    StartBootloader();
 
     // This should never be reached
     return 1;

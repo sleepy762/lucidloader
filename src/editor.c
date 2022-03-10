@@ -61,6 +61,7 @@ int8_t StartEditor(char_t* filename)
 
     EditorSetStatusMessage(EDITOR_INITIAL_STATUS_MSG);
 
+    ST->ConIn->Reset(ST->ConIn, 0);
     // Keep reading and processing input until the editor is closed
     do
     {
@@ -99,8 +100,8 @@ static void InitEditorConfig(void)
     {
         Log(LL_ERROR, status, "Failed to get console width and height.");
         // Use default values on error
-        cfg.screenCols = 80;
-        cfg.screenRows = 25;
+        cfg.screenCols = DEFAULT_CONSOLE_COLUMNS;
+        cfg.screenRows = DEFAULT_CONSOLE_ROWS;
     }
     cfg.screenRows -= 2; // Making room for the status messages
     cfg.cx = 0;

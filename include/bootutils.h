@@ -10,6 +10,9 @@
 
 #define DEFAULT_WATCHDOG_TIMEOUT (300)
 
+#define DEFAULT_CONSOLE_COLUMNS (80)
+#define DEFAULT_CONSOLE_ROWS    (25)
+
 wchar_t* StringToWideString(char_t* str);
 
 efi_status_t GetFileProtocols(char_t* path, efi_device_path_t** devPath, efi_file_handle_t** rootDir, efi_file_handle_t** fileHandle);
