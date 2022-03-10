@@ -54,6 +54,7 @@ static void InitBootMenuConfig(void)
     // This variable defines the amount of entries that can be shown on screen at once
     // We subtract 10 because there are 10 rows that we have reserved for other printing
     bmcfg.maxEntriesOnScreen = rows - 10;
+
     bmcfg.selectedEntryIndex = 0;
     bmcfg.entryOffset = 0;
 }
@@ -96,7 +97,7 @@ static void PrintBootMenu(boot_entry_array_s* entryArr)
         index++;
     }
 
-    // Print how many entries are at the bottom of the list
+    // Print how many hidden entries are at the bottom of the list
     if (index < entryArr->numOfEntries)
     {
         printf(" . . . %d more\n", entryArr->numOfEntries - index);
@@ -155,6 +156,10 @@ static void BootMenu(boot_entry_array_s* entryArr)
                     case INFO_CHAR:
                         PrintEntryInfo(&entryArr->entries[bmcfg.selectedEntryIndex]);
                         break;
+                    
+                    default:
+                        // Nothing
+                        break;
                 }
         }
     }
@@ -162,11 +167,11 @@ static void BootMenu(boot_entry_array_s* entryArr)
 
 static void ScrollEntryList(void)
 {
-    if (bmcfg.selectedEntryIndex < bmcfg.entryOffset)
+    if (bmcfg.selectedEntryIndex < bmcfg.entryOffset) // Scroll up
     {
         bmcfg.entryOffset = bmcfg.selectedEntryIndex;
     }
-    if (bmcfg.selectedEntryIndex >= bmcfg.entryOffset + bmcfg.maxEntriesOnScreen)
+    if (bmcfg.selectedEntryIndex >= bmcfg.entryOffset + bmcfg.maxEntriesOnScreen) // Scroll down
     {
         bmcfg.entryOffset = bmcfg.selectedEntryIndex - bmcfg.maxEntriesOnScreen + 1;
     }
