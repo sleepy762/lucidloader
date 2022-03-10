@@ -1,25 +1,23 @@
 #include "config.h"
 
-/* Parsing */
-static int8_t ValidateEntry(boot_entry_s newEntry, boot_entry_s** head);
+static boolean_t ValidateEntry(boot_entry_s newEntry);
 static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry);
 static int8_t ParseLine(boot_entry_s* entry, char_t* token);
-
-/* Linked list modification */
-static boot_entry_s* InitializeEntry(void);
-static void AppendEntry(boot_entry_s* head, boot_entry_s* entry);
+static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry);
 
 // Returns a pointer to the head of a linked list of boot entries
 // Every pointer in the linked list was allocated dynamically
-boot_entry_s* ParseConfig(void)
+boot_entry_array_s ParseConfig(void)
 {
+    boot_entry_array_s bootEntryArr = { NULL, 0 };
+
     efi_device_path_t* devPath = NULL;
     efi_file_handle_t* rootDir = NULL;
     efi_file_handle_t* configFileHandle = NULL;
     efi_status_t status = GetFileProtocols(CFG_PATH, &devPath, &rootDir, &configFileHandle);
     if (EFI_ERROR(status))
     {
-        return NULL;
+        return bootEntryArr;
     }
 
     efi_file_info_t configInfo;
@@ -27,7 +25,7 @@ boot_entry_s* ParseConfig(void)
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to get config file info.");
-        return NULL;
+        return bootEntryArr;
     }
 
     char_t* configData = NULL;
@@ -36,14 +34,13 @@ boot_entry_s* ParseConfig(void)
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to read the config file.");
-        return NULL;
+        return bootEntryArr;
     }
     configData[configSize] = 0;
 
     char_t* line;
     char_t* configEntry;
     char_t* srcCopy = configData;
-    boot_entry_s* head = NULL;
 
     // Gets blocks of text from the config
     while ((configEntry = strstr(srcCopy, CFG_ENTRY_DELIMITER)) != NULL)
@@ -57,7 +54,7 @@ boot_entry_s* ParseConfig(void)
         {
             Log(LL_ERROR, status, "Failed to allocate memory while parsing config entries.");
             BS->FreePool(configData);
-            return head;
+            return bootEntryArr;
         }
 
         memcpy(strippedEntry, srcCopy, len);
@@ -72,15 +69,14 @@ boot_entry_s* ParseConfig(void)
             {
                 BS->FreePool(configData);
                 BS->FreePool(strippedEntry);
-                return head;
+                return bootEntryArr;
             }
         }
 
         BS->FreePool(strippedEntry);
-        if (ValidateEntry(entry, &head) == 1)
+        if (ValidateEntry(entry))
         {
-            BS->FreePool(configData);
-            return head;
+            AppendEntry(&bootEntryArr, &entry);
         }
     }
 
@@ -91,61 +87,49 @@ boot_entry_s* ParseConfig(void)
         if (ParseLine(&entry, line) == 1)
         {
             BS->FreePool(configData);
-            return head;
+            return bootEntryArr;
         }
     }
-    ValidateEntry(entry, &head);
+    if (ValidateEntry(entry))
+    {
+        AppendEntry(&bootEntryArr, &entry);
+    }
 
     BS->FreePool(configData);
-    if (head == NULL)
+    if (bootEntryArr.numOfEntries == 0)
     {
         Log(LL_ERROR, 0, "The configuration file is empty or has incorrect entries.");
     }
-    return head;
+    return bootEntryArr;
 }
 
-// If the entry is valid then it is added to the entry linked list
-// Return value 1 is fatal, otherwise it can be ignored.
-static int8_t ValidateEntry(boot_entry_s newEntry, boot_entry_s** head)
+static boolean_t ValidateEntry(boot_entry_s newEntry)
 {
     if (strlen(newEntry.name) == 0)
     {
         Log(LL_WARNING, 0, "Ignoring config entry with no name.");
-        return 0;
+        return FALSE;
     }
     else if (strlen(newEntry.mainPath) == 0)
     {
         Log(LL_WARNING, 0, "Ignoring entry with no main path specified. (entry name: %s)", newEntry.name);
-        return 0;
+        return FALSE;
     }
-    boot_entry_s* entry = InitializeEntry();
-
-    if (entry == NULL)
-    {
-        return 1;
-    }
-
-    *entry = newEntry;
-    entry->next = NULL;
-
-    if (*head == NULL)
-    {
-        *head = entry;
-    }
-    else
-    {
-        AppendEntry(*head, entry);
-    }
-    return 0;
+    return TRUE;
 }
 
 static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry)
 {
     if (strcmp(key, "name") == 0)
     {
+        // Truncate the name if it's too long
+        if (strlen(value) > MAX_ENTRY_NAME_LEN)
+        {
+            value[MAX_ENTRY_NAME_LEN] = CHAR_NULL;
+        }
         entry->name = value;
     }
-    else if (strcmp(key, "path") == 0|| strcmp(key, "kernel") == 0) 
+    else if (strcmp(key, "path") == 0) 
     {
         entry->mainPath = value;
     }
@@ -199,32 +183,27 @@ static int8_t ParseLine(boot_entry_s* entry, char_t* token)
     return 0;
 }
 
-// Creates a new entry pointer
-static boot_entry_s* InitializeEntry(void)
+// Adds an entry to the end of the entries array
+static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry)
 {
-    boot_entry_s* entry = NULL;
-    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, sizeof(boot_entry_s), (void**)&entry);
-    if (EFI_ERROR(status))
-    {
-        Log(LL_ERROR, status, "Failed to allocate memory during entry node initialization.");
-    }
-    else
-    {
-        entry->name = NULL;
-        entry->mainPath = NULL;
-        entry->imgArgs = NULL;
-        entry->next = NULL;
-    }
-    return entry;
+    bootEntryArr->entries = realloc(bootEntryArr->entries, 
+        sizeof(boot_entry_s) * (bootEntryArr->numOfEntries + 1));
+
+    int32_t at = bootEntryArr->numOfEntries;
+    bootEntryArr->entries[at].name = entry->name;
+    bootEntryArr->entries[at].mainPath = entry->mainPath;
+    bootEntryArr->entries[at].imgArgs = entry->imgArgs;
+
+    bootEntryArr->numOfEntries++;
 }
 
-// Adds an entry to the end of the entry linked list
-static void AppendEntry(boot_entry_s* head, boot_entry_s* entry)
+void FreeConfigEntries(boot_entry_array_s* entryArr)
 {
-    boot_entry_s* copy = head;
-    while (copy->next != NULL)
+    for (int32_t i = 0; i < entryArr->numOfEntries; i++)
     {
-        copy = copy->next;
+        BS->FreePool(entryArr->entries[i].name);
+        BS->FreePool(entryArr->entries[i].mainPath);
+        BS->FreePool(entryArr->entries[i].imgArgs);
     }
-    copy->next = entry;
+    free(entryArr->entries);
 }

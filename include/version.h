@@ -1,4 +1,4 @@
 #pragma once
 
-#define BOOTLOADER_NAME_STR ("EZboot")
-#define BOOTLOADER_VERSION ("1.0")
+#define EZBOOT_NAME_STR ("EZboot")
+#define EZBOOT_VERSION ("1.1")

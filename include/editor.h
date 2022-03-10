@@ -2,6 +2,7 @@
 #include <uefi.h>
 #include "shellutils.h"
 #include "shellerr.h"
+#include "bootutils.h"
 #include "logger.h"
 
 #define EDITOR_STATUS_MSG_ARR_SIZE (80)

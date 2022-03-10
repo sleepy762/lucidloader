@@ -1,83 +1,207 @@
 #include "bootmenu.h"
 
-static void SuccessMenu(boot_entry_s* head);
+static void BootMenu(boot_entry_array_s* entryArr);
 static void FailMenu(const char_t* errorMsg);
-static boot_entry_s * GetCurrOS(uint8_t numOfPartition, boot_entry_s * head);
+
+static void InitBootMenuConfig(void);
+static void BootEntry(boot_entry_s* selectedEntry);
+static void PrintEntryInfo(boot_entry_s* selectedEntry);
+static void PrintBootMenu(boot_entry_array_s* entryArr);
+static void ScrollEntryList(void);
+
+static boot_menu_cfg_s bmcfg;
 
 void PrintBootloaderVersion(void)
 {
-    printf("%s v%s\n\n", BOOTLOADER_NAME_STR, BOOTLOADER_VERSION);
+    printf("%s v%s\n\n", EZBOOT_NAME_STR, EZBOOT_VERSION);
 }
 
-void MainMenu(void)
+void StartBootloader(void)
 {
     ST->ConOut->ClearScreen(ST->ConOut);
     ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
     
-    boot_entry_s* headConfig = ParseConfig();
-    
     while (TRUE)
     {
-        if (headConfig == NULL)
+        InitBootMenuConfig();
+        // The config parsing is in this loop because we want the menu to update in case the user
+        // decided to update the config through the bootloader shell
+        boot_entry_array_s bootEntries = ParseConfig();
+
+        if (bootEntries.numOfEntries == 0)
         {
             FailMenu(BAD_CONFIGURATION_ERR_MSG);
         }
         else
         {
-            SuccessMenu(headConfig);
+            BootMenu(&bootEntries);
+        }
+
+        FreeConfigEntries(&bootEntries);
+    }
+}
+
+static void InitBootMenuConfig(void)
+{
+    uintn_t rows;
+    efi_status_t status = ST->ConOut->QueryMode(ST->ConOut, ST->ConOut->Mode->Mode, NULL, &rows);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_WARNING, status, "Failed to query the console size in the boot menu.");
+        rows = DEFAULT_CONSOLE_ROWS;
+    }
+
+    // This variable defines the amount of entries that can be shown on screen at once
+    // We subtract 10 because there are 10 rows that we have reserved for other printing
+    bmcfg.maxEntriesOnScreen = rows - 10;
+
+    bmcfg.selectedEntryIndex = 0;
+    bmcfg.entryOffset = 0;
+}
+
+static void PrintBootMenu(boot_entry_array_s* entryArr)
+{
+    ST->ConOut->ClearScreen(ST->ConOut);
+    PrintBootloaderVersion();
+
+    int32_t index = bmcfg.entryOffset; // The index at which the printed entries begin
+
+    // Print how many hidden entries are at the top of the list
+    if (index > 0)
+    {
+        printf(" . . . %d more\n", index);
+    }
+    else
+    {
+        putchar('\n');
+    }
+
+    for (int32_t i = 0; i < bmcfg.maxEntriesOnScreen; i++)
+    {   
+        // Prevent going out of bounds
+        if (index >= entryArr->numOfEntries)
+        {
+            break;
+        }
+
+        if (index == bmcfg.selectedEntryIndex) // Highlight the selected entry
+        {
+            ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_BLACK, EFI_LIGHTGRAY));
+            printf(" %d) %s \n", index + 1, entryArr->entries[index].name);
+            ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
+        }
+        else // Print normally
+        {
+            printf(" %d) %s \n", index + 1, entryArr->entries[index].name);
+        }
+        index++;
+    }
+
+    // Print how many hidden entries are at the bottom of the list
+    if (index < entryArr->numOfEntries)
+    {
+        printf(" . . . %d more\n", entryArr->numOfEntries - index);
+    }
+    else
+    {
+        putchar('\n');
+    }
+        
+    printf("\nUse the up and down arrow keys to select which entry is highlighted.\n"
+           "Press enter to boot the selected entry.\n"
+           "Press 'c' to open the shell.\n"
+           "Press 'i' to get info about a highlighted entry.\n");
+}
+
+static void BootMenu(boot_entry_array_s* entryArr)
+{
+    while (TRUE)
+    {
+        PrintBootMenu(entryArr);
+
+        // Clear buffer and read key stroke
+        ST->ConIn->Reset(ST->ConIn, 0);
+        efi_input_key_t key = GetInputKey();
+
+        switch (key.ScanCode)
+        {
+            case UP_ARROW_SCANCODE:
+                if (bmcfg.selectedEntryIndex != 0)
+                {
+                    bmcfg.selectedEntryIndex--;
+                    ScrollEntryList();
+                }
+                break;
+            case DOWN_ARROW_SCANCODE:
+                if (bmcfg.selectedEntryIndex + 1 < entryArr->numOfEntries)
+                {
+                    bmcfg.selectedEntryIndex++;
+                    ScrollEntryList();
+                }
+                break;
+
+            default:
+                switch (key.UnicodeChar)
+                {
+                    case CHAR_CARRIAGE_RETURN:
+                        BootEntry(&entryArr->entries[bmcfg.selectedEntryIndex]);
+                        // If booting failed we will end up here
+                        FailMenu(FAILED_BOOT_ERR_MSG);
+                        return;
+
+                    case SHELL_CHAR:
+                        StartShell();
+                        return;
+
+                    case INFO_CHAR:
+                        PrintEntryInfo(&entryArr->entries[bmcfg.selectedEntryIndex]);
+                        break;
+                    
+                    default:
+                        // Nothing
+                        break;
+                }
         }
     }
 }
 
-static void SuccessMenu(boot_entry_s* head)
+static void ScrollEntryList(void)
 {
-    while (TRUE)
+    if (bmcfg.selectedEntryIndex < bmcfg.entryOffset) // Scroll up
     {
-        uint8_t i = 0;
-        boot_entry_s* curr = head;
-
-        ST->ConOut->ClearScreen(ST->ConOut);
-        
-        PrintBootloaderVersion();
-        while (curr != NULL)
-        {  
-            printf("%d. %s, %s\n", ++i, curr->name, curr->mainPath);
-            curr = curr->next;
-        } 
-        
-        printf("\nPress 'c' to open the shell\n\n");
-
-        //clear buffer and read key stroke
-        ST->ConIn->Reset(ST->ConIn, 0);    
-        efi_input_key_t key;
-
-        do
-        {
-            key = GetInputKey();
-        } while (key.UnicodeChar != SHELL_CHAR && 
-                ((key.UnicodeChar > i + CHAR_INT) || (key.UnicodeChar < '1')));
-
-        if(key.UnicodeChar == SHELL_CHAR)
-        {
-            StartShell();
-            continue; // Return to the beginning
-        }
-
-        curr = GetCurrOS(key.UnicodeChar - CHAR_INT, head);
-
-        // Printing info before booting
-        ST->ConOut->ClearScreen(ST->ConOut);
-        printf("Booting `%s`...\n"
-               "- path: `%s`\n"
-               "- args: `%s`\n",
-               curr->name, curr->mainPath, curr->imgArgs);
-
-        ChainloadImage(curr->mainPath, curr->imgArgs);
-
-        // If booting failed we break the loop in order to show the fail menu
-        break;
+        bmcfg.entryOffset = bmcfg.selectedEntryIndex;
     }
-    FailMenu(FAILED_BOOT_ERR_MSG);
+    if (bmcfg.selectedEntryIndex >= bmcfg.entryOffset + bmcfg.maxEntriesOnScreen) // Scroll down
+    {
+        bmcfg.entryOffset = bmcfg.selectedEntryIndex - bmcfg.maxEntriesOnScreen + 1;
+    }
+}
+
+static void PrintEntryInfo(boot_entry_s* selectedEntry)
+{
+    ST->ConOut->ClearScreen(ST->ConOut);
+    PrintBootloaderVersion();
+
+    printf("Entry %d\n\n", bmcfg.selectedEntryIndex + 1);
+    printf("Name: %s\n"
+           "Path: %s\n"
+           "Args: %s\n",
+           selectedEntry->name, selectedEntry->mainPath, selectedEntry->imgArgs);
+
+    printf("\nPress any key to return...");
+    GetInputKey();
+}
+
+static void BootEntry(boot_entry_s* selectedEntry)
+{
+    // Printing info before booting
+    ST->ConOut->ClearScreen(ST->ConOut);
+    printf("Booting `%s`...\n"
+            "- path: `%s`\n"
+            "- args: `%s`\n",
+            selectedEntry->name, selectedEntry->mainPath, selectedEntry->imgArgs);
+
+    ChainloadImage(selectedEntry->mainPath, selectedEntry->imgArgs);
 }
 
 static void FailMenu(const char_t* errorMsg)
@@ -93,7 +217,8 @@ static void FailMenu(const char_t* errorMsg)
                "2) Show log\n"
                "3) Shutdown\n"
                "4) Restart\n"
-               "5) Return to main menu\n");
+               "5) Return to main menu\n\n"
+               "Press a number on your keyboard to select an option.\n");
         
         //clear buffer and read key stroke
         ST->ConIn->Reset(ST->ConIn, 0);    
@@ -109,7 +234,7 @@ static void FailMenu(const char_t* errorMsg)
         {
             case '1':
                 StartShell();
-                break;
+                return; // Return in order to parse the config again
             case '2':
                 ShowLogFile();
                 break;
@@ -139,19 +264,6 @@ void ShowLogFile(void)
         printf("Failed to open log file!\n");
     }
 
-    printf("\nPress any key to continue...");
+    printf("\nPress any key to return...");
     GetInputKey();
-}
-
-static boot_entry_s * GetCurrOS(uint8_t numOfPartition, boot_entry_s * head)
-{
-    uint8_t  i = 0;
-    boot_entry_s * curr = head;
-
-    for(i = 1; i < numOfPartition; i++)
-    {
-        curr = curr->next;
-    }
-    
-    return curr;
 }
