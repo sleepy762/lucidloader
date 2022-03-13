@@ -27,4 +27,5 @@ typedef struct boot_entry_array_s
 } boot_entry_array_s;
 
 boot_entry_array_s ParseConfig(void);
+void ParseKeyValuePair(char_t* token, const char_t delimiter, char_t** key, char_t** value);
 void FreeConfigEntries(boot_entry_array_s* entryArr);

@@ -2,7 +2,6 @@
 
 static boolean_t ValidateEntry(boot_entry_s newEntry);
 static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry);
-static int8_t ParseLine(boot_entry_s* entry, char_t* token);
 static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry);
 
 // Returns a pointer to the head of a linked list of boot entries
@@ -65,12 +64,18 @@ boot_entry_array_s ParseConfig(void)
         // Gets lines from the blocks of text
         while ((line = strtok_r(entryCopy, CFG_LINE_DELIMITER, &entryCopy)) != NULL)
         {
-            if (ParseLine(&entry, line) == 1)
+            char_t* key = NULL;
+            char_t* value = NULL;
+            ParseKeyValuePair(line, CFG_KEY_VALUE_DELIMITER, &key, &value);
+
+            if (key == NULL || value == NULL)
             {
-                BS->FreePool(configData);
-                BS->FreePool(strippedEntry);
-                return bootEntryArr;
+                BS->FreePool(key);
+                BS->FreePool(value);
+                continue;
             }
+            AssignValueToEntry(key, value, &entry);
+            BS->FreePool(key);
         }
 
         BS->FreePool(strippedEntry);
@@ -84,11 +89,18 @@ boot_entry_array_s ParseConfig(void)
     boot_entry_s entry = {0};
     while ((line = strtok_r(srcCopy, CFG_LINE_DELIMITER, &srcCopy)) != NULL)
     {
-        if (ParseLine(&entry, line) == 1)
+        char_t* key = NULL;
+        char_t* value = NULL;
+        ParseKeyValuePair(line, CFG_KEY_VALUE_DELIMITER, &key, &value);
+
+        if (key == NULL || value == NULL)
         {
-            BS->FreePool(configData);
-            return bootEntryArr;
+            BS->FreePool(key);
+            BS->FreePool(value);
+            continue;
         }
+        AssignValueToEntry(key, value, &entry);
+        BS->FreePool(key);
     }
     if (ValidateEntry(entry))
     {
@@ -143,44 +155,36 @@ static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* e
     }
 }
 
-// Stores the key and value in separate strings
-// Return value 1 is fatal, otherwise it can be ignored
-static int8_t ParseLine(boot_entry_s* entry, char_t* token)
+// Stores the key and value in separate strings, key and value are OUTPUT parameters
+void ParseKeyValuePair(char_t* token, const char_t delimiter, char_t** key, char_t** value)
 {
-    efi_status_t status;
-    int32_t valueOffset = GetValueOffset(token, CFG_KEY_VALUE_DELIMITER);
+    int32_t valueOffset = GetValueOffset(token, delimiter);
     if (valueOffset == -1)
     {
-        return 0;
+        return;
     }
 
     size_t tokenLen = strlen(token);
     size_t valueLength = tokenLen - valueOffset;
 
-    char_t* key = NULL;
-    char_t* value = NULL;
-    status = BS->AllocatePool(LIP->ImageDataType, valueOffset, (void**)&key);
+    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, valueOffset, (void**)key);
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to allocate memory for the key string during config line parsing.");
-        return 1;
+        return;
     }
-    status = BS->AllocatePool(LIP->ImageDataType, valueLength + 1, (void**)&value);
+    status = BS->AllocatePool(LIP->ImageDataType, valueLength + 1, (void**)value);
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to allocate memory for the value string during config line parsing.");
-        return 1;
+        return;
     }
 
-    memcpy(key, token, valueOffset - 1);
-    key[valueOffset - 1] = 0;
+    memcpy(*key, token, valueOffset - 1);
+    (*key)[valueOffset - 1] = CHAR_NULL;
 
-    memcpy(value, token + valueOffset, valueLength);
-    value[valueLength] = 0;
-
-    AssignValueToEntry(key, value, entry);
-    BS->FreePool(key);
-    return 0;
+    memcpy(*value, token + valueOffset, valueLength);
+    (*value)[valueLength] = CHAR_NULL;
 }
 
 // Adds an entry to the end of the entries array
