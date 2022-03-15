@@ -167,6 +167,12 @@ const char_t* GetCommandErrorInfo(const uint8_t error)
         case CMD_EFI_FAIL:
         return "efi call failed.";
 
+        case CMD_MISSING_SRC_FILE_OPERAND:
+        return "missing file operand.";
+
+        case CMD_MISSING_DST_FILE_OPERAND:
+        return "missing destination file operand.";
+
         default:
         return "unknown error.";
     }

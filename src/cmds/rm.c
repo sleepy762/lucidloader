@@ -5,14 +5,15 @@ static uint8_t RemoveDirRecursively(char_t* mainPath, cmd_args_s* cmdArg);
 boolean_t RmCmd(cmd_args_s** args, char_t** currPathPtr)
 {
     cmd_args_s* cmdArg = *args;
+    boolean_t recursiveFlag = FindFlagAndDelete(args, RECURSIVE_FLAG);
     cmd_args_s* arg = cmdArg->next;
+    
     if (arg == NULL)
     {
         PrintCommandError(cmdArg->argString, NULL, CMD_NO_FILE_SPECIFIED);
         return FALSE;
     }
 
-    boolean_t recursiveFlag = FindFlagAndDelete(args, RECURSIVE_FLAG);
 
     boolean_t cmdSuccess = TRUE;
     while (arg != NULL)

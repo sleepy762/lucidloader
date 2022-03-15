@@ -16,6 +16,7 @@
 #include "cmds/rm.h"
 #include "cmds/edit.h"
 #include "cmds/passwd.h"
+#include "cmds/cp.h"
 
 // The only command in this file because it has to access the list of all commands
 boolean_t HelpCmd(cmd_args_s** args, char_t** currPathPtr);

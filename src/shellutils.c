@@ -235,12 +235,11 @@ efi_input_key_t GetInputKey(void)
 void GetInputString(char_t buffer[], const uint32_t maxInputSize, boolean_t hideInput)
 {
     uint32_t index = 0;
-    efi_input_key_t key;
 
     while (TRUE)
     {
         // Continuously read input
-        key = GetInputKey();
+        efi_input_key_t key = GetInputKey();
         char_t unicodechar = key.UnicodeChar;
 
         // When enter is pressed, leave the loop to process the input
@@ -334,6 +333,15 @@ boolean_t FindFlagAndDelete(cmd_args_s** argsHead, const char* flagStr)
     return FALSE;
 }
 
+cmd_args_s* GetLastArg(cmd_args_s* head)
+{
+    while (head->next != NULL)
+    {
+        head = head->next;
+    }
+    return head;
+}
+
 int32_t PrintFileContent(char_t* path)
 {
     uint64_t fileSize;
@@ -352,5 +360,39 @@ int32_t PrintFileContent(char_t* path)
 
     BS->FreePool(buffer);
     
+    return 0;
+}
+
+int32_t CopyFile(FILE* srcFP, const char_t* dest)
+{
+    FILE* destFP = fopen(dest, "w");
+    if (destFP == NULL)
+    {
+        return errno;
+    }
+
+    char_t buf[BUFSIZ];
+    uint64_t srcSize = GetFileSize(srcFP);
+
+    for (uint64_t i = 0; i < srcSize; i += BUFSIZ)
+    {
+        uint64_t bytesToCopy;
+        if (i + BUFSIZ > srcSize) // Copy the remainder
+        {
+            bytesToCopy = srcSize - i;
+        }
+        else // Copy up to 8KiB at a time
+        {
+            bytesToCopy = BUFSIZ;
+        }
+
+        if (fread(buf, 1, bytesToCopy, srcFP) == 0 ||
+            fwrite(buf, 1, bytesToCopy, destFP) == 0)
+        {
+            Log(LL_ERROR, 0, "Error during file copy: %s", GetCommandErrorInfo(errno));
+            return errno;
+        }
+    }
+    fclose(destFP);
     return 0;
 }
