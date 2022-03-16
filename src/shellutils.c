@@ -137,30 +137,31 @@ void CleanPath(char_t** path)
     }
 }
 
-char_t* MakeFullPath(char_t* args, char_t* currPathPtr, boolean_t* isDynamicMemory)
+char_t* MakeFullPath(char_t* pathArg, char_t* currPathPtr, boolean_t* isDynamicMemory)
 {
     char_t* fullPath = NULL;
 
-    CleanPath(&args);
+    CleanPath(&pathArg);
 
     // Check if the path starts from the root dir
-    if (args[0] == DIRECTORY_DELIM)
+    if (pathArg[0] == DIRECTORY_DELIM)
     {
-        fullPath = args;
+        fullPath = pathArg;
+        *isDynamicMemory = FALSE;
     }
     // if the args are only whitespace
-    else if (args[0] == CHAR_NULL)
+    else if (pathArg[0] == CHAR_NULL)
     {
+        *isDynamicMemory = FALSE;
         return NULL;
     }
     else // Check the concatenated path
     {
-        fullPath = ConcatPaths(currPathPtr, args);
+        fullPath = ConcatPaths(currPathPtr, pathArg);
         if (fullPath == NULL)
         {
             return NULL;
         }
-        
         *isDynamicMemory = TRUE;
     }
     return fullPath;
@@ -363,8 +364,13 @@ int32_t PrintFileContent(char_t* path)
     return 0;
 }
 
-int32_t CopyFile(FILE* srcFP, const char_t* dest)
+int32_t CopyFile(const char_t* src, const char_t* dest)
 {
+    FILE* srcFP = fopen(src, "r");
+    if (srcFP == NULL)
+    {
+        return errno;
+    }
     FILE* destFP = fopen(dest, "w");
     if (destFP == NULL)
     {
@@ -394,5 +400,31 @@ int32_t CopyFile(FILE* srcFP, const char_t* dest)
         }
     }
     fclose(destFP);
+    fclose(srcFP);
     return 0;
+}
+
+int32_t CreateDirectory(char_t* path)
+{
+    DIR* dir = opendir(path);
+    if (dir != NULL)
+    {
+        closedir(dir);
+        return CMD_DIR_ALREADY_EXISTS;
+    }
+    else
+    {
+        // Creates a new directory and frees the pointer to it
+        FILE* fp = fopen(path, "wd");
+        if (fp != NULL)
+        {
+            fclose(fp);
+        }
+        else
+        {
+            // Make the error message more sensible
+            return (errno == ENOTDIR) ? EEXIST : errno;
+        }
+    }
+    return CMD_SUCCESS;
 }
