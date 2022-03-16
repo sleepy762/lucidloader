@@ -18,6 +18,8 @@
 #define CMD_SHUTDOWN_FAIL (48)
 #define CMD_REFUSE_REMOVE (49)
 #define CMD_EFI_FAIL (50)
+#define CMD_MISSING_SRC_FILE_OPERAND (51)
+#define CMD_MISSING_DST_FILE_OPERAND (52)
 
 const char_t* GetCommandErrorInfo(const uint8_t error);
 void PrintCommandError(const char_t* cmd, const char_t* args, const uint8_t error);
