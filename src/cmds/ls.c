@@ -16,6 +16,7 @@ uint8_t LsCmd(cmd_args_s** args, char_t** currPathPtr)
         }
         else
         {
+            putchar('\n');
             return TRUE;
         }
     }

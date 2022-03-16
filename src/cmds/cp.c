@@ -1,5 +1,8 @@
 #include "cmds/cp.h"
 
+static int32_t CopyFileIntoDir(char_t* srcFile, char_t* dstDir);
+static boolean_t CopyRecursively(char_t* mainPath, char_t* dstPath, cmd_args_s* cmdArg);
+
 boolean_t CpCmd(cmd_args_s** args, char_t** currPathPtr)
 {
     cmd_args_s* cmdArg = *args;
@@ -21,11 +24,46 @@ boolean_t CpCmd(cmd_args_s** args, char_t** currPathPtr)
     // The last argument is always the destination
     cmd_args_s* dstArg = GetLastArg(srcBegin);
 
+    boolean_t isDynamicMemoryDstPath = FALSE;
+    char_t* dstPath = MakeFullPath(dstArg->argString, *currPathPtr, &isDynamicMemoryDstPath);
+    if (dstPath == NULL)
+    {
+        PrintCommandError(cmdArg->argString, dstArg->argString, CMD_MISSING_DST_FILE_OPERAND);
+        return FALSE;
+    }
+
     boolean_t cmdSuccess = TRUE;
     if (recursiveFlag) // Recursive copy
     {
-        // recursive copy function
-        // dst is always dir, unless `cp -r <src file> <dst file>`
+        cmd_args_s* currSrc = srcBegin;
+        
+        while (currSrc != NULL)
+        {
+            // Reached the end of the sources
+            if (currSrc == dstArg)
+            {
+                break;
+            }
+
+            boolean_t isDynamicMemory = FALSE;
+            char_t* fullPath = MakeFullPath(currSrc->argString, *currPathPtr, &isDynamicMemory);
+            if (fullPath == NULL)
+            {
+                PrintCommandError(cmdArg->argString, currSrc->argString, CMD_MISSING_SRC_FILE_OPERAND);
+                return FALSE;
+            }
+
+            if (CopyRecursively(fullPath, dstPath, cmdArg) == FALSE)
+            {
+                cmdSuccess = FALSE;
+            }
+
+            if (isDynamicMemory)
+            {
+                BS->FreePool(fullPath);
+            }
+            currSrc = currSrc->next;
+        }
     }
     else
     {
@@ -40,40 +78,37 @@ boolean_t CpCmd(cmd_args_s** args, char_t** currPathPtr)
                 return FALSE;
             }
 
-            boolean_t isDynamicMemoryDstPath = FALSE;
-            char_t* dstPath = MakeFullPath(dstArg->argString, *currPathPtr, &isDynamicMemoryDstPath);
-            if (dstPath == NULL)
+            char_t* fullDstPath = dstPath;
+
+            FILE* fp = fopen(dstPath, "r");
+            // If the destination is a directory, copy the file into the directory
+            if (fp == NULL && errno == EISDIR)
             {
-                PrintCommandError(cmdArg->argString, dstArg->argString, CMD_MISSING_DST_FILE_OPERAND);
-                return FALSE;
+                fullDstPath = ConcatPaths(dstPath, strrchr(srcPath, '\\') + 1);
+            }
+            else if (fp != NULL)
+            {
+                fclose(fp);
             }
 
-            int32_t res = CopyFile(srcPath, dstPath);
+            int32_t res = CopyFile(srcPath, fullDstPath);
             if (res != 0)
             {
                 PrintCommandError(cmdArg->argString, srcBegin->argString, res);
                 cmdSuccess = FALSE;
             }
 
+            if (fullDstPath != dstPath)
+            {
+                BS->FreePool(fullDstPath);
+            }
             if (isDynamicMemorySrcPath)
             {
                 BS->FreePool(srcPath);
             }
-            if (isDynamicMemoryDstPath)
-            {
-                BS->FreePool(dstPath);
-            }
         }
         else // If there are multiple sources
         {
-            boolean_t isDynamicMemoryDstPath = FALSE;
-            char_t* dstPath = MakeFullPath(dstArg->argString, *currPathPtr, &isDynamicMemoryDstPath);
-            if (dstPath == NULL)
-            {
-                PrintCommandError(cmdArg->argString, dstArg->argString, CMD_MISSING_DST_FILE_OPERAND);
-                return FALSE;
-            }
-
             // The destination has to be a directory
             int32_t res = CreateDirectory(dstPath);
             if (res != CMD_DIR_ALREADY_EXISTS && res != CMD_SUCCESS)
@@ -101,10 +136,7 @@ boolean_t CpCmd(cmd_args_s** args, char_t** currPathPtr)
                     return FALSE;
                 }
 
-                char_t* fileName = strrchr(srcPath, '\\');
-                char_t* fullDstPath = ConcatPaths(dstPath, fileName);
-
-                int32_t res = CopyFile(srcPath, fullDstPath);
+                int32_t res = CopyFileIntoDir(srcPath, dstPath);
                 if (res != 0)
                 {
                     PrintCommandError(cmdArg->argString, currSrc->argString, res);
@@ -115,17 +147,110 @@ boolean_t CpCmd(cmd_args_s** args, char_t** currPathPtr)
                 {
                     BS->FreePool(srcPath);
                 }
-                BS->FreePool(fullDstPath);
                 currSrc = currSrc->next;
-            }
-
-            if (isDynamicMemoryDstPath)
-            {
-                BS->FreePool(dstPath);
             }
         }
     }
+    if (isDynamicMemoryDstPath)
+    {
+        BS->FreePool(dstPath);
+    }
     return cmdSuccess;
+}
+
+static int32_t CopyFileIntoDir(char_t* srcFile, char_t* dstDir)
+{
+    char_t* fileName = strrchr(srcFile, '\\') + 1;
+    char_t* fullCopyPath = ConcatPaths(dstDir, fileName);
+
+    int32_t res = CopyFile(srcFile, fullCopyPath);
+    BS->FreePool(fullCopyPath);
+    return res;
+}
+
+static boolean_t CopyRecursively(char_t* mainPath, char_t* dstPath, cmd_args_s* cmdArg)
+{
+    DIR* dir = opendir(mainPath);
+    // Allow copying normal files with the recursive flag on
+    if (dir == NULL && errno == ENOTDIR)
+    {
+        int32_t res = CreateDirectory(dstPath);
+        if (res != CMD_DIR_ALREADY_EXISTS && res != CMD_SUCCESS)
+        {
+            PrintCommandError(cmdArg->argString, dstPath, res);
+            return FALSE;
+        }
+
+        res = CopyFileIntoDir(mainPath, dstPath);
+        if (res != 0)
+        {
+            PrintCommandError(cmdArg->argString, mainPath, res);
+            return FALSE;
+        }
+        return TRUE;
+    }
+    else if (dir == NULL)
+    {
+        PrintCommandError(cmdArg->argString, mainPath, errno);
+        return FALSE;
+    }
+
+    // Make sure the base destination directory exists
+    int32_t dstPathRes = CreateDirectory(dstPath);
+    if (dstPathRes != CMD_DIR_ALREADY_EXISTS && dstPathRes != CMD_SUCCESS)
+    {
+        PrintCommandError(cmdArg->argString, dstPath, dstPathRes);
+        return FALSE;
+    }
+
+    // Use the new destination
+    char_t* newDstPath = ConcatPaths(dstPath, strrchr(mainPath, '\\') + 1);
+    dstPathRes = CreateDirectory(newDstPath);
+    if (dstPathRes != CMD_DIR_ALREADY_EXISTS && dstPathRes != CMD_SUCCESS)
+    {
+        PrintCommandError(cmdArg->argString, newDstPath, dstPathRes);
+        return FALSE;
+    }
+
+    boolean_t funcSuccess = TRUE;
+    struct dirent* de;
+    while ((de = readdir(dir)) != NULL)
+    {
+        if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)
+        {
+            // Skip the current and previous directories
+            continue;
+        }
+
+        boolean_t isDynamicMemory = FALSE;
+        // Concatenate the current directory path with the name of the file to copy
+        char_t* filePath = MakeFullPath(de->d_name, mainPath, &isDynamicMemory);
+
+        // If we find a directory, descend into it and copy everything in it
+        if (de->d_type == DT_DIR)
+        {
+            if (CopyRecursively(filePath, newDstPath, cmdArg) == FALSE)
+            {
+                funcSuccess = FALSE;
+            }
+        }
+        else
+        {
+            int32_t res = CopyFileIntoDir(filePath, newDstPath);
+            if (res != 0)
+            {
+                PrintCommandError(cmdArg->argString, filePath, res);
+                funcSuccess = FALSE;
+            }
+        }
+
+        if (isDynamicMemory)
+        {
+            BS->FreePool(filePath);
+        }
+    }
+    BS->FreePool(newDstPath);
+    return funcSuccess;
 }
 
 const char_t* CpBrief(void)
