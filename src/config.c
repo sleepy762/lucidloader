@@ -10,31 +10,15 @@ boot_entry_array_s ParseConfig(void)
 {
     boot_entry_array_s bootEntryArr = { NULL, 0 };
 
-    FILE* cfgFP = fopen(CFG_PATH, "r");
-    if (cfgFP == NULL)
-    {
-        Log(LL_ERROR, 0, "Failed to open config file: %s", GetCommandErrorInfo(errno));
-        return bootEntryArr;
-    }
-
-    uint64_t cfgSize = GetFileSize(cfgFP);
-    char_t* configData = malloc(cfgSize + 1);
+    char_t* configData = GetFileContent(CFG_PATH, NULL);
     if (configData == NULL)
     {
         Log(LL_ERROR, 0, "Failed to allocate memory.");
         return bootEntryArr;
     }
-    if (fread(configData, 1, cfgSize, cfgFP) != cfgSize)
-    {
-        Log(LL_ERROR, 0, "Failed to read config file: %s", GetCommandErrorInfo(errno));
-        return bootEntryArr;
-    }
-    configData[cfgSize] = CHAR_NULL;
 
-    fclose(cfgFP);
-
-    char_t* line;
-    char_t* configEntry;
+    char_t* line = NULL;
+    char_t* configEntry = NULL;
     char_t* srcCopy = configData;
 
     // Gets blocks of text from the config

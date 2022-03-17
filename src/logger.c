@@ -6,7 +6,15 @@ efi_time_t timeSinceInit = {0};
 // Returns 1 on success and 0 on failure
 int8_t InitLogger(void)
 {
-    FILE* fp = fopen(LOG_PATH, "w");
+    // If a log file already exists, keep it as an old log
+    FILE* fp = fopen(LOG_PATH, "r");
+    if (fp != NULL)
+    {
+        fclose(fp);
+        CopyFile(LOG_PATH, OLD_LOG_PATH);
+    }
+
+    fp = fopen(LOG_PATH, "w");
     if (fp != NULL)
     {
         fclose(fp);
@@ -47,7 +55,7 @@ void Log(log_level_t loglevel, efi_status_t status, const char_t* fmtMessage, ..
     if (EFI_ERROR(status))
     {
         // We must turn off the sign bit in status, therefore we subtract 0x8000000000000000
-        fprintf(log, " (EFI Error: %s (%ld))", EfiErrorString(status), (status - EFI_ERROR_MASK));
+        fprintf(log, " (EFI Error: %s (%d))", EfiErrorString(status), (status - EFI_ERROR_MASK));
     }
 
     fprintf(log, "\n");

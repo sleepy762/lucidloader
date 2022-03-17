@@ -43,7 +43,7 @@ void StartBootloader(void)
 
 static void InitBootMenuConfig(void)
 {
-    uintn_t rows;
+    uintn_t rows = DEFAULT_CONSOLE_ROWS;
     efi_status_t status = ST->ConOut->QueryMode(ST->ConOut, ST->ConOut->Mode->Mode, NULL, &rows);
     if (EFI_ERROR(status))
     {
@@ -222,7 +222,7 @@ static void FailMenu(const char_t* errorMsg)
         
         //clear buffer and read key stroke
         ST->ConIn->Reset(ST->ConIn, 0);    
-        efi_input_key_t key;
+        efi_input_key_t key = {0};
 
         // check if key is valid
         do

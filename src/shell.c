@@ -19,7 +19,7 @@ int8_t StartShell(void)
     if (ShellLoginWithPassword() == FALSE)
     {
         // Login failed
-        return 0;
+        return -1;
     }
 
     Log(LL_INFO, 0, "Starting the shell.");
@@ -129,7 +129,7 @@ static char_t* GetCommandFromBuffer(char_t buffer[])
         return NULL;
     }
 
-    int32_t cmdLen;
+    int32_t cmdLen = 0;
     int32_t cmdOffset = GetValueOffset(buffer, ' ');
     if (cmdOffset == -1)
     {

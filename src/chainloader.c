@@ -13,7 +13,7 @@ void ChainloadImage(char_t* path, char_t* args)
     }
 
     // Read the file data into a buffer
-    uintn_t imgFileSize;
+    uintn_t imgFileSize = 0;
     char_t* imgData = GetFileContent(path, &imgFileSize);
     if (imgData == NULL)
     {

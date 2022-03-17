@@ -171,8 +171,8 @@ efi_status_t RebootDevice(boolean_t rebootToFirmware)
         uint64_t newOsIndications = EFI_OS_INDICATIONS_BOOT_TO_FW_UI;
 
         efi_guid_t global = EFI_GLOBAL_VARIABLE;
-        uintn_t oiSize;
-        
+        uintn_t oiSize = 0;
+
         // Get the size required to store the variable (oiSize is an output parameter)
         RT->GetVariable(L"OsIndications", &global, NULL, &oiSize, NULL);
 
@@ -186,7 +186,7 @@ efi_status_t RebootDevice(boolean_t rebootToFirmware)
 
         // Get the actual data
         status = RT->GetVariable(L"OsIndications", &global, NULL, &oiSize, (void*)currOsIndications);
-        if (EFI_ERROR(status))
+        if (currOsIndications == NULL)
         {
             Log(LL_ERROR, status, "Failed to get OsIndications environment variable.");
             return status;

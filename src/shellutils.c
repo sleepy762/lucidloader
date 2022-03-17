@@ -213,8 +213,8 @@ void RemoveRepeatedChars(char_t* str, char_t toRemove)
 
 efi_input_key_t GetInputKey(void)
 {
-    efi_status_t status;
-    efi_input_key_t key;
+    efi_status_t status = 0;
+    efi_input_key_t key = {0};
 
     DisableWatchdogTimer();
 
@@ -344,7 +344,7 @@ cmd_args_s* GetLastArg(cmd_args_s* head)
 
 int32_t PrintFileContent(char_t* path)
 {
-    uint64_t fileSize;
+    uint64_t fileSize = 0;
     char_t* buffer = GetFileContent(path, &fileSize);
     if (buffer == NULL)
     {
