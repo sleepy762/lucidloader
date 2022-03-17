@@ -2,14 +2,14 @@
 
 char_t* ConcatPaths(char_t* lhs, char_t* rhs)
 {
-    char_t* newPath = NULL;
     size_t lhsLen = strlen(lhs);
     size_t rhsLen = strlen(rhs);
 
-    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, lhsLen + rhsLen + 2, (void**)&newPath);
-    if (EFI_ERROR(status))
+    // Null terminator + additional '\' character
+    char_t* newPath = malloc(lhsLen + rhsLen + 2);
+    if (newPath == NULL)
     {
-        Log(LL_ERROR, status, "Failed to allocate memory to concatenate two paths.");
+        Log(LL_ERROR, 0, "Failed to allocate memory to concatenate two paths.");
         return NULL;
     }
 
@@ -47,14 +47,12 @@ uint8_t NormalizePath(char_t** path)
         return CMD_SUCCESS;
     }
 
-    char_t** tokens = NULL;
-    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, tokenAmount * sizeof(char_t*), (void**)&tokens);
-    if (EFI_ERROR(status))
+    char_t** tokens = malloc(tokenAmount * sizeof(char_t*));
+    if (tokens == NULL)
     {
-        Log(LL_ERROR, status, "Failed to allocate memory while normalizing the path.");
+        Log(LL_ERROR, 0, "Failed to allocate memory while normalizing the path.");
         return CMD_OUT_OF_MEMORY;
     }
-        
     tokens[0] = NULL;
 
     char_t* token = NULL;
@@ -92,7 +90,7 @@ uint8_t NormalizePath(char_t** path)
                 {
                     tokenAmount--;
                 }
-                BS->FreePool(tokens[i]);
+                free(tokens[i]);
                 tokens[i] = NULL;
             }
         }
@@ -115,10 +113,9 @@ uint8_t NormalizePath(char_t** path)
             strcat(*path, "\\");
         }
             
-        BS->FreePool(tokens[i]);
+        free(tokens[i]);
     }
-    BS->FreePool(tokens);
-
+    free(tokens);
     return CMD_SUCCESS;
 }
 
@@ -216,8 +213,8 @@ void RemoveRepeatedChars(char_t* str, char_t toRemove)
 
 efi_input_key_t GetInputKey(void)
 {
-    efi_status_t status;
-    efi_input_key_t key;
+    efi_status_t status = 0;
+    efi_input_key_t key = {0};
 
     DisableWatchdogTimer();
 
@@ -310,7 +307,8 @@ boolean_t FindFlagAndDelete(cmd_args_s** argsHead, const char* flagStr)
     if (strcmp(args->argString, flagStr) == 0)
     {
         *argsHead = args->next;
-        BS->FreePool(args);
+        free(args->argString);
+        free(args);
         return TRUE;
     }
 
@@ -324,7 +322,8 @@ boolean_t FindFlagAndDelete(cmd_args_s** argsHead, const char* flagStr)
         {
             // Deleting the argument node
             prev->next = args->next;
-            BS->FreePool(args);
+            free(args->argString);
+            free(args);
             return TRUE;
         }
         // Advancing the list search
@@ -345,7 +344,7 @@ cmd_args_s* GetLastArg(cmd_args_s* head)
 
 int32_t PrintFileContent(char_t* path)
 {
-    uint64_t fileSize;
+    uint64_t fileSize = 0;
     char_t* buffer = GetFileContent(path, &fileSize);
     if (buffer == NULL)
     {
@@ -359,7 +358,7 @@ int32_t PrintFileContent(char_t* path)
     }
     putchar('\n');
 
-    BS->FreePool(buffer);
+    free(buffer);
     
     return 0;
 }
@@ -392,8 +391,8 @@ int32_t CopyFile(const char_t* src, const char_t* dest)
             bytesToCopy = BUFSIZ;
         }
 
-        if (fread(buf, 1, bytesToCopy, srcFP) == 0 ||
-            fwrite(buf, 1, bytesToCopy, destFP) == 0)
+        if (fread(buf, 1, bytesToCopy, srcFP) != bytesToCopy ||
+            fwrite(buf, 1, bytesToCopy, destFP) != bytesToCopy)
         {
             Log(LL_ERROR, 0, "Error during file copy: %s", GetCommandErrorInfo(errno));
             return errno;

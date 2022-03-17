@@ -1,6 +1,6 @@
 #include "chainloader.h"
 
-efi_status_t ChainloadImage(char_t* path, char_t* args)
+void ChainloadImage(char_t* path, char_t* args)
 {
     efi_device_path_t* devPath = NULL;
     efi_file_handle_t* rootDir = NULL;
@@ -8,27 +8,17 @@ efi_status_t ChainloadImage(char_t* path, char_t* args)
     efi_status_t status = GetFileProtocols(path, &devPath, &rootDir, &imgFileHandle);
     if (EFI_ERROR(status))
     {
-        Log(LL_ERROR, 0, "Failed to get image file protocols for chainloading '%s'.", path);
-        return EFI_NOT_FOUND;
-    }
-
-    // Get file information for the file size
-    efi_file_info_t imgInfo;
-    status = GetFileInfo(imgFileHandle, &imgInfo);
-    if (EFI_ERROR(status))
-    {
-        Log(LL_ERROR, status, "Failed to get file information for chainloading '%s'.", path);
-        return status;
+        Log(LL_ERROR, status, "Failed to get image file protocols for chainloading '%s'.", path);
+        return;
     }
 
     // Read the file data into a buffer
-    uintn_t imgFileSize = imgInfo.FileSize;
-    char_t* imgData = NULL;
-    status = ReadFile(imgFileHandle, imgFileSize, &imgData);
-    if (EFI_ERROR(status))
+    uintn_t imgFileSize = 0;
+    char_t* imgData = GetFileContent(path, &imgFileSize);
+    if (imgData == NULL)
     {
-        Log(LL_ERROR, status, "Failed to read file '%s' for chainloading.", path);
-        return status;
+        Log(LL_ERROR, 0, "Failed to read file '%s' for chainloading: %s", path);
+        return;
     }
 
     // Load the image
@@ -37,20 +27,20 @@ efi_status_t ChainloadImage(char_t* path, char_t* args)
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to load the image for chainloading '%s'.", path);
-        return status;
+        return;
     }
-    BS->FreePool(imgData);
+    free(imgData);
 
     // Adds arguments to the loaded image, if there are any
+    efi_loaded_image_protocol_t* imgProtocol = NULL;
     if (args != NULL)
     {
         efi_guid_t loadedImageGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
-        efi_loaded_image_protocol_t* imgProtocol = NULL;
         status = BS->HandleProtocol(imgHandle, &loadedImageGuid, (void**)&imgProtocol);
         if (EFI_ERROR(status))
         {
             Log(LL_ERROR, status, "Failed to get loaded image protocol when passing args.");
-            return 1;
+            return;
         }
         else
         {
@@ -64,9 +54,11 @@ efi_status_t ChainloadImage(char_t* path, char_t* args)
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to start the image '%s' (chainload).", path);
-        return status;
+        return;
     }
 
-    // This line should never be reached
-    return 1;
+    // We shouldn't reach this, but in case the chainload fails we don't want memory leaks
+    free(imgProtocol->LoadOptions);
+    imgFileHandle->Close(imgFileHandle);
+    rootDir->Close(rootDir);
 }

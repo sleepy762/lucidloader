@@ -56,7 +56,7 @@ uint8_t LsCmd(cmd_args_s** args, char_t** currPathPtr)
 
         if (isDynamicMemory)
         {
-            BS->FreePool(dirToList);
+            free(dirToList);
         }
         arg = arg->next;
     }

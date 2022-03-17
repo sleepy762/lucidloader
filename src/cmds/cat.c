@@ -34,7 +34,7 @@ boolean_t CatCmd(cmd_args_s** args, char_t** currPathPtr)
         
         if (isDynamicMemory)
         {
-            BS->FreePool(filePath);
+            free(filePath);
         }
         arg = arg->next;
     }

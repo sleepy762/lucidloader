@@ -5,12 +5,10 @@ wchar_t* StringToWideString(char_t* str)
     // The size has to be multiplied by the size of wchar_t 
     // because wchar_t is 2 bytes, while char_t is 1 byte
     const size_t size = strlen(str) * sizeof(wchar_t);
-    wchar_t* wpath = NULL;
-    
-    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, size + 1, (void**)&wpath);
-    if (EFI_ERROR(status))
+    wchar_t* wpath = malloc(size + 1);
+    if (wpath == NULL)
     {
-        Log(LL_ERROR, status, "Failed to allocate memory during string conversion.");
+        Log(LL_ERROR, 0, "Failed to allocate memory during string conversion.");
         return NULL;
     }
 
@@ -33,11 +31,11 @@ efi_status_t GetFileProtocols(char_t* path, efi_device_path_t** devPath, efi_fil
         return status;
     }
 
-    status = BS->AllocatePool(LIP->ImageDataType, bufSize, (void**)&handles);
-    if (EFI_ERROR(status))
+    handles = malloc(bufSize);
+    if (handles == NULL)
     {
-        Log(LL_ERROR, status, "Failed to allocate buffer for handles.");
-        return status;
+        Log(LL_ERROR, 0, "Failed to allocate buffer for handles.");
+        return EFI_OUT_OF_RESOURCES;
     }
 
     status = BS->LocateHandle(ByProtocol, &sfsGuid, NULL, &bufSize, handles);
@@ -95,10 +93,10 @@ efi_status_t GetFileProtocols(char_t* path, efi_device_path_t** devPath, efi_fil
         {
             Log(LL_INFO, 0, "Checking another partition for the file '%s'...", path);
         }
-        BS->FreePool(wpath);
+        free(wpath);
     }
-    BS->FreePool(handles);
-    if ((*fileHandle) == NULL)
+    free(handles);
+    if (*fileHandle == NULL)
     {
         Log(LL_ERROR, 0, "Failed to find the file '%s' on the machine.", path);
         return EFI_NOT_FOUND;
@@ -111,19 +109,6 @@ efi_status_t GetFileInfo(efi_file_handle_t* fileHandle, efi_file_info_t* fileInf
     efi_guid_t infGuid = EFI_FILE_INFO_GUID;
     uintn_t size = sizeof(efi_file_info_t);
     return fileHandle->GetInfo(fileHandle, &infGuid, &size, (void*)fileInfo);
-}
-
-// A bare-bones function that reads a file's content into a buffer
-// The buffer must be freed by the user
-efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char_t** buffer)
-{
-    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, fileSize, (void**)buffer);
-    if (EFI_ERROR(status))
-    {
-        Log(LL_ERROR, status, "Failed to allocate memory to read file.");
-        return status;
-    }
-    return fileHandle->Read(fileHandle, &fileSize, (*buffer));
 }
 
 // Returns the size of a file in bytes
@@ -145,7 +130,7 @@ uint64_t GetFileSize(FILE* file)
     return info.FileSize;
 }
 
-// The function reads the file content into a dynamically allocated buffer
+// The function reads the file content into a dynamically allocated buffer (null terminated)
 // The buffer must be freed by the user
 // outFileSize is an optional parameter, it will contain the file size
 char_t* GetFileContent(char_t* path, uint64_t* outFileSize)
@@ -161,14 +146,16 @@ char_t* GetFileContent(char_t* path, uint64_t* outFileSize)
             *outFileSize = fileSize;
         }
 
-        efi_status_t status = ReadFile(file, fileSize + 1, &buffer);
-        if (EFI_ERROR(status))
+        buffer = malloc(fileSize + 1);
+        if (buffer != NULL)
         {
-            Log(LL_ERROR, status, "Failed to read file %s.", path);
-            return NULL;
+            fread(buffer, 1, fileSize, file);
+            buffer[fileSize] = CHAR_NULL;
         }
-
-        buffer[fileSize] = CHAR_NULL;
+        else
+        {
+            Log(LL_ERROR, 0, "Failed to create buffer to read file.");
+        }
         fclose(file);
     }
     return buffer;
@@ -182,26 +169,27 @@ efi_status_t RebootDevice(boolean_t rebootToFirmware)
     if (rebootToFirmware)
     {
         uint64_t newOsIndications = EFI_OS_INDICATIONS_BOOT_TO_FW_UI;
+
         efi_guid_t global = EFI_GLOBAL_VARIABLE;
-        uintn_t oiSize;
-        uint64_t* currOsIndications = NULL;
-        
+        uintn_t oiSize = 0;
+
         // Get the size required to store the variable (oiSize is an output parameter)
         RT->GetVariable(L"OsIndications", &global, NULL, &oiSize, NULL);
 
         // Create a buffer with the appropriate size
-        status = BS->AllocatePool(LIP->ImageDataType, oiSize, (void**)&currOsIndications);
-        if (EFI_ERROR(status))
+        uint64_t* currOsIndications = malloc(oiSize);
+        if (currOsIndications == NULL)
         {
-            Log(LL_ERROR, status, "Failed to allocate memory pool for variable data.");
+            Log(LL_ERROR, 0, "Failed to allocate memory pool for variable data.");
+            return EFI_OUT_OF_RESOURCES;
         }
 
         // Get the actual data
-        RT->GetVariable(L"OsIndications", &global, NULL, &oiSize, (void*)currOsIndications);
+        status = RT->GetVariable(L"OsIndications", &global, NULL, &oiSize, (void*)currOsIndications);
         if (currOsIndications == NULL)
         {
-            Log(LL_ERROR, 0, "Failed to get OsIndications environment variable.");
-            return EFI_OUT_OF_RESOURCES;
+            Log(LL_ERROR, status, "Failed to get OsIndications environment variable.");
+            return status;
         }
 
         if (oiSize == sizeof(newOsIndications))
@@ -218,13 +206,13 @@ efi_status_t RebootDevice(boolean_t rebootToFirmware)
             Log(LL_ERROR, status, "Failed to set OsIndications environment variable.");
         }
 
-        Log(LL_INFO, 0, "Attempting to reboot device into firmware settings...");
-        status = RT->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
+        Log(LL_INFO, 0, "Rebooting device into firmware settings...");
+        status = RT->ResetSystem(EfiResetCold, EFI_SUCCESS, 0, NULL);
     }
     else
     {
         Log(LL_INFO, 0, "Rebooting device...");
-        status = RT->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
+        status = RT->ResetSystem(EfiResetCold, EFI_SUCCESS, 0, NULL);
     }
 
     // Will be reached only if rebooting failed

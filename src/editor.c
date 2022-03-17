@@ -137,7 +137,7 @@ static void EditorOpenFile(char_t* filename)
 
     char_t* origDataPtr = GetFileContent(filename, NULL);
     char_t* fileData = origDataPtr;
-    char_t* token;
+    char_t* token = NULL;
 
     // Read the file line by line
     while ((token = strtok_r_with_empty_str(fileData, "\n", &fileData)) != NULL)
@@ -151,7 +151,7 @@ static void EditorOpenFile(char_t* filename)
     }
     cfg.dirty = FALSE;
 
-    BS->FreePool(origDataPtr);
+    free(origDataPtr);
     fclose(fp);
 }
 
@@ -826,7 +826,7 @@ static void EditorSave(void)
     }
 
     // Convert the rows of text into one big string
-    int32_t len;
+    int32_t len = 0;
     char_t* buf = EditorRowsToString(&len);
     if (len == 0)
     {

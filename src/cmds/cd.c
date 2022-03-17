@@ -32,7 +32,7 @@ boolean_t CdCmd(cmd_args_s** args, char_t** currPathPtr)
     if (auxDir != NULL)
     {
         closedir(auxDir);
-        BS->FreePool(*currPathPtr);
+        free(*currPathPtr);
 
         if (isDynamicMemory)
         {
@@ -41,8 +41,8 @@ boolean_t CdCmd(cmd_args_s** args, char_t** currPathPtr)
         else // if the string wasn't allocated dynamically, we have to do that
         {
             size_t newDirLen = strlen(dirToChangeTo);
-            efi_status_t status = BS->AllocatePool(LIP->ImageDataType, newDirLen + 1, (void**)currPathPtr);
-            if (EFI_ERROR(status))
+            *currPathPtr = malloc(newDirLen + 1);
+            if (*currPathPtr == NULL)
             {
                 PrintCommandError(cmdArg->argString, arg->argString, CMD_OUT_OF_MEMORY);
                 return FALSE;

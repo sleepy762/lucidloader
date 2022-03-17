@@ -53,7 +53,7 @@ boolean_t RmCmd(cmd_args_s** args, char_t** currPathPtr)
 
         if (isDynamicMemory)
         {
-            BS->FreePool(filePath);
+            free(filePath);
         }
         arg = arg->next;
     }
@@ -106,7 +106,7 @@ static boolean_t RemoveRecursively(char_t* mainPath, cmd_args_s* cmdArg)
 
         if (isDynamicMemory)
         {
-            BS->FreePool(filePath);
+            free(filePath);
         }
     }
     // Remove the parent directory
