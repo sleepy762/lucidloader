@@ -29,12 +29,11 @@ int8_t StartShell(void)
            "Type `help` to get a list of commands.\n"
            "Type `help cmd` for info on a command.\n\n");
 
-    char_t* currPath = NULL;
     // 2 is the initial size for the root dir "\" and null string terminator
-    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, 2, (void**)&currPath);
-    if (EFI_ERROR(status))
+    char_t* currPath = malloc(2 * sizeof(char_t));
+    if (currPath == NULL)
     {
-        Log(LL_ERROR, status, "Failed to allocate memory for the path during shell initialization.");
+        Log(LL_ERROR, 0, "Failed to allocate memory for the path during shell initialization.");
         return CMD_OUT_OF_MEMORY;
     }
 
@@ -51,7 +50,7 @@ int8_t StartShell(void)
 
     // Cleanup
     Log(LL_INFO, 0, "Closing the shell.");
-    BS->FreePool(currPath);
+    free(currPath);
     ST->ConOut->EnableCursor(ST->ConOut, FALSE);
     ST->ConOut->ClearScreen(ST->ConOut);
     return 0;
@@ -244,10 +243,10 @@ static int8_t SplitArgsString(char_t buffer[], cmd_args_s** outputArgs)
 
     // Allocate memory for the argument string and copy the buffer into it
     const size_t bufferLen = strlen(buffer);
-    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, bufferLen + 1, (void**)&node->argString);
-    if (EFI_ERROR(status))
+    node->argString = malloc(bufferLen + 1);
+    if (node->argString == NULL)
     {
-        Log(LL_ERROR, status, "Failed to allocate memory for the argument string pointer.");
+        Log(LL_ERROR, 0, "Failed to allocate memory for the argument string pointer.");
         return CMD_OUT_OF_MEMORY;
     }
     memcpy(node->argString, buffer, bufferLen);
@@ -269,11 +268,10 @@ static int8_t SplitArgsString(char_t buffer[], cmd_args_s** outputArgs)
 
 static cmd_args_s* InitializeArgsNode(void)
 {
-    cmd_args_s* node = NULL;
-    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, sizeof(cmd_args_s), (void**)&node);
-    if (EFI_ERROR(status))
+    cmd_args_s* node = malloc(sizeof(cmd_args_s));
+    if (node == NULL)
     {
-        Log(LL_ERROR, status, "Failed to initialize argument node.");
+        Log(LL_ERROR, 0, "Failed to initialize argument node.");
     }
     else
     {
@@ -301,8 +299,8 @@ static void FreeArgs(cmd_args_s* args)
     {
         cmd_args_s* next = args->next;
 
-        BS->FreePool(args->argString);
-        BS->FreePool(args);
+        free(args->argString);
+        free(args);
 
         args = next;
     }

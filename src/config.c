@@ -10,32 +10,28 @@ boot_entry_array_s ParseConfig(void)
 {
     boot_entry_array_s bootEntryArr = { NULL, 0 };
 
-    efi_device_path_t* devPath = NULL;
-    efi_file_handle_t* rootDir = NULL;
-    efi_file_handle_t* configFileHandle = NULL;
-    efi_status_t status = GetFileProtocols(CFG_PATH, &devPath, &rootDir, &configFileHandle);
-    if (EFI_ERROR(status))
+    FILE* cfgFP = fopen(CFG_PATH, "r");
+    if (cfgFP == NULL)
     {
+        Log(LL_ERROR, 0, "Failed to open config file: %s", GetCommandErrorInfo(errno));
         return bootEntryArr;
     }
 
-    efi_file_info_t configInfo;
-    status = GetFileInfo(configFileHandle, &configInfo);
-    if (EFI_ERROR(status))
+    uint64_t cfgSize = GetFileSize(cfgFP);
+    char_t* configData = malloc(cfgSize + 1);
+    if (configData == NULL)
     {
-        Log(LL_ERROR, status, "Failed to get config file info.");
+        Log(LL_ERROR, 0, "Failed to allocate memory.");
         return bootEntryArr;
     }
+    if (fread(configData, 1, cfgSize, cfgFP) != cfgSize)
+    {
+        Log(LL_ERROR, 0, "Failed to read config file: %s", GetCommandErrorInfo(errno));
+        return bootEntryArr;
+    }
+    configData[cfgSize] = CHAR_NULL;
 
-    char_t* configData = NULL;
-    uint64_t configSize = configInfo.FileSize;
-    status = ReadFile(configFileHandle, configSize + 1, &configData);
-    if (EFI_ERROR(status))
-    {
-        Log(LL_ERROR, status, "Failed to read the config file.");
-        return bootEntryArr;
-    }
-    configData[configSize] = 0;
+    fclose(cfgFP);
 
     char_t* line;
     char_t* configEntry;
@@ -47,12 +43,12 @@ boot_entry_array_s ParseConfig(void)
         boot_entry_s entry = {0};
         size_t len = configEntry - srcCopy;
 
-        char_t* strippedEntry = NULL; // Holds the current entry block
-        status = BS->AllocatePool(LIP->ImageDataType, len + 1, (void**)&strippedEntry);
-        if (EFI_ERROR(status))
+        // Holds the current entry block
+        char_t* strippedEntry = malloc(len + 1);
+        if (strippedEntry == NULL)
         {
-            Log(LL_ERROR, status, "Failed to allocate memory while parsing config entries.");
-            BS->FreePool(configData);
+            Log(LL_ERROR, 0, "Failed to allocate memory while parsing config entries.");
+            free(configData);
             return bootEntryArr;
         }
 
@@ -70,15 +66,15 @@ boot_entry_array_s ParseConfig(void)
 
             if (key == NULL || value == NULL)
             {
-                BS->FreePool(key);
-                BS->FreePool(value);
+                free(key);
+                free(value);
                 continue;
             }
             AssignValueToEntry(key, value, &entry);
-            BS->FreePool(key);
+            free(key);
         }
 
-        BS->FreePool(strippedEntry);
+        free(strippedEntry);
         if (ValidateEntry(entry))
         {
             AppendEntry(&bootEntryArr, &entry);
@@ -95,19 +91,19 @@ boot_entry_array_s ParseConfig(void)
 
         if (key == NULL || value == NULL)
         {
-            BS->FreePool(key);
-            BS->FreePool(value);
+            free(key);
+            free(value);
             continue;
         }
         AssignValueToEntry(key, value, &entry);
-        BS->FreePool(key);
+        free(key);
     }
     if (ValidateEntry(entry))
     {
         AppendEntry(&bootEntryArr, &entry);
     }
 
-    BS->FreePool(configData);
+    free(configData);
     if (bootEntryArr.numOfEntries == 0)
     {
         Log(LL_ERROR, 0, "The configuration file is empty or has incorrect entries.");
@@ -167,16 +163,16 @@ void ParseKeyValuePair(char_t* token, const char_t delimiter, char_t** key, char
     size_t tokenLen = strlen(token);
     size_t valueLength = tokenLen - valueOffset;
 
-    efi_status_t status = BS->AllocatePool(LIP->ImageDataType, valueOffset, (void**)key);
-    if (EFI_ERROR(status))
+    *key = malloc(valueOffset);
+    if (*key == NULL)
     {
-        Log(LL_ERROR, status, "Failed to allocate memory for the key string during config line parsing.");
+        Log(LL_ERROR, 0, "Failed to allocate memory for the key string during config line parsing.");
         return;
     }
-    status = BS->AllocatePool(LIP->ImageDataType, valueLength + 1, (void**)value);
-    if (EFI_ERROR(status))
+    *value = malloc(valueLength + 1);
+    if (*value == NULL)
     {
-        Log(LL_ERROR, status, "Failed to allocate memory for the value string during config line parsing.");
+        Log(LL_ERROR, 0, "Failed to allocate memory for the value string during config line parsing.");
         return;
     }
 
@@ -205,9 +201,9 @@ void FreeConfigEntries(boot_entry_array_s* entryArr)
 {
     for (int32_t i = 0; i < entryArr->numOfEntries; i++)
     {
-        BS->FreePool(entryArr->entries[i].name);
-        BS->FreePool(entryArr->entries[i].mainPath);
-        BS->FreePool(entryArr->entries[i].imgArgs);
+        free(entryArr->entries[i].name);
+        free(entryArr->entries[i].mainPath);
+        free(entryArr->entries[i].imgArgs);
     }
     free(entryArr->entries);
 }

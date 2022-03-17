@@ -151,7 +151,7 @@ static void EditorOpenFile(char_t* filename)
     }
     cfg.dirty = FALSE;
 
-    BS->FreePool(origDataPtr);
+    free(origDataPtr);
     fclose(fp);
 }
 

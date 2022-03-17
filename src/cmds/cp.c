@@ -60,7 +60,7 @@ boolean_t CpCmd(cmd_args_s** args, char_t** currPathPtr)
 
             if (isDynamicMemory)
             {
-                BS->FreePool(fullPath);
+                free(fullPath);
             }
             currSrc = currSrc->next;
         }
@@ -100,11 +100,11 @@ boolean_t CpCmd(cmd_args_s** args, char_t** currPathPtr)
 
             if (fullDstPath != dstPath)
             {
-                BS->FreePool(fullDstPath);
+                free(fullDstPath);
             }
             if (isDynamicMemorySrcPath)
             {
-                BS->FreePool(srcPath);
+                free(srcPath);
             }
         }
         else // If there are multiple sources
@@ -145,7 +145,7 @@ boolean_t CpCmd(cmd_args_s** args, char_t** currPathPtr)
 
                 if (isDynamicMemorySrcPath)
                 {
-                    BS->FreePool(srcPath);
+                    free(srcPath);
                 }
                 currSrc = currSrc->next;
             }
@@ -153,7 +153,7 @@ boolean_t CpCmd(cmd_args_s** args, char_t** currPathPtr)
     }
     if (isDynamicMemoryDstPath)
     {
-        BS->FreePool(dstPath);
+        free(dstPath);
     }
     return cmdSuccess;
 }
@@ -164,7 +164,7 @@ static int32_t CopyFileIntoDir(char_t* srcFile, char_t* dstDir)
     char_t* fullCopyPath = ConcatPaths(dstDir, fileName);
 
     int32_t res = CopyFile(srcFile, fullCopyPath);
-    BS->FreePool(fullCopyPath);
+    free(fullCopyPath);
     return res;
 }
 
@@ -246,10 +246,10 @@ static boolean_t CopyRecursively(char_t* mainPath, char_t* dstPath, cmd_args_s* 
 
         if (isDynamicMemory)
         {
-            BS->FreePool(filePath);
+            free(filePath);
         }
     }
-    BS->FreePool(newDstPath);
+    free(newDstPath);
     return funcSuccess;
 }
 

@@ -34,7 +34,7 @@ boolean_t TouchCmd(cmd_args_s** args, char_t** currPathPtr)
 
         if (isDynamicMemory) 
         {
-            BS->FreePool(path);
+            free(path);
         }
         arg = arg->next;
     }
