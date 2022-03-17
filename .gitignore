@@ -4,3 +4,7 @@
 *.efi
 ovmf/
 iso/
+mount/
+config.cfg
+.vscode
+add-to-image/

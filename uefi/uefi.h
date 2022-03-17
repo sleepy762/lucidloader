@@ -32,15 +32,17 @@
 #ifndef _UEFI_H_
 #define _UEFI_H_
 
+/*** configuration ***/
+/* #define UEFI_NO_UTF8 */                  /* use wchar_t in your application */
+#define UEFI_NO_TRACK_ALLOC           /* do not track allocated buffers' size */
+/*** configuration ends ***/
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
-/* comment out this if you want to use wchar_t in your application */
-#define USE_UTF8            1
-
-/* get these from the compiler */
-#ifndef _STDINT_H
+/* get these from the compiler or the efi headers, only define if we have neither */
+#if !defined(_STDINT_H) && !defined(_GCC_STDINT_H) && !defined(_EFI_INCLUDE_)
 #define _STDINT_H
 typedef char                int8_t;
 typedef unsigned char       uint8_t;
@@ -82,7 +84,7 @@ typedef uint64_t efi_physical_address_t;
 typedef uint64_t efi_virtual_address_t;
 typedef void     *efi_handle_t;
 typedef void     *efi_event_t;
-#if USE_UTF8
+#ifndef UEFI_NO_UTF8
 typedef char    char_t;
 #define CL(a)   a
 extern char *__argvutf8;
@@ -704,19 +706,19 @@ typedef void (EFIAPI *efi_event_notify_t)(efi_event_t Event, void *Context);
 typedef efi_status_t (EFIAPI *efi_create_event_t)(uint32_t Type, efi_tpl_t NotifyTpl, efi_event_notify_t NotifyFunction,
     void *NextContext, efi_event_t *Event);
 typedef efi_status_t (EFIAPI *efi_set_timer_t)(efi_event_t Event, efi_timer_delay_t Type, uint64_t TriggerTime);
-typedef efi_status_t (EFIAPI *efi_wait_for_event_t)(uintn_t NumberOfEvents, efi_event_t *Event, uintn_t Index);
+typedef efi_status_t (EFIAPI *efi_wait_for_event_t)(uintn_t NumberOfEvents, efi_event_t *Event, uintn_t *Index);
 typedef efi_status_t (EFIAPI *efi_signal_event_t)(efi_event_t Event);
 typedef efi_status_t (EFIAPI *efi_close_event_t)(efi_event_t Event);
 typedef efi_status_t (EFIAPI *efi_check_event_t)(efi_event_t Event);
 typedef efi_status_t (EFIAPI *efi_handle_protocol_t)(efi_handle_t Handle, efi_guid_t *Protocol, void **Interface);
 typedef efi_status_t (EFIAPI *efi_register_protocol_notify_t)(efi_guid_t *Protocol, efi_event_t Event, void **Registration);
 typedef efi_status_t (EFIAPI *efi_locate_handle_t)(efi_locate_search_type_t SearchType, efi_guid_t *Protocol,
-    void *SearchKey, uintn_t BufferSize, efi_handle_t *Buffer);
+    void *SearchKey, uintn_t *BufferSize, efi_handle_t *Buffer);
 typedef efi_status_t (EFIAPI *efi_locate_device_path_t)(efi_guid_t *Protocol, efi_device_path_t **DevicePath,
     efi_handle_t *Device);
 typedef efi_status_t (EFIAPI *efi_install_configuration_table_t)(efi_guid_t *Guid, void *Table);
 typedef efi_status_t (EFIAPI *efi_image_load_t)(boolean_t BootPolicy, efi_handle_t ParentImageHandle, efi_device_path_t *FilePath,
-    void *SourceBuffer, uintn_t SourceSie, efi_handle_t *ImageHandle);
+    void *SourceBuffer, uintn_t SourceSize, efi_handle_t *ImageHandle);
 typedef efi_status_t (EFIAPI *efi_image_start_t)(efi_handle_t ImageHandle, uintn_t *ExitDataSize, wchar_t **ExitData);
 typedef efi_status_t (EFIAPI *efi_exit_t)(efi_handle_t ImageHandle, efi_status_t ExitStatus, uintn_t ExitDataSize,
     wchar_t *ExitData);
