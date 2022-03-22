@@ -7,9 +7,10 @@
 // Entries config path
 #define CFG_PATH ("EFI\\ezboot\\ezboot-config.cfg")
 
-#define CFG_LINE_DELIMITER ("\n")
-#define CFG_ENTRY_DELIMITER ("\n\n")
+#define CFG_LINE_DELIMITER      ("\n")
+#define CFG_ENTRY_DELIMITER     ("\n\n")
 #define CFG_KEY_VALUE_DELIMITER ('=')
+#define CFG_COMMENT_CHAR        ('#')
 
 #define MAX_ENTRY_NAME_LEN (70)
 
@@ -27,7 +28,7 @@ boot_entry_array_s ParseConfig(void)
 {
     Log(LL_INFO, 0, "Parsing config file...");
 
-    boot_entry_array_s bootEntryArr = { NULL, 0 };
+    boot_entry_array_s bootEntryArr = BOOT_ENTRY_ARR_INIT;
 
     char_t* configData = GetFileContent(CFG_PATH, NULL);
     if (configData == NULL)
@@ -44,7 +45,7 @@ boot_entry_array_s ParseConfig(void)
     while ((configEntry = strstr(srcCopy, CFG_ENTRY_DELIMITER)) != NULL)
     {
         ignoreEntryWarnings = FALSE;
-        boot_entry_s entry = {0};
+        boot_entry_s entry = BOOT_ENTRY_INIT;
 
         size_t len = configEntry - srcCopy;
 
@@ -65,6 +66,11 @@ boot_entry_array_s ParseConfig(void)
         // Gets lines from the blocks of text
         while ((line = strtok_r(entryCopy, CFG_LINE_DELIMITER, &entryCopy)) != NULL)
         {
+            // Ignore comments
+            if (line[0] == CFG_COMMENT_CHAR)
+            {
+                continue;
+            }
             char_t* key = NULL;
             char_t* value = NULL;
             ParseKeyValuePair(line, CFG_KEY_VALUE_DELIMITER, &key, &value);
@@ -90,6 +96,11 @@ boot_entry_array_s ParseConfig(void)
     boot_entry_s entry = {0};
     while ((line = strtok_r(srcCopy, CFG_LINE_DELIMITER, &srcCopy)) != NULL)
     {
+        // Ignore comments
+        if (line[0] == CFG_COMMENT_CHAR)
+        {
+            continue;
+        }
         char_t* key = NULL;
         char_t* value = NULL;
         ParseKeyValuePair(line, CFG_KEY_VALUE_DELIMITER, &key, &value);
@@ -118,6 +129,12 @@ boot_entry_array_s ParseConfig(void)
 
 static boolean_t ValidateEntry(boot_entry_s newEntry)
 {
+    // May be a block of comments, don't print warnings in that case
+    if (newEntry.name == NULL && newEntry.mainPath == NULL && newEntry.imgArgs == NULL)
+    {
+        return FALSE;
+    }
+
     if (strlen(newEntry.name) == 0)
     {   
         if (!ignoreEntryWarnings)
@@ -141,6 +158,12 @@ static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* e
 {
     if (strcmp(key, "name") == 0)
     {
+        if (entry->name != NULL)
+        {
+            Log(LL_WARNING, 0, "Ignoring '%s' value redefinition in the same config entry. (current=%s, ignored=%s)", key, entry->name, value);
+            return;
+        }
+
         // Truncate the name if it's too long
         if (strlen(value) > MAX_ENTRY_NAME_LEN)
         {
@@ -150,10 +173,20 @@ static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* e
     }
     else if (strcmp(key, "path") == 0) 
     {
+        if (entry->mainPath != NULL)
+        {
+            Log(LL_WARNING, 0, "Ignoring '%s' value redefinition in the same config entry. (current=%s, ignored=%s)", key, entry->mainPath, value);
+            return;
+        }
         entry->mainPath = value;
     }
     else if (strcmp(key, "args") == 0)
     {
+        if (entry->imgArgs != NULL)
+        {
+            Log(LL_WARNING, 0, "Ignoring '%s' value redefinition in the same config entry. (current=%s, ignored=%s)", key, entry->imgArgs, value);
+            return;
+        }
         entry->imgArgs = value;
     }
     else
