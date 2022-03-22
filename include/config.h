@@ -3,9 +3,10 @@
 #include "logger.h"
 #include "bootutils.h"
 #include "shellutils.h"
+#include "bootmenu.h"
 
 // Entries config path
-#define CFG_PATH ("EFI\\ezboot\\ezboot-entries.cfg")
+#define CFG_PATH ("EFI\\ezboot\\ezboot-config.cfg")
 
 #define CFG_LINE_DELIMITER ("\n")
 #define CFG_ENTRY_DELIMITER ("\n\n")

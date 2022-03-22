@@ -169,7 +169,7 @@ boolean_t IsPrintableChar(char_t c)
     return (c  >= ' ' && c <= '~');
 }
 
-boolean_t isspace(char_t c)
+boolean_t IsSpace(char_t c)
 {
     return (c == ' ' || c == CHAR_TAB);
 }
@@ -180,14 +180,14 @@ char_t* TrimSpaces(char_t* str)
     char_t* originalString = str;
 
     // remove leading whitespace
-    while (isspace(*str))
+    while (IsSpace(*str))
     {
         str++;
     }
 
     // remove trailing whitespace
     char_t* end = originalString + stringLen - 1;
-    while (end > originalString && isspace(*end)) 
+    while (end > originalString && IsSpace(*end)) 
     {
         end--;
     }

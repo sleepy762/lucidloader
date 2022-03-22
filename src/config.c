@@ -2,18 +2,23 @@
 
 static boolean_t ValidateEntry(boot_entry_s newEntry);
 static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry);
+static boolean_t EditRuntimeConfig(const char_t* key, char_t* value);
 static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry);
+
+static boolean_t ignoreEntryWarnings;
 
 // Returns a pointer to the head of a linked list of boot entries
 // Every pointer in the linked list was allocated dynamically
 boot_entry_array_s ParseConfig(void)
 {
+    Log(LL_INFO, 0, "Parsing config file...");
+
     boot_entry_array_s bootEntryArr = { NULL, 0 };
 
     char_t* configData = GetFileContent(CFG_PATH, NULL);
     if (configData == NULL)
     {
-        Log(LL_ERROR, 0, "Failed to allocate memory.");
+        Log(LL_ERROR, 0, "Failed to read config file.");
         return bootEntryArr;
     }
 
@@ -24,14 +29,16 @@ boot_entry_array_s ParseConfig(void)
     // Gets blocks of text from the config
     while ((configEntry = strstr(srcCopy, CFG_ENTRY_DELIMITER)) != NULL)
     {
+        ignoreEntryWarnings = FALSE;
         boot_entry_s entry = {0};
+
         size_t len = configEntry - srcCopy;
 
         // Holds the current entry block
         char_t* strippedEntry = malloc(len + 1);
         if (strippedEntry == NULL)
         {
-            Log(LL_ERROR, 0, "Failed to allocate memory while parsing config entries.");
+            Log(LL_ERROR, 0, "Failed to allocate memory for an entry block.");
             free(configData);
             return bootEntryArr;
         }
@@ -98,13 +105,19 @@ boot_entry_array_s ParseConfig(void)
 static boolean_t ValidateEntry(boot_entry_s newEntry)
 {
     if (strlen(newEntry.name) == 0)
-    {
-        Log(LL_WARNING, 0, "Ignoring config entry with no name.");
+    {   
+        if (!ignoreEntryWarnings)
+        {
+            Log(LL_WARNING, 0, "Ignoring config entry with no name.");
+        }
         return FALSE;
     }
     else if (strlen(newEntry.mainPath) == 0)
     {
-        Log(LL_WARNING, 0, "Ignoring entry with no main path specified. (entry name: %s)", newEntry.name);
+        if (!ignoreEntryWarnings)
+        {
+            Log(LL_WARNING, 0, "Ignoring entry with no main path specified. (entry name: %s)", newEntry.name);
+        }
         return FALSE;
     }
     return TRUE;
@@ -131,8 +144,36 @@ static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* e
     }
     else
     {
-        Log(LL_WARNING, 0, "Unknown key '%s' in the config file.", key);
+        boolean_t isRuntimeCfgKey = EditRuntimeConfig(key, value);
+        if (!isRuntimeCfgKey)
+        {
+            Log(LL_WARNING, 0, "Unknown key '%s' in the config file.", key);
+        }
+        else
+        {
+            // Avoid false warnings when runtime config keys are on their own
+            ignoreEntryWarnings = TRUE;
+        }
     }
+}
+
+// Special keys that control the settings of the bootloader during runtime
+static boolean_t EditRuntimeConfig(const char_t* key, char_t* value)
+{
+    if (strcmp(key, "timeout") == 0)
+    {
+        bmcfg.timeoutSeconds = atoi(value);
+        if (bmcfg.timeoutSeconds == -1)
+        {
+            bmcfg.timeoutCancelled = TRUE;
+        }
+        else if (bmcfg.timeoutSeconds == 0)
+        {
+            bmcfg.bootImmediately = TRUE;
+        }
+        return TRUE;
+    }
+    return FALSE;
 }
 
 // Stores the key and value in separate strings, key and value are OUTPUT parameters

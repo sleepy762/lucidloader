@@ -3,13 +3,16 @@
 static void BootMenu(boot_entry_array_s* entryArr);
 static void FailMenu(const char_t* errorMsg);
 
+static inline void BootHighlightedEntry(boot_entry_array_s* entryArr);
+static inline void PrintHighlightedEntryInfo(boot_entry_array_s* entryArr);
+
 static void InitBootMenuConfig(void);
 static void BootEntry(boot_entry_s* selectedEntry);
 static void PrintEntryInfo(boot_entry_s* selectedEntry);
 static void PrintBootMenu(boot_entry_array_s* entryArr);
 static void ScrollEntryList(void);
 
-static boot_menu_cfg_s bmcfg;
+boot_menu_cfg_s bmcfg;
 
 void PrintBootloaderVersion(void)
 {
@@ -21,13 +24,14 @@ void StartBootloader(void)
     ST->ConOut->ClearScreen(ST->ConOut);
     ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
     
+    InitBootMenuConfig();
     while (TRUE)
     {
-        InitBootMenuConfig();
         // The config parsing is in this loop because we want the menu to update in case the user
         // decided to update the config through the bootloader shell
         boot_entry_array_s bootEntries = ParseConfig();
 
+        ST->ConIn->Reset(ST->ConIn, 0);
         if (bootEntries.numOfEntries == 0)
         {
             FailMenu(BAD_CONFIGURATION_ERR_MSG);
@@ -38,6 +42,8 @@ void StartBootloader(void)
         }
 
         FreeConfigEntries(&bootEntries);
+        bmcfg.selectedEntryIndex = 0;
+        bmcfg.entryOffset = 0;
     }
 }
 
@@ -52,11 +58,14 @@ static void InitBootMenuConfig(void)
     }
 
     // This variable defines the amount of entries that can be shown on screen at once
-    // We subtract 10 because there are 10 rows that we have reserved for other printing
+    // We subtract because there are rows that we have reserved for other printing
     bmcfg.maxEntriesOnScreen = rows - 10;
 
     bmcfg.selectedEntryIndex = 0;
     bmcfg.entryOffset = 0;
+    bmcfg.timeoutSeconds = 10; // Default value
+    bmcfg.timeoutCancelled = FALSE;
+    bmcfg.bootImmediately = FALSE;
 }
 
 static void PrintBootMenu(boot_entry_array_s* entryArr)
@@ -106,11 +115,18 @@ static void PrintBootMenu(boot_entry_array_s* entryArr)
     {
         putchar('\n');
     }
-        
+    
     printf("\nUse the up and down arrow keys to select which entry is highlighted.\n"
-           "Press enter to boot the selected entry.\n"
-           "Press 'c' to open the shell.\n"
-           "Press 'i' to get info about a highlighted entry.\n");
+           "Press enter to boot the selected entry, 'c' to open the shell\n"
+           "or 'i' to get info about a highlighted entry.\n");
+
+    // Show the timeout
+    if (!bmcfg.timeoutCancelled)
+    {
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_WHITE, EFI_BLACK));
+        printf("The highlighted selection will be booted automatically in %d seconds.\n", bmcfg.timeoutSeconds);
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
+    }
 }
 
 static void BootMenu(boot_entry_array_s* entryArr)
@@ -119,8 +135,32 @@ static void BootMenu(boot_entry_array_s* entryArr)
     {
         PrintBootMenu(entryArr);
 
-        // Clear buffer and read key stroke
-        ST->ConIn->Reset(ST->ConIn, 0);
+        if (!bmcfg.timeoutCancelled)
+        {
+            if (bmcfg.bootImmediately)
+            {
+                BootHighlightedEntry(entryArr);
+                return;
+            }
+
+            int32_t timerStatus = WaitForInput(1000);
+            if (timerStatus == INPUT_TIMER_TIMEOUT)
+            {
+                bmcfg.timeoutSeconds--;
+                // Boot the selected entry if the timer ends
+                if (bmcfg.timeoutSeconds == 0)
+                {
+                    BootHighlightedEntry(entryArr);
+                    return;
+                }
+                continue;
+            }
+            else if (timerStatus == INPUT_TIMER_KEY)
+            {
+                // Cancel the timer if a key was pressed
+                bmcfg.timeoutCancelled = TRUE;
+            }
+        }
         efi_input_key_t key = GetInputKey();
 
         switch (key.ScanCode)
@@ -144,9 +184,7 @@ static void BootMenu(boot_entry_array_s* entryArr)
                 switch (key.UnicodeChar)
                 {
                     case CHAR_CARRIAGE_RETURN:
-                        BootEntry(&entryArr->entries[bmcfg.selectedEntryIndex]);
-                        // If booting failed we will end up here
-                        FailMenu(FAILED_BOOT_ERR_MSG);
+                        BootHighlightedEntry(entryArr);
                         return;
 
                     case SHELL_CHAR:
@@ -154,7 +192,7 @@ static void BootMenu(boot_entry_array_s* entryArr)
                         return;
 
                     case INFO_CHAR:
-                        PrintEntryInfo(&entryArr->entries[bmcfg.selectedEntryIndex]);
+                        PrintHighlightedEntryInfo(entryArr);
                         break;
                     
                     default:
@@ -192,6 +230,18 @@ static void PrintEntryInfo(boot_entry_s* selectedEntry)
     GetInputKey();
 }
 
+static inline void PrintHighlightedEntryInfo(boot_entry_array_s* entryArr)
+{
+    PrintEntryInfo(&entryArr->entries[bmcfg.selectedEntryIndex]);
+}
+
+static inline void BootHighlightedEntry(boot_entry_array_s* entryArr)
+{
+    BootEntry(&entryArr->entries[bmcfg.selectedEntryIndex]);
+    // If booting fails we will end up here
+    FailMenu(FAILED_BOOT_ERR_MSG);
+}
+
 static void BootEntry(boot_entry_s* selectedEntry)
 {
     // Printing info before booting
@@ -206,7 +256,9 @@ static void BootEntry(boot_entry_s* selectedEntry)
 
 static void FailMenu(const char_t* errorMsg)
 {
+    bmcfg.timeoutCancelled = TRUE;
     boolean_t returnToMainMenu = FALSE;
+
     while (!returnToMainMenu)
     {
         ST->ConOut->ClearScreen(ST->ConOut);

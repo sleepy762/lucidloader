@@ -9,7 +9,7 @@ int main(int argc, char** argv)
     {
         printf("Failed to initialize logger. Logging disabled.\n");
     }
-    
+
     SetMaxConsoleSize();
 
     StartBootloader();

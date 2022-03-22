@@ -13,6 +13,10 @@
 #define DEFAULT_CONSOLE_COLUMNS (80)
 #define DEFAULT_CONSOLE_ROWS    (25)
 
+#define INPUT_TIMER_ERROR   (-1)
+#define INPUT_TIMER_TIMEOUT (0)
+#define INPUT_TIMER_KEY     (1)
+
 wchar_t* StringToWideString(char_t* str);
 
 efi_status_t GetFileProtocols(char_t* path, efi_device_path_t** devPath, efi_file_handle_t** rootDir, efi_file_handle_t** fileHandle);
@@ -24,6 +28,8 @@ uint64_t GetFileSize(FILE* file);
 
 efi_status_t RebootDevice(boolean_t rebootToFirmware);
 efi_status_t ShutdownDevice(void);
+
+int32_t WaitForInput(uint32_t timeout);
 
 void DisableWatchdogTimer(void);
 void EnableWatchdogTimer(uintn_t seconds);
