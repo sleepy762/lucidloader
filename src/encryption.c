@@ -1,5 +1,11 @@
 #include "encryption.h"
+/*---------------------defines-----------------------*/
+#define ROUNDS 10 //key rounds 
+#define ROW 4
+/*---------------------defines-----------------------*/
 
+
+/*---------------------consts------------------------*/
 const uint8_t sub_box[] = { 0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
                         0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
                         0xB7, 0xFD, 0x93, 0x26, 0x36, 0x3F, 0xF7, 0xCC, 0x34, 0xA5, 0xE5, 0xF1, 0x71, 0xD8, 0x31, 0x15,
@@ -38,10 +44,38 @@ const uint8_t round_consts[] = {0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
                             0x80, 0x1B, 0x36, 0x6C, 0xD8, 0xAB, 0x4D, 0x9A,
                             0x2F, 0x5E, 0xBC, 0x63, 0xC6, 0x97, 0x35, 0x6A,
                             0xD4, 0xB3, 0x7D, 0xFA, 0xEF, 0xC5, 0x91, 0x39};
+/*---------------------consts------------------------*/
+
+
+/*----------------------func-------------------------*/
+//helpers
+static void MatrixToArr(uint8_t matrix[ROW][ROW], uint8_t arr[]);
+static void ArrToMatrix(uint8_t arr[], uint8_t matrix[ROW][ROW]);
+static void GroupKeys(uint8_t matrix[][ROW], uint8_t keys[ROUNDS+1][ROW][ROW]);
+
+static uint8_t XorTime(uint8_t a);
+static void XorArr(uint8_t a[], uint8_t b[], uint8_t ans[]);
+
+static void DeepCop(uint8_t* a, uint8_t b[]);
+static void MatrixCop(uint8_t a[][ROW], uint8_t b[][ROW]);
+
+//encryption functions
+static void ExpandKey(uint8_t key[], uint8_t word[ROW *(ROUNDS + 1)][ROW]);
+static void AddRoundKey(uint8_t state[][ROW], uint8_t key[][ROW]);
+
+static void ShiftRows(uint8_t state[][ROW]);
+
+static void MixCol(uint8_t matrix[][ROW]);
+
+static void MixSingleCol(uint8_t col[]);
+
+static void SubBytes(uint8_t s[][ROW]);
+/*----------------------func-------------------------*/
+
 
 //helpers
 //this func will convert matrix to arr 
-void MatrixToArr(uint8_t matrix[ROW][ROW], uint8_t arr[])
+static void MatrixToArr(uint8_t matrix[ROW][ROW], uint8_t arr[])
 {
     uint8_t i = 0;
     uint8_t j = 0;
@@ -56,7 +90,7 @@ void MatrixToArr(uint8_t matrix[ROW][ROW], uint8_t arr[])
 }
 
 //this will do the oppsite
-void ArrToMatrix(uint8_t arr[], uint8_t matrix[ROW][ROW])
+static void ArrToMatrix(uint8_t arr[], uint8_t matrix[ROW][ROW])
 {
     uint8_t i = 0;
     uint8_t j = 0;
@@ -73,7 +107,7 @@ void ArrToMatrix(uint8_t arr[], uint8_t matrix[ROW][ROW])
 }
 
 //to group keys for easy use
-void GroupKeys(uint8_t matrix[][ROW], uint8_t keys[ROUNDS+1][ROW][ROW])
+static void GroupKeys(uint8_t matrix[][ROW], uint8_t keys[ROUNDS+1][ROW][ROW])
 {
     uint8_t i = 0;
     uint8_t j = 0;
@@ -92,7 +126,7 @@ void GroupKeys(uint8_t matrix[][ROW], uint8_t keys[ROUNDS+1][ROW][ROW])
 }
 
 //xor help 
-uint8_t XorTime(uint8_t a)
+static uint8_t XorTime(uint8_t a)
 {
     uint8_t shift = a << 1;
 
@@ -106,7 +140,7 @@ uint8_t XorTime(uint8_t a)
 
 }
 
-void XorArr(uint8_t a[], uint8_t b[], uint8_t ans[])
+static void XorArr(uint8_t a[], uint8_t b[], uint8_t ans[])
 {
     uint8_t i = 0;
 
@@ -117,32 +151,8 @@ void XorArr(uint8_t a[], uint8_t b[], uint8_t ans[])
 }
 
 
-//helps with shift rows to make it O(2n) and mudolar
-void Rot(uint8_t s[], uint8_t k)
-{
-    uint8_t size = ROW;
-
-    Rev(s, 0, size-k-1);
-    Rev(s, size-k, size-1);
-    Rev(s, 0, size-1);
-}
-
-//helps Rev func
-void Rev(uint8_t s[], uint8_t l, uint8_t h)
-{
-    while(h > l)
-    {
-        //just simple fliping with o(1) aux space couse we go hard 
-        s[h] += s[l];
-        s[l] = s[h] - s[l];
-        s[h] = s[h] - s[l];
-        h--;
-        l++;
-    }
-}
-
 //problems with the Rot func on uint8_t*
-void DeepCop(uint8_t* a, uint8_t b[])
+static void DeepCop(uint8_t* a, uint8_t b[])
 {
     uint8_t i = 0;
     
@@ -154,7 +164,7 @@ void DeepCop(uint8_t* a, uint8_t b[])
 }
 
 //copy matrix
-void MatrixCop(uint8_t a[][ROW], uint8_t b[][ROW])
+static void MatrixCop(uint8_t a[][ROW], uint8_t b[][ROW])
 {
     uint8_t i = 0;
     uint8_t j = 0;
@@ -169,7 +179,7 @@ void MatrixCop(uint8_t a[][ROW], uint8_t b[][ROW])
 }
 
 //Enc dec func
-void ExpandKey(uint8_t key[], uint8_t word[ROW *(ROUNDS + 1)][ROW])
+static void ExpandKey(uint8_t key[], uint8_t word[ROW *(ROUNDS + 1)][ROW])
 {
     uint8_t i = ROW;
     uint8_t j = 0;
@@ -212,7 +222,7 @@ void ExpandKey(uint8_t key[], uint8_t word[ROW *(ROUNDS + 1)][ROW])
     
 }
 
-void AddRoundKey(uint8_t state[][ROW], uint8_t key[][ROW])
+static void AddRoundKey(uint8_t state[][ROW], uint8_t key[][ROW])
 {
     uint8_t i = 0;
     uint8_t j = 0;
@@ -227,7 +237,7 @@ void AddRoundKey(uint8_t state[][ROW], uint8_t key[][ROW])
 }
 
 //just shift each row by it index
-void ShiftRows(uint8_t state[][ROW])
+static void ShiftRows(uint8_t state[][ROW])
 {
     uint8_t i = 1;
     uint8_t j = 0;
@@ -245,27 +255,8 @@ void ShiftRows(uint8_t state[][ROW])
     MatrixCop(state, temp);
 }
 
-//the same but 3 more times
-void InvShiftRows(uint8_t state[][ROW])
-{
-    uint8_t i = 1;
-    uint8_t j = 0;
-
-    uint8_t temp[ROW][ROW];
-
-    //Rotate
-    for(i = 0; i < ROW; i++)
-    {
-        for(j = 1; j < ROW; j++)
-        {
-            temp[(j+i) % ROW][j] = state[i][j];
-        }
-    }
-    MatrixCop(state, temp);
-}
-
 //cool mix col shit
-void MixSingleCol(uint8_t col[])
+static void MixSingleCol(uint8_t col[])
 {
     uint8_t i = 0;
     
@@ -286,7 +277,7 @@ void MixSingleCol(uint8_t col[])
 }
 
 //mix all
-void MixCol(uint8_t matrix[][ROW])
+static void MixCol(uint8_t matrix[][ROW])
 {
     uint8_t i = 0;
     
@@ -296,35 +287,9 @@ void MixCol(uint8_t matrix[][ROW])
     }
 }
 
-//xor trick couse why not 
-void InvMixCol(uint8_t s[][ROW])
-{
-    uint8_t i = 0;
-    uint8_t j = 0;
-    //for better readablity 
-    uint8_t u = 0;
-    uint8_t v = 0;
-
-    for(i = 0; i < ROW; i++)
-    {
-        //need to be changed for more modular coding(know only suppurt aes128)
-        u = XorTime(XorTime(s[i][0] ^ s[i][2]));
-        v = XorTime(XorTime(s[i][1] ^ s[i][3]));
-        
-        for(j = 0; j < ROW; j++)
-        {
-            //to skip modulo check 
-            //first one will be even and second will be odd(no reading error becouse the matrix is always even)
-            s[i][j++] ^= u;
-            s[i][j] ^= v;
-        }
-    } 
-    MixCol(s);
-}
-
 
 //sub bytes, its a global table only one len(128) atm
-void sub_bytes(uint8_t s[][ROW])
+static void SubBytes(uint8_t s[][ROW])
 {
     uint8_t i = 0;
     uint8_t j = 0;
@@ -337,21 +302,6 @@ void sub_bytes(uint8_t s[][ROW])
         }
     }
 }
-
-//invert
-void InvertSubBytes(uint8_t s[][ROW])
-{
-    uint8_t i = 0;
-    uint8_t j = 0;
-
-    for(i = 0; i < ROW; i++)
-    {
-        for(j = 0; j < ROW; j++)
-        {
-            s[i][j] = invert_sub_box[s[i][j]];
-        }
-    }
-} 
 
 
 void Enc(uint8_t key[], uint8_t text[])
@@ -371,15 +321,15 @@ void Enc(uint8_t key[], uint8_t text[])
     
     AddRoundKey(state, keys[0]);
 
-    for(i = 0; i < ROUNDS -1; i++)
+    for(i = 0; i < ROUNDS - 1; i++)
     {
-        sub_bytes(state);
+        SubBytes(state);
         ShiftRows(state);
         MixCol(state);
         AddRoundKey(state, keys[i]);
     }
 
-    sub_bytes(state);
+    SubBytes(state);
     ShiftRows(state);
     AddRoundKey(state, keys[i]);
 

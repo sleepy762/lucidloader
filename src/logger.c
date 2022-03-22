@@ -1,6 +1,15 @@
 #include "logger.h"
+#include "shellutils.h"
 
-efi_time_t timeSinceInit = {0};
+#define LOG_PATH        ("\\EFI\\ezboot\\ezboot-log.txt")
+#define OLD_LOG_PATH    ("\\EFI\\ezboot\\ezboot-log.txt.old")
+
+#define SECONDS_IN_DAY (86400)
+#define SECONDS_IN_HOUR (3600)
+#define SECONDS_IN_MINUTE (60)
+
+static efi_time_t timeSinceInit = {0};
+
 
 // Creates an empty log file and initializes the timeSinceInit variable
 // Returns 1 on success and 0 on failure
@@ -78,6 +87,15 @@ time_t GetSecondsSinceInit(void)
     seconds += currTime.Second - timeSinceInit.Second;
     
     return seconds;
+}
+
+void PrintLogFile(void)
+{
+    uint8_t res = PrintFileContent(LOG_PATH);
+    if (res != 0)
+    {
+        printf("Failed to open log file!\n");
+    }
 }
 
 const char_t* LogLevelString(log_level_t loglevel)

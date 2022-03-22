@@ -1,4 +1,18 @@
 #include "bootmenu.h"
+#include "shell.h"
+#include "config.h"
+#include "chainloader.h"
+#include "logger.h"
+#include "version.h"
+#include "bootutils.h"
+#include "editor.h"
+#include "shellutils.h"
+
+#define SHELL_CHAR  ('c')
+#define INFO_CHAR   ('i')
+
+#define BAD_CONFIGURATION_ERR_MSG ("Configuration file is incorrect or doesn't exist.")
+#define FAILED_BOOT_ERR_MSG ("An error has occurred during the booting process.")
 
 static void BootMenu(boot_entry_array_s* entryArr);
 static void FailMenu(const char_t* errorMsg);
@@ -13,6 +27,7 @@ static void PrintBootMenu(boot_entry_array_s* entryArr);
 static void ScrollEntryList(void);
 
 boot_menu_cfg_s bmcfg;
+
 
 void PrintBootloaderVersion(void)
 {
@@ -310,11 +325,7 @@ void ShowLogFile(void)
 {
     ST->ConOut->ClearScreen(ST->ConOut);
 
-    uint8_t res = PrintFileContent(LOG_PATH);
-    if (res != CMD_SUCCESS)
-    {
-        printf("Failed to open log file!\n");
-    }
+    PrintLogFile();
 
     printf("\nPress any key to return...");
     GetInputKey();

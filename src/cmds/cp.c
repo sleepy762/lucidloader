@@ -1,7 +1,13 @@
 #include "cmds/cp.h"
+#include "shellerr.h"
+#include "shellutils.h"
+#include "bootutils.h"
+
+#define RECURSIVE_FLAG ("-r")
 
 static int32_t CopyFileIntoDir(char_t* srcFile, char_t* dstDir);
 static boolean_t CopyRecursively(char_t* mainPath, char_t* dstPath, cmd_args_s* cmdArg);
+
 
 boolean_t CpCmd(cmd_args_s** args, char_t** currPathPtr)
 {

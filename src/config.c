@@ -1,4 +1,17 @@
 #include "config.h"
+#include "logger.h"
+#include "bootutils.h"
+#include "shellutils.h"
+#include "bootmenu.h"
+
+// Entries config path
+#define CFG_PATH ("EFI\\ezboot\\ezboot-config.cfg")
+
+#define CFG_LINE_DELIMITER ("\n")
+#define CFG_ENTRY_DELIMITER ("\n\n")
+#define CFG_KEY_VALUE_DELIMITER ('=')
+
+#define MAX_ENTRY_NAME_LEN (70)
 
 static boolean_t ValidateEntry(boot_entry_s newEntry);
 static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry);
@@ -6,6 +19,7 @@ static boolean_t EditRuntimeConfig(const char_t* key, char_t* value);
 static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry);
 
 static boolean_t ignoreEntryWarnings;
+
 
 // Returns a pointer to the head of a linked list of boot entries
 // Every pointer in the linked list was allocated dynamically

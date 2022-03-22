@@ -1,4 +1,3 @@
-#include <uefi.h>
 #include "logger.h"
 #include "bootmenu.h"
 #include "screen.h"

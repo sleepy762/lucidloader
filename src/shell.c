@@ -1,4 +1,17 @@
 #include "shell.h"
+#include "commands.h"
+#include "shellutils.h"
+#include "bootutils.h"
+#include "shellerr.h"
+#include "logger.h"
+#include "password.h"
+
+#define SHELL_MAX_INPUT (128)
+
+#define SPACE (' ') // Used as a delimiter between a command and the arguments
+#define QUOTATION_MARK ('"')
+
+#define SHELL_EXIT_STR ("exit")
 
 /* Main shell functions */
 static int8_t ShellLoop(char_t** currPathPtr);

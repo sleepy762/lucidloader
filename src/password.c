@@ -1,4 +1,13 @@
 #include "password.h"
+#include "bootutils.h"
+#include "shellutils.h"
+#include "encryption.h"
+#include "bootmenu.h"
+#include "logger.h"
+
+#define MAX_PASS_LEN (16)
+#define SLEEP_LENGTH_FOR_BAD_PASS (2)
+
 
 // Returns TRUE if the login succeeded, FALSE otherwise
 boolean_t ShellLoginWithPassword()

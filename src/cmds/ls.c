@@ -1,6 +1,10 @@
 #include "cmds/ls.h"
+#include "shellutils.h"
+#include "bootutils.h"
+#include "shellerr.h"
 
 static int32_t ListDir(char_t* path);
+
 
 uint8_t LsCmd(cmd_args_s** args, char_t** currPathPtr)
 {

@@ -1,4 +1,13 @@
 #include "shellutils.h"
+#include "logger.h"
+#include "bootutils.h"
+#include "shellerr.h"
+
+#define DIRECTORY_DELIM ('\\')
+#define DIRECTORY_DELIM_STR ("\\")
+#define CURRENT_DIR (".")
+#define PREVIOUS_DIR ("..")
+
 
 char_t* ConcatPaths(char_t* lhs, char_t* rhs)
 {

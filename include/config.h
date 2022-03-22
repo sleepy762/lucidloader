@@ -1,18 +1,5 @@
 #pragma once
 #include <uefi.h>
-#include "logger.h"
-#include "bootutils.h"
-#include "shellutils.h"
-#include "bootmenu.h"
-
-// Entries config path
-#define CFG_PATH ("EFI\\ezboot\\ezboot-config.cfg")
-
-#define CFG_LINE_DELIMITER ("\n")
-#define CFG_ENTRY_DELIMITER ("\n\n")
-#define CFG_KEY_VALUE_DELIMITER ('=')
-
-#define MAX_ENTRY_NAME_LEN (70)
 
 typedef struct boot_entry_s
 {

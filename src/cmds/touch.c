@@ -1,6 +1,10 @@
 #include "cmds/touch.h"
+#include "shellutils.h"
+#include "bootutils.h"
+#include "shellerr.h"
 
 static int32_t CreateFileNoOverride(char_t* path);
+
 
 boolean_t TouchCmd(cmd_args_s** args, char_t** currPathPtr)
 {

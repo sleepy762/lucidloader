@@ -1,4 +1,9 @@
 #include "cmds/passwd.h"
+#include "password.h"
+#include "encryption.h"
+#include "shellutils.h"
+#include "bootutils.h"
+#include "shellerr.h"
 
 boolean_t PasswdCmd(cmd_args_s** args, char_t** currPathPtr)
 {
