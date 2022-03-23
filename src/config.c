@@ -30,27 +30,49 @@ boot_entry_array_s ParseConfig(void)
 
     boot_entry_array_s bootEntryArr = BOOT_ENTRY_ARR_INIT;
 
-    char_t* configData = GetFileContent(CFG_PATH, NULL);
+    uint64_t fileSize = 0;
+    char_t* configData = GetFileContent(CFG_PATH, &fileSize);
     if (configData == NULL)
     {
         Log(LL_ERROR, 0, "Failed to read config file.");
         return bootEntryArr;
     }
 
-    char_t* line = NULL;
-    char_t* configEntry = NULL;
-    char_t* srcCopy = configData;
+    // Tracks where we currently are in the config
+    char_t* filePtr = configData;
 
-    // Gets blocks of text from the config
-    while ((configEntry = strstr(srcCopy, CFG_ENTRY_DELIMITER)) != NULL)
+    // Gets blocks of text from the config in a loop
+    // Once (filePtr >= configData + fileSize) it means that we have finished reading the entire file
+    while (filePtr < configData + fileSize)
     {
-        ignoreEntryWarnings = FALSE;
         boot_entry_s entry = BOOT_ENTRY_INIT;
+        ignoreEntryWarnings = FALSE;
 
-        size_t len = configEntry - srcCopy;
+        // Gets a pointer to the end of an entry text block
+        char_t* configEntryEnd = strstr(filePtr, CFG_ENTRY_DELIMITER);
 
-        // Holds the current entry block
-        char_t* strippedEntry = malloc(len + 1);
+        size_t entryStrLen = 0;
+        size_t ptrIncrement = 0; // Used to increment filePtr
+        if (configEntryEnd == NULL) // This means that we have reached the last entry
+        {
+            entryStrLen = strlen(filePtr);
+            ptrIncrement = entryStrLen;
+        }
+        else
+        {
+            entryStrLen = configEntryEnd - filePtr;
+            ptrIncrement = entryStrLen + strlen(CFG_ENTRY_DELIMITER);
+        }
+
+        // Increment the file pointer and skip empty lines
+        if (entryStrLen == 0)
+        {
+            filePtr += ptrIncrement;
+            continue;
+        }
+
+        // Holds only the current entry text block
+        char_t* strippedEntry = malloc(entryStrLen + 1);
         if (strippedEntry == NULL)
         {
             Log(LL_ERROR, 0, "Failed to allocate memory for an entry block.");
@@ -58,12 +80,14 @@ boot_entry_array_s ParseConfig(void)
             return bootEntryArr;
         }
 
-        memcpy(strippedEntry, srcCopy, len);
-        strippedEntry[len] = 0;
-        srcCopy += len + strlen(CFG_ENTRY_DELIMITER); // Move the pointer to the next entry block
+        memcpy(strippedEntry, filePtr, entryStrLen);
+        strippedEntry[entryStrLen] = CHAR_NULL;
 
+        // We create a copy because we need to keep the original pointer to free it
+        // since strtok modifies the pointer
         char_t* entryCopy = strippedEntry;
-        // Gets lines from the blocks of text
+        char_t* line = NULL;
+        // Gets lines from the blocks of text and parses them
         while ((line = strtok_r(entryCopy, CFG_LINE_DELIMITER, &entryCopy)) != NULL)
         {
             // Ignore comments
@@ -90,33 +114,7 @@ boot_entry_array_s ParseConfig(void)
         {
             AppendEntry(&bootEntryArr, &entry);
         }
-    }
-
-    // Handle the last entry
-    boot_entry_s entry = {0};
-    while ((line = strtok_r(srcCopy, CFG_LINE_DELIMITER, &srcCopy)) != NULL)
-    {
-        // Ignore comments
-        if (line[0] == CFG_COMMENT_CHAR)
-        {
-            continue;
-        }
-        char_t* key = NULL;
-        char_t* value = NULL;
-        ParseKeyValuePair(line, CFG_KEY_VALUE_DELIMITER, &key, &value);
-
-        if (key == NULL || value == NULL)
-        {
-            free(key);
-            free(value);
-            continue;
-        }
-        AssignValueToEntry(key, value, &entry);
-        free(key);
-    }
-    if (ValidateEntry(entry))
-    {
-        AppendEntry(&bootEntryArr, &entry);
+        filePtr += ptrIncrement; // Move the pointer to the next entry block
     }
 
     free(configData);
@@ -238,13 +236,13 @@ void ParseKeyValuePair(char_t* token, const char_t delimiter, char_t** key, char
     *key = malloc(valueOffset);
     if (*key == NULL)
     {
-        Log(LL_ERROR, 0, "Failed to allocate memory for the key string during config line parsing.");
+        Log(LL_ERROR, 0, "Failed to allocate memory for the key string.");
         return;
     }
     *value = malloc(valueLength + 1);
     if (*value == NULL)
     {
-        Log(LL_ERROR, 0, "Failed to allocate memory for the value string during config line parsing.");
+        Log(LL_ERROR, 0, "Failed to allocate memory for the value string.");
         return;
     }
 

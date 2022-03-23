@@ -11,7 +11,7 @@
 #define SHELL_CHAR  ('c')
 #define INFO_CHAR   ('i')
 
-#define BAD_CONFIGURATION_ERR_MSG ("Configuration file is incorrect or doesn't exist.")
+#define BAD_CONFIGURATION_ERR_MSG ("An error has occurred while parsing the config file.")
 #define FAILED_BOOT_ERR_MSG ("An error has occurred during the booting process.")
 
 static void BootMenu(boot_entry_array_s* entryArr);
@@ -280,7 +280,7 @@ static void FailMenu(const char_t* errorMsg)
 
         PrintBootloaderVersion();
         printf("%s\n\n", errorMsg);
-        printf("1) Open shell    (fix/change configuration file)\n"
+        printf("1) Open shell\n"
                "2) Show log\n"
                "3) Shutdown\n"
                "4) Restart\n"

@@ -63,8 +63,7 @@ void Log(log_level_t loglevel, efi_status_t status, const char_t* fmtMessage, ..
     // Append a UEFI error message if the status argument is an error status
     if (EFI_ERROR(status))
     {
-        // We must turn off the sign bit in status, therefore we subtract 0x8000000000000000
-        fprintf(log, " (EFI Error: %s (%d))", EfiErrorString(status), (status - EFI_ERROR_MASK));
+        fprintf(log, " (EFI Error: %s)", EfiErrorString(status));
     }
 
     fprintf(log, "\n");
