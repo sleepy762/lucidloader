@@ -13,7 +13,7 @@ ezboot_dir="${mounted_boot_dir}/EFI/ezboot"
 mkdir ${ezboot_dir} 2>/dev/null
 cp ezboot_x64.efi ${ezboot_dir} || exit 1
 rm ezboot_x64.efi
-touch ${ezboot_dir}/ezboot-entries.cfg
+touch ${ezboot_dir}/ezboot-config.cfg
 
 # Parses lsblk to get the boot disk + partition
 boot_disk="/dev/$(lsblk | grep boot | cut -c7- | cut -d " " -f 1)"
@@ -24,4 +24,4 @@ boot_disk="${boot_disk%?}"
 efibootmgr | grep ezboot >/dev/null || efibootmgr -c -d $boot_disk -p $boot_partition -L ezboot -l \\EFI\\ezboot\\ezboot_x64.efi >/dev/null
 
 echo "Installation complete! Make sure to configure the bootloader."
-echo "The configuration file is located at ${ezboot_dir}/ezboot-entries.cfg"
+echo "The configuration file is located at ${ezboot_dir}/ezboot-config.cfg"
