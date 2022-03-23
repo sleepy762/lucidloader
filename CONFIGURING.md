@@ -13,6 +13,8 @@ Available keys:
 - `path` - The absolute path to the binary which the bootloader is going to load.
 - `args` - Arguments which will be passed to the binary.
 
+Writing key and value pairs is in the following format: `key=value`. Note that there are NO SPACES to the right and to the left of the `=` character. 
+
 Let's see an example.
 
 ```
