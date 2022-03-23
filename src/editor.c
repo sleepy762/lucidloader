@@ -60,6 +60,8 @@ typedef struct editor_config_t
     boolean_t dirty; // Modified without saving
 } editor_config_t;
 
+#define BUF_INIT {NULL, 0} // Used for initializing the buffer
+
 /*** Static declarations ***/
 /* Row operations */
 static void EditorInsertRow(int32_t at, char_t* str, size_t len);

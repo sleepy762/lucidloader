@@ -14,6 +14,9 @@
 
 #define MAX_ENTRY_NAME_LEN (70)
 
+#define BOOT_ENTRY_INIT { NULL, NULL, NULL, 0 }
+#define BOOT_ENTRY_ARR_INIT { NULL, 0 }
+
 static boolean_t ValidateEntry(boot_entry_s newEntry);
 static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry);
 static boolean_t EditRuntimeConfig(const char_t* key, char_t* value);

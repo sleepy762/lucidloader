@@ -29,7 +29,6 @@ typedef struct buffer_t
     char_t* b;
     int32_t len;
 } buffer_t;
-#define BUF_INIT {NULL, 0} // Used for initializing the buffer
 
 int8_t StartEditor(char_t* filename);
 
