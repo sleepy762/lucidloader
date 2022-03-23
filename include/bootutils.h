@@ -1,9 +1,5 @@
 #pragma once
 #include <uefi.h>
-#include "logger.h"
-
-// Taken from the UEFI Specification v2.9
-#define EFI_OS_INDICATIONS_BOOT_TO_FW_UI (0x0000000000000001)
 
 #define FALSE ((boolean_t)0)
 #define TRUE ((boolean_t)1)
@@ -12,6 +8,10 @@
 
 #define DEFAULT_CONSOLE_COLUMNS (80)
 #define DEFAULT_CONSOLE_ROWS    (25)
+
+#define INPUT_TIMER_ERROR   (-1)
+#define INPUT_TIMER_TIMEOUT (0)
+#define INPUT_TIMER_KEY     (1)
 
 wchar_t* StringToWideString(char_t* str);
 
@@ -24,6 +24,8 @@ uint64_t GetFileSize(FILE* file);
 
 efi_status_t RebootDevice(boolean_t rebootToFirmware);
 efi_status_t ShutdownDevice(void);
+
+int32_t WaitForInput(uint32_t timeout);
 
 void DisableWatchdogTimer(void);
 void EnableWatchdogTimer(uintn_t seconds);

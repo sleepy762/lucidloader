@@ -1,4 +1,5 @@
 #include "cmds/clear.h"
+#include "bootutils.h"
 
 boolean_t ClearCmd(cmd_args_s** args, char_t** currPathPtr)
 {

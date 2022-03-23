@@ -1,6 +1,12 @@
 #include "cmds/rm.h"
+#include "shellerr.h"
+#include "shellutils.h"
+#include "bootutils.h"
+
+#define RECURSIVE_FLAG ("-r")
 
 static boolean_t RemoveRecursively(char_t* mainPath, cmd_args_s* cmdArg);
+
 
 boolean_t RmCmd(cmd_args_s** args, char_t** currPathPtr)
 {

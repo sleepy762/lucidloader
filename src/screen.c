@@ -1,4 +1,6 @@
 #include "screen.h"
+#include "logger.h"
+#include "bootutils.h"
 
 boolean_t SetMaxConsoleSize(void)
 {

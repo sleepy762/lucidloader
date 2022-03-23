@@ -1,4 +1,8 @@
 #include "cmds/edit.h"
+#include "editor.h"
+#include "bootutils.h"
+#include "shellerr.h"
+#include "shellutils.h"
 
 boolean_t EditCmd(cmd_args_s** args, char_t** currPathPtr)
 {
