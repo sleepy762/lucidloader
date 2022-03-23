@@ -19,7 +19,7 @@ void ChainloadImage(char_t* path, char_t* args)
     char_t* imgData = GetFileContent(path, &imgFileSize);
     if (imgData == NULL)
     {
-        Log(LL_ERROR, 0, "Failed to read file '%s' for chainloading: %s", path);
+        Log(LL_ERROR, 0, "Failed to read file '%s' for chainloading.", path);
         return;
     }
 

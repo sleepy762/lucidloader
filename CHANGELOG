@@ -1,0 +1,18 @@
+Version 1.1 - 17/03/2022
+- Added -O2 compiler flag to the Makefile.
+- Updated README.md
+- Removed cleanScript.sh
+- Changed the boot menu to a dynamic menu.
+- Added copy command (cp).
+- Changed config file name to `ezboot-entries.cfg`
+- Entry names are now limited to 70 characters.
+- Boot entries are now stored in a dynamic array instead of a linked list.
+- The logger now keeps the old log in a separate file instead of overwriting it with a new log.
+- Removed the `make` command from `launch_qemu.sh`.
+- Added a way to get info about a highlighted entry in the menu (by pressing 'i').
+- Changed all calls to AllocatePool and FreePool into malloc and free respectively.
+- The bootloader now performs cold reboots instead of warm reboots.
+- Fixed some memory leaks.
+
+Version 1.0 - 01/03/2022
+- Pre-initial release
