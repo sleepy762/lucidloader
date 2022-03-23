@@ -12,7 +12,6 @@ ezboot_dir="${mounted_boot_dir}/EFI/ezboot"
 # Move the bootloader into the created directory
 mkdir ${ezboot_dir} 2>/dev/null
 cp ezboot_x64.efi ${ezboot_dir} || exit 1
-rm ezboot_x64.efi
 touch ${ezboot_dir}/ezboot-config.cfg
 
 # Parses lsblk to get the boot disk + partition

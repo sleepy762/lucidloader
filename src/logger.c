@@ -1,5 +1,6 @@
 #include "logger.h"
 #include "shellutils.h"
+#include "version.h"
 
 #define LOG_PATH        ("\\EFI\\ezboot\\ezboot-log.txt")
 #define OLD_LOG_PATH    ("\\EFI\\ezboot\\ezboot-log.txt.old")
@@ -29,7 +30,8 @@ int8_t InitLogger(void)
         fclose(fp);
         RT->GetTime(&timeSinceInit, NULL);
 
-        // Print the date of the log
+        // Print the date of the log and the version of the bootloader
+        Log(LL_INFO, 0, "Starting %s v%s", EZBOOT_NAME_STR, EZBOOT_VERSION);
         Log(LL_INFO, 0, "Log date: %02d/%02d/%04d %02d:%02d:%02d.", 
             timeSinceInit.Day, timeSinceInit.Month, timeSinceInit.Year,
             timeSinceInit.Hour, timeSinceInit.Minute, timeSinceInit.Second);
