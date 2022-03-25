@@ -28,8 +28,7 @@ boolean_t ShellLoginWithPassword()
     char_t password[MAX_PASS_LEN + 1] = {0};
     GetInputString(password, MAX_PASS_LEN, TRUE);
 
-    //enc conventions we set(just use the msg as key)
-    Enc((uint8_t*)password, (uint8_t*)password);
+    HashString(password);
 
     if (strcmp(password, encPassword) == 0)
     {
@@ -61,7 +60,7 @@ boolean_t CreateShellPassword()
     printf("Enter a new password: ");
     GetInputString(buffer, MAX_PASS_LEN, TRUE);
 	
-    Enc((uint8_t*)buffer, (uint8_t*)buffer);
+    HashString(buffer);
     
     // Store the encrypted password in a file
     size_t ret = fwrite(buffer, 1, MAX_PASS_LEN, out);
