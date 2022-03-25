@@ -53,8 +53,6 @@ static void MixCol(uint8_t matrix[][ROW]);
 static void MixSingleCol(uint8_t col[]);
 
 static void SubBytes(uint8_t s[][ROW]);
-
-static void Enc(uint8_t key[], uint8_t text[]);
 /*----------------------func-------------------------*/
 
 
@@ -289,7 +287,7 @@ static void SubBytes(uint8_t s[][ROW])
 }
 
 
-static void Enc(uint8_t key[], uint8_t text[])
+void Encrypt(uint8_t key[], uint8_t text[])
 {
     //one odd round so we do it separately
     uint8_t i = 0;
@@ -325,5 +323,5 @@ static void Enc(uint8_t key[], uint8_t text[])
 void HashString(char_t* str)
 {
     // encryption using the message as the key
-    Enc((uint8_t*)str, (uint8_t*)str);
+    Encrypt((uint8_t*)str, (uint8_t*)str);
 }
