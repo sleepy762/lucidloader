@@ -24,17 +24,17 @@
 #define F2_KEY_SCANCODE         (0x0C)
 
 // Generic buffer struct
-typedef struct buffer_t
+typedef struct buffer_s
 {
     char_t* b;
     int32_t len;
-} buffer_t;
+} buffer_s;
 
 int8_t StartEditor(char_t* filename);
 
-void AppendToBuffer(buffer_t* buf, const char_t* str, uint32_t len);
-void PrintBuffer(buffer_t* buf);
-void FreeBuffer(buffer_t* buf);
+void AppendToBuffer(buffer_s* buf, const char_t* str, uint32_t len);
+void PrintBuffer(buffer_s* buf);
+void FreeBuffer(buffer_s* buf);
 
 // Similar to strtok but returns an empty string between multiple appearances of a delimiter
 char_t* strtok_r_with_empty_str(char_t *s, const char_t *d, char_t **p);

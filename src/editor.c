@@ -25,17 +25,17 @@
 #define EDITOR_SEARCH_KEY       (F2_KEY_SCANCODE)
 
 // Struct specific to the editor
-typedef struct text_row_t
+typedef struct text_row_s
 {
     int32_t size;
     char_t* chars;
 
     int32_t rsize;
     char_t* render;
-} text_row_t;
+} text_row_s;
 
 // Struct specific to the editor
-typedef struct editor_config_t
+typedef struct editor_config_s
 {
     // Size of the screen in rows and columns
     intn_t screenRows;
@@ -48,7 +48,7 @@ typedef struct editor_config_t
     
     // Stores the text of the opened file
     intn_t numRows;
-    text_row_t* row;
+    text_row_s* row;
     intn_t rowOffset;
     intn_t colOffset;
 
@@ -58,21 +58,21 @@ typedef struct editor_config_t
     char_t statusmsg[EDITOR_STATUS_MSG_ARR_SIZE];
     time_t statusmsgTime;
     boolean_t dirty; // Modified without saving
-} editor_config_t;
+} editor_config_s;
 
 #define BUF_INIT {NULL, 0} // Used for initializing the buffer
 
 /*** Static declarations ***/
 /* Row operations */
 static void EditorInsertRow(int32_t at, char_t* str, size_t len);
-static void EditorUpdateRow(text_row_t* row);
-static intn_t EditorRowCxToRx(text_row_t* row, intn_t cx);
-static intn_t EditorRowRxToCx(text_row_t* row, intn_t rx);
-static void EditorRowInsertChar(text_row_t* row, int32_t at, char_t c);
-static void EditorRowDeleteChar(text_row_t* row, int32_t at);
-static void EditorFreeRow(text_row_t* row);
+static void EditorUpdateRow(text_row_s* row);
+static intn_t EditorRowCxToRx(text_row_s* row, intn_t cx);
+static intn_t EditorRowRxToCx(text_row_s* row, intn_t rx);
+static void EditorRowInsertChar(text_row_s* row, int32_t at, char_t c);
+static void EditorRowDeleteChar(text_row_s* row, int32_t at);
+static void EditorFreeRow(text_row_s* row);
 static void EditorDeleteRow(int32_t at);
-static void EditorRowAppendString(text_row_t* row, char_t* str, size_t len);
+static void EditorRowAppendString(text_row_s* row, char_t* str, size_t len);
 
 /* Editor operations */
 static void EditorInsertChar(char_t c);
@@ -89,9 +89,9 @@ static void EditorFind(void);
 static void EditorFindCallback(char_t* query, efi_input_key_t key);
 
 /* Output */
-static void AppendEditorWelcomeMessage(buffer_t* buf);
+static void AppendEditorWelcomeMessage(buffer_s* buf);
 static void EditorRefreshScreen(void);
-static void EditorDrawRows(buffer_t* buf);
+static void EditorDrawRows(buffer_s* buf);
 static void EditorScroll(void);
 static void EditorDrawStatusBar(void);
 static void EditorSetStatusMessage(const char_t* fmt, ...);
@@ -106,7 +106,7 @@ static char_t* EditorPrompt(const char_t* prompt, void (*callback)(char_t*, efi_
 static void InitEditorConfig(void);
 static void FreeEditorMemory(void);
 
-static editor_config_t cfg;
+static editor_config_s cfg;
 
 
 int8_t StartEditor(char_t* filename)
@@ -320,7 +320,7 @@ static boolean_t ProcessEditorInput(void)
     return TRUE;
 }
 
-static void AppendEditorWelcomeMessage(buffer_t* buf)
+static void AppendEditorWelcomeMessage(buffer_s* buf)
 {
     // Add our welcome message into a buffer
     char_t welcome[EDITOR_WELCOME_MSG_ARR_SIZE];
@@ -348,7 +348,7 @@ static void AppendEditorWelcomeMessage(buffer_t* buf)
 
 static void EditorRefreshScreen(void)
 {
-    buffer_t buf = BUF_INIT;
+    buffer_s buf = BUF_INIT;
 
     EditorScroll();
     EditorDrawRows(&buf);
@@ -368,7 +368,7 @@ static void EditorRefreshScreen(void)
     FreeBuffer(&buf);
 }
 
-static void EditorDrawRows(buffer_t* buf)
+static void EditorDrawRows(buffer_s* buf)
 {
     for (intn_t y = 0; y < cfg.screenRows; y++)
     {
@@ -406,7 +406,7 @@ static void EditorDrawRows(buffer_t* buf)
 static void EditorMoveCursor(uint16_t scancode)
 {
     // Used to limit scrolling to the right
-    text_row_t* row = (cfg.cy >= cfg.numRows) ? NULL : &cfg.row[cfg.cy];
+    text_row_s* row = (cfg.cy >= cfg.numRows) ? NULL : &cfg.row[cfg.cy];
 
     // Move the cursor while performing bounds checking
     switch (scancode)
@@ -626,8 +626,8 @@ static void EditorInsertRow(int32_t at, char_t* str, size_t len)
     }
 
     // Make room for a new row
-    cfg.row = realloc(cfg.row, sizeof(text_row_t) * (cfg.numRows + 1));
-    memmove(&cfg.row[at + 1], &cfg.row[at], sizeof(text_row_t) * (cfg.numRows - at));
+    cfg.row = realloc(cfg.row, sizeof(text_row_s) * (cfg.numRows + 1));
+    memmove(&cfg.row[at + 1], &cfg.row[at], sizeof(text_row_s) * (cfg.numRows - at));
 
     // Create the row
     cfg.row[at].size = len;
@@ -643,7 +643,7 @@ static void EditorInsertRow(int32_t at, char_t* str, size_t len)
     cfg.dirty = TRUE;
 }
 
-static void EditorUpdateRow(text_row_t* row)
+static void EditorUpdateRow(text_row_s* row)
 {
     // Count the tabs in order to render them as multiple spaces later
     int32_t tabs = 0;
@@ -680,7 +680,7 @@ static void EditorUpdateRow(text_row_t* row)
 }
 
 // Figure out how many spaces each tab takes up
-static intn_t EditorRowCxToRx(text_row_t* row, intn_t cx)
+static intn_t EditorRowCxToRx(text_row_s* row, intn_t cx)
 {
     intn_t rx = 0;
     for (int i = 0; i < cx; i++)
@@ -694,7 +694,7 @@ static intn_t EditorRowCxToRx(text_row_t* row, intn_t cx)
     return rx;
 }
 
-static intn_t EditorRowRxToCx(text_row_t* row, intn_t rx)
+static intn_t EditorRowRxToCx(text_row_s* row, intn_t rx)
 {
     intn_t curRx = 0;
     int32_t cx;
@@ -713,7 +713,7 @@ static intn_t EditorRowRxToCx(text_row_t* row, intn_t rx)
     return cx;
 }
 
-static void EditorRowInsertChar(text_row_t* row, int32_t at, char_t c)
+static void EditorRowInsertChar(text_row_s* row, int32_t at, char_t c)
 {
     // Validate the index we want to insert a character at
     if (at < 0 || at > row->size)
@@ -731,7 +731,7 @@ static void EditorRowInsertChar(text_row_t* row, int32_t at, char_t c)
     cfg.dirty = TRUE;
 }
 
-static void EditorRowDeleteChar(text_row_t* row, int32_t at)
+static void EditorRowDeleteChar(text_row_s* row, int32_t at)
 {
     if (at < 0 || at >= row->size)
     {
@@ -745,7 +745,7 @@ static void EditorRowDeleteChar(text_row_t* row, int32_t at)
     cfg.dirty = TRUE;
 }
 
-static void EditorFreeRow(text_row_t* row)
+static void EditorFreeRow(text_row_s* row)
 {
     free(row->render);
     free(row->chars);
@@ -759,12 +759,12 @@ static void EditorDeleteRow(int32_t at)
     }
 
     EditorFreeRow(&cfg.row[at]);
-    memmove(&cfg.row[at], &cfg.row[at + 1], sizeof(text_row_t) * (cfg.numRows - at - 1));
+    memmove(&cfg.row[at], &cfg.row[at + 1], sizeof(text_row_s) * (cfg.numRows - at - 1));
     cfg.numRows--;
     cfg.dirty = TRUE;
 }
 
-static void EditorRowAppendString(text_row_t* row, char_t* str, size_t len)
+static void EditorRowAppendString(text_row_s* row, char_t* str, size_t len)
 {
     row->chars = realloc(row->chars, row->size + len + 1);
     memcpy(&row->chars[row->size], str, len);
@@ -806,7 +806,7 @@ static void EditorDeleteChar(void)
         return;
     }
 
-    text_row_t* row = &cfg.row[cfg.cy];
+    text_row_s* row = &cfg.row[cfg.cy];
     if (cfg.cx > 0)
     {
         EditorRowDeleteChar(row, cfg.cx - 1);
@@ -830,7 +830,7 @@ static void EditorInsertNewline(void)
     }
     else // Split the line we're on into two rows
     {
-        text_row_t* row = &cfg.row[cfg.cy];
+        text_row_s* row = &cfg.row[cfg.cy];
         EditorInsertRow(cfg.cy + 1, &row->chars[cfg.cx], row->size - cfg.cx);
 
         row = &cfg.row[cfg.cy];
@@ -983,7 +983,7 @@ static void EditorFindCallback(char_t* query, efi_input_key_t key)
             current = 0;
         }
 
-        text_row_t* row = &cfg.row[current];
+        text_row_s* row = &cfg.row[current];
         char_t* match = strstr(row->render, query);
 
         if (match != NULL)
@@ -997,7 +997,7 @@ static void EditorFindCallback(char_t* query, efi_input_key_t key)
     }
 }
 
-void AppendToBuffer(buffer_t* buf, const char_t* str, uint32_t len)
+void AppendToBuffer(buffer_s* buf, const char_t* str, uint32_t len)
 {
     // Resize the string
     char* new = realloc(buf->b, buf->len + len + 1);
@@ -1013,12 +1013,12 @@ void AppendToBuffer(buffer_t* buf, const char_t* str, uint32_t len)
     buf->b[buf->len] = CHAR_NULL;
 }
 
-void FreeBuffer(buffer_t* buf)
+void FreeBuffer(buffer_s* buf)
 {
     free(buf->b);
 }
 
-void PrintBuffer(buffer_t* buf)
+void PrintBuffer(buffer_s* buf)
 {
     // Printing this way allows printing of binary files
     for (int32_t i = 0; i < buf->len; i++)
