@@ -19,7 +19,6 @@ boolean_t ShellLoginWithPassword()
     }
 
     ST->ConOut->ClearScreen(ST->ConOut);
-    Log(LL_INFO, 0, "Asking for shell password...");
 
     PrintBootloaderVersion();
     printf("The shell is protected with a password.\n"
@@ -69,6 +68,7 @@ boolean_t CreateShellPassword()
         return FALSE;
     }
     fclose(out);
-
+    
+    Log(LL_INFO, 0, "New shell password has been set.");
     return TRUE;
 }
