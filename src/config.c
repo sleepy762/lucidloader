@@ -14,7 +14,7 @@
 
 #define MAX_ENTRY_NAME_LEN (70)
 
-#define BOOT_ENTRY_INIT { NULL, NULL, NULL, 0 }
+#define BOOT_ENTRY_INIT { NULL, NULL, NULL, FALSE , NULL }
 #define BOOT_ENTRY_ARR_INIT { NULL, 0 }
 
 static boolean_t ValidateEntry(boot_entry_s newEntry);
@@ -131,7 +131,7 @@ boot_entry_array_s ParseConfig(void)
 static boolean_t ValidateEntry(boot_entry_s newEntry)
 {
     // May be a block of comments, don't print warnings in that case
-    if (newEntry.name == NULL && newEntry.mainPath == NULL && newEntry.imgArgs == NULL)
+    if (newEntry.name == NULL && newEntry.imgToLoad == NULL && newEntry.imgArgs == NULL)
     {
         return FALSE;
     }
@@ -144,7 +144,7 @@ static boolean_t ValidateEntry(boot_entry_s newEntry)
         }
         return FALSE;
     }
-    else if (strlen(newEntry.mainPath) == 0)
+    else if (strlen(newEntry.imgToLoad) == 0)
     {
         if (!ignoreEntryWarnings)
         {
@@ -174,12 +174,12 @@ static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* e
     }
     else if (strcmp(key, "path") == 0) 
     {
-        if (entry->mainPath != NULL)
+        if (entry->imgToLoad != NULL)
         {
-            Log(LL_WARNING, 0, "Ignoring '%s' value redefinition in the same config entry. (current=%s, ignored=%s)", key, entry->mainPath, value);
+            Log(LL_WARNING, 0, "Ignoring '%s' value redefinition in the same config entry. (current=%s, ignored=%s)", key, entry->imgToLoad, value);
             return;
         }
-        entry->mainPath = value;
+        entry->imgToLoad = value;
     }
     else if (strcmp(key, "args") == 0)
     {
@@ -264,7 +264,7 @@ static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry)
 
     int32_t at = bootEntryArr->numOfEntries;
     bootEntryArr->entries[at].name = entry->name;
-    bootEntryArr->entries[at].mainPath = entry->mainPath;
+    bootEntryArr->entries[at].imgToLoad = entry->imgToLoad;
     bootEntryArr->entries[at].imgArgs = entry->imgArgs;
 
     bootEntryArr->numOfEntries++;
@@ -275,7 +275,7 @@ void FreeConfigEntries(boot_entry_array_s* entryArr)
     for (int32_t i = 0; i < entryArr->numOfEntries; i++)
     {
         free(entryArr->entries[i].name);
-        free(entryArr->entries[i].mainPath);
+        free(entryArr->entries[i].imgToLoad);
         free(entryArr->entries[i].imgArgs);
     }
     free(entryArr->entries);

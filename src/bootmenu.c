@@ -239,7 +239,7 @@ static void PrintEntryInfo(boot_entry_s* selectedEntry)
     printf("Name: %s\n"
            "Path: %s\n"
            "Args: %s\n",
-           selectedEntry->name, selectedEntry->mainPath, selectedEntry->imgArgs);
+           selectedEntry->name, selectedEntry->imgToLoad, selectedEntry->imgArgs);
 
     printf("\nPress any key to return...");
     GetInputKey();
@@ -264,9 +264,9 @@ static void BootEntry(boot_entry_s* selectedEntry)
     printf("Booting `%s`...\n"
             "- path: `%s`\n"
             "- args: `%s`\n",
-            selectedEntry->name, selectedEntry->mainPath, selectedEntry->imgArgs);
+            selectedEntry->name, selectedEntry->imgToLoad, selectedEntry->imgArgs);
 
-    ChainloadImage(selectedEntry->mainPath, selectedEntry->imgArgs);
+    ChainloadImage(selectedEntry->imgToLoad, selectedEntry->imgArgs);
 }
 
 static void FailMenu(const char_t* errorMsg)
