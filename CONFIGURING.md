@@ -4,9 +4,11 @@
 
 The configuration file is named `ezboot-config.cfg` and it is saved in the directory of the bootloader `ESP/EFI/ezboot` (ESP is the EFI System Partition, which is usually mounted as `/boot` or `/boot/efi`). 
 
-Every entry in the config file will be a block of text that must contain the `name` and `path` keys. Each entry is separated by an empty line.
+Every entry in the config file will be a block of text that must contain the `name` and `path` keys. Each entry is separated by an empty line. In addition, the first entry is considered as the default entry.
 
-Lines that start with `#` are treated as comments and will be ignored by the config parser. In addition, the first entry is considered as the default entry.
+The path specified in `path`, begins at the mount point of the EFI System Partition(ESP). For instance, if it is mounted at `/boot`, then `/boot` is the root directory for the bootloader. You can find out where the ESP is mounted using `lsblk`. It is also worth noting that the delimiter between directories in UEFI is `\` and not `/`. Spaces are also allowed and don't need to be escaped. So an example path will look like this: `\EFI\Arch Linux\vmlinuz-linux`. 
+
+Lines that start with `#` are treated as comments and will be ignored by the config parser.
 
 Available keys:
 - `name` - The name of the entry which will be shown in the boot menu.
@@ -26,13 +28,13 @@ name=Windows
 path=EFI\Boot\Microsoft\bootmgfw.efi
 
 name=Some UEFI App
-path=path\to\UEFI\app
+path=\path\to\UEFI\app
 args=args to pass to the app
 ```
 
 Here we can see 3 entries, each entry is separated by an empty line, and each has the keys `name` and `path`. The key `args` is an optional key which passes arguments to the binary specified in `path`.
 
-## Global configuration
+## Global runtime configuration
 
 These are special keys that you can put anywhere in the config file and they will change runtime configuration in the bootloader.
 

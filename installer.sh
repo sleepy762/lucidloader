@@ -10,7 +10,7 @@ mounted_boot_dir=$(lsblk | awk '{print $7}' | grep boot)
 ezboot_dir="${mounted_boot_dir}/EFI/ezboot"
 
 # Move the bootloader into the created directory
-mkdir -p ${ezboot_dir} 2>/dev/null
+mkdir ${ezboot_dir} 2>/dev/null
 cp ezboot_x64.efi ${ezboot_dir} || exit 1
 touch ${ezboot_dir}/ezboot-config.cfg
 
@@ -24,3 +24,4 @@ efibootmgr | grep ezboot >/dev/null || efibootmgr -c -d $boot_disk -p $boot_part
 
 echo "Installation complete! Make sure to configure the bootloader."
 echo "The configuration file is located at ${ezboot_dir}/ezboot-config.cfg"
+echo "Refer to the configuration guide in CONFIGURING.md"
