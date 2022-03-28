@@ -36,14 +36,17 @@ void PrintBootloaderVersion(void)
 
 void StartBootloader(void)
 {
-    ST->ConOut->ClearScreen(ST->ConOut);
-    ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
-    
     InitBootMenuConfig();
     while (TRUE)
     {
+        ST->ConOut->ClearScreen(ST->ConOut);
+        ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
+        PrintBootloaderVersion();
+        printf("Parsing config...\n");
+
         // The config parsing is in this loop because we want the menu to update in case the user
         // decided to update the config through the bootloader shell
+        // TODO: only reparse if config was modified
         boot_entry_array_s bootEntries = ParseConfig();
 
         ST->ConIn->Reset(ST->ConIn, 0);
@@ -240,6 +243,12 @@ static void PrintEntryInfo(boot_entry_s* selectedEntry)
            "Path: %s\n"
            "Args: %s\n",
            selectedEntry->name, selectedEntry->imgToLoad, selectedEntry->imgArgs);
+    
+    if (selectedEntry->isDirectoryToKernel)
+    {
+        printf("\nKernel directory: %s\n", selectedEntry->kernelScanInfo->kernelDirectory);
+        printf("Kernel version string: %s\n", selectedEntry->kernelScanInfo->kernelVersionString);
+    }
 
     printf("\nPress any key to return...");
     GetInputKey();

@@ -255,6 +255,7 @@ static boolean_t CopyRecursively(char_t* mainPath, char_t* dstPath, cmd_args_s* 
             free(filePath);
         }
     }
+    closedir(dir);
     free(newDstPath);
     return funcSuccess;
 }

@@ -9,7 +9,8 @@
 #define PREVIOUS_DIR ("..")
 
 
-char_t* ConcatPaths(char_t* lhs, char_t* rhs)
+// The returned pointer is allocated dynamically and must be freed by the caller
+char_t* ConcatPaths(const char_t* lhs, const char_t* rhs)
 {
     size_t lhsLen = strlen(lhs);
     size_t rhsLen = strlen(rhs);
@@ -24,10 +25,16 @@ char_t* ConcatPaths(char_t* lhs, char_t* rhs)
 
     memcpy(newPath, lhs, lhsLen + 1); // Copy with null terminator
 
-    // Don't add an extra backslash if the lhs path is "\"
-    if (strlen(lhs) > 1)
+    // If the last char in lhs and the first char in rhs are *not* '\', then append it
+    int32_t lhsLastIndex = strlen(lhs) - 1;
+    if (lhs[lhsLastIndex] != '\\' && rhs[0] != '\\')
     {
         strcat(newPath, "\\");
+    }
+    // Avoid duplicating '\' char in the path
+    else if (lhs[lhsLastIndex] == '\\' && rhs[0] == '\\')
+    {
+        rhs++;
     }
 
     strcat(newPath, rhs);

@@ -115,6 +115,7 @@ static boolean_t RemoveRecursively(char_t* mainPath, cmd_args_s* cmdArg)
             free(filePath);
         }
     }
+    closedir(dir);
     // Remove the parent directory
     if (remove(mainPath) != 0)
     {

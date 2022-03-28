@@ -2,7 +2,7 @@
 #include <uefi.h>
 #include "commanddefs.h"
 
-char_t* ConcatPaths(char_t* lhs, char_t* rhs);
+char_t* ConcatPaths(const char_t* lhs, const char_t* rhs);
 uint8_t NormalizePath(char_t** path);
 void CleanPath(char_t** path);
 char_t* MakeFullPath(char_t* pathArg, char_t* currPathPtr, boolean_t* isDynamicMemory);
