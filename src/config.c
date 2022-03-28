@@ -29,7 +29,7 @@ static boolean_t EditRuntimeConfig(const char_t* key, char_t* value);
 /* Functions related to the "kerneldir" key in the config */
 static void ParseKernelDirEntry(boot_entry_s* entry);
 static char_t* GetPathToKernel(const char_t* directoryPath);
-static char_t* GetKernelVersionString(const char_t* kernelFileName);
+static char_t* GetKernelVersionString(const char_t* fullKernelFileName);
 static void InsertKernelVersionInArgs(boot_entry_s* entry);
 
 static boolean_t ignoreEntryWarnings;
@@ -311,11 +311,16 @@ static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry)
     newEntry->imgToLoad = entry->imgToLoad;
     newEntry->imgArgs = entry->imgArgs;
     newEntry->isDirectoryToKernel = entry->isDirectoryToKernel;
+
     if (newEntry->isDirectoryToKernel)
     {
         newEntry->kernelScanInfo = entry->kernelScanInfo;
         newEntry->kernelScanInfo->kernelDirectory = entry->kernelScanInfo->kernelDirectory;
         newEntry->kernelScanInfo->kernelVersionString = entry->kernelScanInfo->kernelVersionString;
+    }
+    else
+    {
+        newEntry->kernelScanInfo = NULL;
     }
 
     bootEntryArr->numOfEntries++;
@@ -365,9 +370,33 @@ static char_t* GetPathToKernel(const char_t* directoryPath)
     return path;
 }
 
-static char_t* GetKernelVersionString(const char_t* kernelFileName)
+static char_t* GetKernelVersionString(const char_t* fullKernelFileName)
 {
-    return NULL;
+    char_t* kernelFileName = strrchr(fullKernelFileName, '\\') + 1;
+
+    // Skip past the kernel file name part
+    kernelFileName += strlen(LINUX_KERNEL_IDENTIFIER_STR);
+    
+    // The next character is the version delimiter, like the '-' in `vmlinuz-x.xx.xx`
+    char_t versionDelimiter = *kernelFileName;
+    kernelFileName++;
+
+    // Store the pointer to where the version starts for later
+    char_t* startOfVersionStr = kernelFileName;
+
+    // Find where the version string ends
+    while (*kernelFileName != versionDelimiter && *kernelFileName != CHAR_NULL)
+    {
+        kernelFileName++;
+    }
+
+    // Store the version string in a dynamic buffer
+    int32_t versionStrLen = kernelFileName - startOfVersionStr;
+    char_t* versionStr = malloc(versionStrLen + 1);
+    memcpy(versionStr, startOfVersionStr, versionStrLen);
+    versionStr[versionStrLen] = CHAR_NULL;
+
+    return versionStr;
 }
 
 static void InsertKernelVersionInArgs(boot_entry_s* entry)
