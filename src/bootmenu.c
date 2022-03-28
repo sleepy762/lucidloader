@@ -263,7 +263,7 @@ static void BootEntry(boot_entry_s* selectedEntry)
     ST->ConOut->ClearScreen(ST->ConOut);
     printf("Booting `%s`...\n"
             "- path: `%s`\n"
-            "- args: `%s`\n",
+            "- args: `%s`\n\n",
             selectedEntry->name, selectedEntry->imgToLoad, selectedEntry->imgArgs);
 
     ChainloadImage(selectedEntry->imgToLoad, selectedEntry->imgArgs);

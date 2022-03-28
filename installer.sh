@@ -24,3 +24,4 @@ efibootmgr | grep ezboot >/dev/null || efibootmgr -c -d $boot_disk -p $boot_part
 
 echo "Installation complete! Make sure to configure the bootloader."
 echo "The configuration file is located at ${ezboot_dir}/ezboot-config.cfg"
+echo "Refer to the configuration guide in CONFIGURING.md"

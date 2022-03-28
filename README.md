@@ -17,6 +17,8 @@ Gentoo GNU/Linux (emerge): `sys-devel/make` `sys-devel/clang` `sys-devel/lld` `s
 
 Running `make` in the root directory will create the bootloader `.efi` file.
 #
+The bootloader fully supports the `x86_64` architecture. Compiling for `aarch64` is possible, but untested. It is possible to change the architecture to `aarch64` by editing the Makefile in the root directory of the bootloader source code and changing the `ARCH` variable. 
+#
 Clang is the preferred compiler for compiling the code and it will be used if clang is installed, but gcc can also be used.
 
 If you have clang installed and want to compile with gcc, add `USE_GCC=1` into the Makefile in the root directory (before the include line). If clang is not installed, the code will be compiled with gcc automatically.
