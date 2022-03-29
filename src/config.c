@@ -19,6 +19,7 @@
 #define BOOT_ENTRY_ARR_INIT { NULL, 0 }
 
 #define LINUX_KERNEL_IDENTIFIER_STR ("vmlinuz")
+#define STR_TO_SUBSTITUTE_WITH_VERSION ("%v")
 
 /* Basic config parser functions */
 static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry);
@@ -30,7 +31,6 @@ static boolean_t EditRuntimeConfig(const char_t* key, char_t* value);
 static void ParseKernelDirEntry(boot_entry_s* entry);
 static char_t* GetPathToKernel(const char_t* directoryPath);
 static char_t* GetKernelVersionString(const char_t* fullKernelFileName);
-static void InsertKernelVersionInArgs(boot_entry_s* entry);
 
 static boolean_t ignoreEntryWarnings;
 
@@ -329,9 +329,28 @@ static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry)
 // Called when entry->isDirectoryToKernel is TRUE to fill in the rest of the entry data
 static void ParseKernelDirEntry(boot_entry_s* entry)
 {
-    entry->imgToLoad = GetPathToKernel(entry->kernelScanInfo->kernelDirectory);
-    entry->kernelScanInfo->kernelVersionString = GetKernelVersionString(entry->imgToLoad);
-    // substitute kernel version in args...
+    kernel_scan_info_s* scanInfo = entry->kernelScanInfo;
+
+    entry->imgToLoad = GetPathToKernel(scanInfo->kernelDirectory);
+    scanInfo->kernelVersionString = GetKernelVersionString(entry->imgToLoad);
+
+    if (scanInfo->kernelVersionString != NULL)
+    {
+        // Put the version string wherever it's needed in the args
+        char_t* newArgs = StringReplace(entry->imgArgs, STR_TO_SUBSTITUTE_WITH_VERSION, 
+            scanInfo->kernelVersionString);
+        // Replace the old args if the string replacement function succeeded
+        if (newArgs != NULL)
+        {
+            free(entry->imgArgs);
+            entry->imgArgs = newArgs;
+        }
+    }
+    else
+    {
+        Log(LL_ERROR, 0, "Failed to detect kernel version. (kerneldir=%s, kernel=%s)", 
+            scanInfo->kernelDirectory, entry->imgToLoad);
+    }
 }
 
 static char_t* GetPathToKernel(const char_t* directoryPath)
@@ -397,11 +416,6 @@ static char_t* GetKernelVersionString(const char_t* fullKernelFileName)
     versionStr[versionStrLen] = CHAR_NULL;
 
     return versionStr;
-}
-
-static void InsertKernelVersionInArgs(boot_entry_s* entry)
-{
-
 }
 
 void FreeConfigEntries(boot_entry_array_s* entryArr)
