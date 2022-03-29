@@ -12,27 +12,39 @@ Lines that start with `#` are treated as comments and will be ignored by the con
 
 Available keys:
 - `name` - The name of the entry which will be shown in the boot menu.
-- `path` - The absolute path to the binary which the bootloader is going to load.
-- `args` - Arguments which will be passed to the binary.
+- `path` - The absolute path to the binary which the bootloader is going to load. **Incompatible with `kerneldir`.**
+- `kerneldir` - The absolute path to a directory with a (Linux) kernel (whose name begins with `vmlinuz`). The bootloader will automatically detect the kernel file and the kernel version. It will also replace the characters `%v` in the args with the kernel version string. As a result, the user won't have to edit the config with every kernel update. Highly recommended for Linux systems whose kernel file name can change. Make sure there is only ONE kernel in the specified directory. **Incompatible with `path`.**
+- `args` - (Optional) Arguments which will be passed to the binary. When `kerneldir` is defined and the bootloader detects the kernel version, it will substitute the characters `%v` with the kernel version string.
 
 Writing key and value pairs is in the following format: `key=value`. Note that there are NO SPACES to the right and to the left of the `=` character. 
 
 Let's see an example.
 
 ```
+# Runtime settings (see below)
+timeout = 5
+
+# Example of a basic entry
 name=Arch Linux
 path=EFI\Arch\vmlinuz-linux
-args=root=UUID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx rw initrd=EFI\Arch\initramfs-linux.img loglevel=3
+args=root=UUID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx initrd=EFI\Arch\initramfs-linux.img rw loglevel=3
+
+# Example usage of kerneldir
+# the kernel name is 'vmlinuz-5.15.7-gentoo', and the initramfs is 'initramfs-5.15.7-gentoo.img'
+name=Gentoo
+kerneldir=EFI\Gentoo
+args=root=UUID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx initrd=EFI\Gentoo\initramfs-%v-gentoo.img rw loglevel=3
 
 name=Windows
 path=EFI\Boot\Microsoft\bootmgfw.efi
 
+# The bootloader can also load any UEFI app and not just operating systems
 name=Some UEFI App
 path=\path\to\UEFI\app
 args=args to pass to the app
 ```
 
-Here we can see 3 entries, each entry is separated by an empty line, and each has the keys `name` and `path`. The key `args` is an optional key which passes arguments to the binary specified in `path`.
+Here we can see 4 entries, each entry is separated by an empty line, and each has the keys `name` and `path`, or `name` and `kerneldir`.
 
 ## Global runtime configuration
 

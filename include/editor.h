@@ -1,9 +1,6 @@
 #pragma once
 #include <uefi.h>
 
-// Editor implementation inspired by snaptoken's kilo
-// https://github.com/snaptoken/kilo-src
-
 // Used in the input processing function
 #define UP_ARROW_SCANCODE       (0x01)
 #define DOWN_ARROW_SCANCODE     (0x02)

@@ -95,7 +95,7 @@ void *memmem(const void *haystack, size_t hl, const void *needle, size_t nl)
 {
     uint8_t *c = (uint8_t*)haystack;
     if(!haystack || !needle || !hl || !nl || nl > hl) return NULL;
-    hl -= nl;
+    hl -= nl - 1;
     while(hl) {
         if(!memcmp(c, needle, nl)) return c;
         c++; hl--;
@@ -118,28 +118,31 @@ void *memrmem(const void *haystack, size_t hl, const void *needle, size_t nl)
 
 char_t *strcpy(char_t *dst, const char_t *src)
 {
+    char_t *s = dst;
     if(src && dst && src != dst) {
         while(*src) {*dst++=*src++;} *dst=0;
     }
-    return dst;
+    return s;
 }
 
 char_t *strncpy(char_t *dst, const char_t *src, size_t n)
 {
+    char_t *s = dst;
     const char_t *e = src+n;
     if(src && dst && src != dst && n>0) {
         while(*src && src<e) {*dst++=*src++;} *dst=0;
     }
-    return dst;
+    return s;
 }
 
 char_t *strcat(char_t *dst, const char_t *src)
 {
+    char_t *s = dst;
     if(src && dst) {
         dst += strlen(dst);
         while(*src) {*dst++=*src++;} *dst=0;
     }
-    return dst;
+    return s;
 }
 
 int strcmp(const char_t *s1, const char_t *s2)
@@ -153,12 +156,13 @@ int strcmp(const char_t *s1, const char_t *s2)
 
 char_t *strncat(char_t *dst, const char_t *src, size_t n)
 {
+    char_t *s = dst;
     const char_t *e = src+n;
     if(src && dst && n>0) {
         dst += strlen(dst);
         while(*src && src<e) {*dst++=*src++;} *dst=0;
     }
-    return dst;
+    return s;
 }
 
 int strncmp(const char_t *s1, const char_t *s2, size_t n)
