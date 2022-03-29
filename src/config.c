@@ -176,7 +176,7 @@ static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* e
     {
         if (entry->name != NULL)
         {
-            Log(LL_WARNING, 0, "Ignoring '%s' value redefinition in the same config entry. (current=%s, ignored=%s)", 
+            Log(LL_WARNING, 0, "Ignoring '%s' redefinition in the same config entry. (current=%s, ignored=%s)", 
                 key, entry->name, value);
             return;
         }
@@ -192,13 +192,13 @@ static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* e
     {
         if (entry->isDirectoryToKernel)
         {
-            Log(LL_WARNING, 0, "'%s' and 'kerneldir' keys defined in the same entry. (where kerneldir=%s)",
+            Log(LL_WARNING, 0, "'%s' and 'kerneldir' defined in the same entry. (where kerneldir=%s)",
                 key, entry->kernelScanInfo->kernelDirectory);
             return;
         }
         if (entry->imgToLoad != NULL)
         {
-            Log(LL_WARNING, 0, "Ignoring '%s' value redefinition in the same config entry. (current=%s, ignored=%s)", 
+            Log(LL_WARNING, 0, "Ignoring '%s' redefinition in the same config entry. (current=%s, ignored=%s)", 
                 key, entry->imgToLoad, value);
             return;
         }
@@ -208,13 +208,13 @@ static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* e
     {
         if (entry->imgToLoad != NULL)
         {
-            Log(LL_WARNING, 0, "'%s' and 'path' keys are defined in the same entry. (where path=%s)",
+            Log(LL_WARNING, 0, "'%s' and 'path' are defined in the same entry. (where path=%s)",
                 key, entry->imgToLoad);
             return;
         }
         if (entry->isDirectoryToKernel)
         {
-            Log(LL_WARNING, 0, "Ignoring '%s' value redefinition in the same config entry. (current=%s, ignored=%s)", 
+            Log(LL_WARNING, 0, "Ignoring '%s' redefinition in the same config entry. (current=%s, ignored=%s)", 
                 key, entry->kernelScanInfo->kernelDirectory, value);
             return;
         }
@@ -226,7 +226,7 @@ static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* e
     {
         if (entry->imgArgs != NULL)
         {
-            Log(LL_WARNING, 0, "Ignoring '%s' value redefinition in the same config entry. (current=%s, ignored=%s)", key, entry->imgArgs, value);
+            Log(LL_WARNING, 0, "Ignoring '%s' redefinition in the same config entry. (current=%s, ignored=%s)", key, entry->imgArgs, value);
             return;
         }
         entry->imgArgs = value;
