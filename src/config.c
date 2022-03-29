@@ -22,7 +22,7 @@
 #define STR_TO_SUBSTITUTE_WITH_VERSION ("%v")
 
 /* Basic config parser functions */
-static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry);
+static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry);
 static boolean_t ValidateEntry(boot_entry_s* newEntry);
 static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry);
 static boolean_t EditRuntimeConfig(const char_t* key, char_t* value);
@@ -31,6 +31,8 @@ static boolean_t EditRuntimeConfig(const char_t* key, char_t* value);
 static void ParseKernelDirEntry(boot_entry_s* entry);
 static char_t* GetPathToKernel(const char_t* directoryPath);
 static char_t* GetKernelVersionString(const char_t* fullKernelFileName);
+
+static void FreeConfigEntry(boot_entry_s* entry);
 
 static boolean_t ignoreEntryWarnings;
 
@@ -117,7 +119,13 @@ boot_entry_array_s ParseConfig(void)
                 free(value);
                 continue;
             }
-            AssignValueToEntry(key, value, &entry);
+
+            if (!AssignValueToEntry(key, value, &entry))
+            {
+                // Free the value if it wasn't assigned to the entry
+                free(value);
+            }
+
             free(key);
         }
 
@@ -127,9 +135,14 @@ boot_entry_array_s ParseConfig(void)
         {
             ParseKernelDirEntry(&entry);
         }
+
         if (ValidateEntry(&entry))
         {
             AppendEntry(&bootEntryArr, &entry);
+        }
+        else // Free memory of invalid entry
+        {
+            FreeConfigEntry(&entry);
         }
 
         filePtr += ptrIncrement; // Move the pointer to the next entry block
@@ -170,7 +183,9 @@ static boolean_t ValidateEntry(boot_entry_s* newEntry)
     return TRUE;
 }
 
-static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry)
+// FALSE means the value wasn't assigned and should be freed
+// TRUE means that value is in use and should not be freed
+static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry)
 {
     if (strcmp(key, "name") == 0)
     {
@@ -178,7 +193,7 @@ static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* e
         {
             Log(LL_WARNING, 0, "Ignoring '%s' redefinition in the same config entry. (current=%s, ignored=%s)", 
                 key, entry->name, value);
-            return;
+            return FALSE;
         }
 
         // Truncate the name if it's too long
@@ -194,13 +209,13 @@ static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* e
         {
             Log(LL_WARNING, 0, "'%s' and 'kerneldir' defined in the same entry. (where kerneldir=%s)",
                 key, entry->kernelScanInfo->kernelDirectory);
-            return;
+            return FALSE;
         }
         if (entry->imgToLoad != NULL)
         {
             Log(LL_WARNING, 0, "Ignoring '%s' redefinition in the same config entry. (current=%s, ignored=%s)", 
                 key, entry->imgToLoad, value);
-            return;
+            return FALSE;
         }
         entry->imgToLoad = value;
     }
@@ -210,13 +225,13 @@ static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* e
         {
             Log(LL_WARNING, 0, "'%s' and 'path' are defined in the same entry. (where path=%s)",
                 key, entry->imgToLoad);
-            return;
+            return FALSE;
         }
         if (entry->isDirectoryToKernel)
         {
             Log(LL_WARNING, 0, "Ignoring '%s' redefinition in the same config entry. (current=%s, ignored=%s)", 
                 key, entry->kernelScanInfo->kernelDirectory, value);
-            return;
+            return FALSE;
         }
         entry->kernelScanInfo = malloc(sizeof(kernel_scan_info_s));
         entry->kernelScanInfo->kernelDirectory = value;
@@ -226,8 +241,9 @@ static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* e
     {
         if (entry->imgArgs != NULL)
         {
-            Log(LL_WARNING, 0, "Ignoring '%s' redefinition in the same config entry. (current=%s, ignored=%s)", key, entry->imgArgs, value);
-            return;
+            Log(LL_WARNING, 0, "Ignoring '%s' redefinition in the same config entry. (current=%s, ignored=%s)", 
+                key, entry->imgArgs, value);
+            return FALSE;
         }
         entry->imgArgs = value;
     }
@@ -243,7 +259,9 @@ static void AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* e
             // Avoid false warnings when runtime config keys are on their own
             ignoreEntryWarnings = TRUE;
         }
+        return FALSE;
     }
+    return TRUE;
 }
 
 // Special keys that control the settings of the bootloader during runtime
@@ -418,22 +436,25 @@ static char_t* GetKernelVersionString(const char_t* fullKernelFileName)
     return versionStr;
 }
 
+static void FreeConfigEntry(boot_entry_s* entry)
+{
+    free(entry->name);
+    free(entry->imgToLoad);
+    free(entry->imgArgs);
+
+    if (entry->isDirectoryToKernel)
+    {
+        free(entry->kernelScanInfo->kernelDirectory);
+        free(entry->kernelScanInfo->kernelVersionString);
+        free(entry->kernelScanInfo);
+    }
+}
+
 void FreeConfigEntries(boot_entry_array_s* entryArr)
 {
     for (int32_t i = 0; i < entryArr->numOfEntries; i++)
     {
-        boot_entry_s entry = entryArr->entries[i];
-
-        free(entry.name);
-        free(entry.imgToLoad);
-        free(entry.imgArgs);
-
-        if (entry.isDirectoryToKernel)
-        {
-            free(entry.kernelScanInfo->kernelDirectory);
-            free(entry.kernelScanInfo->kernelVersionString);
-            free(entry.kernelScanInfo);
-        }
+        FreeConfigEntry(&entryArr->entries[i]);
     }
     free(entryArr->entries);
 }
