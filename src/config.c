@@ -416,6 +416,10 @@ static char_t* GetKernelVersionString(const char_t* fullKernelFileName)
     
     // The next character is the version delimiter, like the '-' in `vmlinuz-x.xx.xx`
     char_t versionDelimiter = *kernelFileName;
+    if (versionDelimiter == CHAR_NULL)
+    {
+        return NULL;
+    }
     kernelFileName++;
 
     // Store the pointer to where the version starts for later
