@@ -26,7 +26,7 @@ char_t* ConcatPaths(const char_t* lhs, const char_t* rhs)
     memcpy(newPath, lhs, lhsLen + 1); // Copy with null terminator
 
     // If the last char in lhs and the first char in rhs are *not* '\', then append it
-    int32_t lhsLastIndex = strlen(lhs) - 1;
+    size_t lhsLastIndex = strlen(lhs) - 1;
     if (lhs[lhsLastIndex] != '\\' && rhs[0] != '\\')
     {
         strcat(newPath, "\\");
