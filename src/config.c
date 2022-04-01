@@ -33,6 +33,7 @@ static char_t* GetPathToKernel(const char_t* directoryPath);
 static char_t* GetKernelVersionString(const char_t* fullKernelFileName);
 
 static void FreeConfigEntry(boot_entry_s* entry);
+static inline void LogKeyRedefinition(const char_t* key, const char_t* curr, const char_t* ignored);
 
 static boolean_t ignoreEntryWarnings;
 
@@ -176,7 +177,7 @@ static boolean_t ValidateEntry(boot_entry_s* newEntry)
     {
         if (!ignoreEntryWarnings)
         {
-            Log(LL_WARNING, 0, "Ignoring entry with no main path specified. (entry name: %s)", newEntry->name);
+            Log(LL_WARNING, 0, "Ignoring entry with no 'path' or 'kerneldir' specified. (entry name: %s)", newEntry->name);
         }
         return FALSE;
     }
@@ -191,8 +192,7 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
     {
         if (entry->name != NULL)
         {
-            Log(LL_WARNING, 0, "Ignoring '%s' redefinition in the same config entry. (current=%s, ignored=%s)", 
-                key, entry->name, value);
+            LogKeyRedefinition(key, entry->name, value);
             return FALSE;
         }
 
@@ -213,8 +213,7 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
         }
         if (entry->imgToLoad != NULL)
         {
-            Log(LL_WARNING, 0, "Ignoring '%s' redefinition in the same config entry. (current=%s, ignored=%s)", 
-                key, entry->imgToLoad, value);
+            LogKeyRedefinition(key, entry->imgToLoad, value);
             return FALSE;
         }
         entry->imgToLoad = value;
@@ -229,8 +228,7 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
         }
         if (entry->isDirectoryToKernel)
         {
-            Log(LL_WARNING, 0, "Ignoring '%s' redefinition in the same config entry. (current=%s, ignored=%s)", 
-                key, entry->kernelScanInfo->kernelDirectory, value);
+            LogKeyRedefinition(key, entry->kernelScanInfo->kernelDirectory, value);
             return FALSE;
         }
         entry->kernelScanInfo = malloc(sizeof(kernel_scan_info_s));
@@ -241,8 +239,7 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
     {
         if (entry->imgArgs != NULL)
         {
-            Log(LL_WARNING, 0, "Ignoring '%s' redefinition in the same config entry. (current=%s, ignored=%s)", 
-                key, entry->imgArgs, value);
+            LogKeyRedefinition(key, entry->imgArgs, value);
             return FALSE;
         }
         entry->imgArgs = value;
@@ -333,8 +330,6 @@ static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry)
     if (newEntry->isDirectoryToKernel)
     {
         newEntry->kernelScanInfo = entry->kernelScanInfo;
-        newEntry->kernelScanInfo->kernelDirectory = entry->kernelScanInfo->kernelDirectory;
-        newEntry->kernelScanInfo->kernelVersionString = entry->kernelScanInfo->kernelVersionString;
     }
     else
     {
@@ -392,6 +387,7 @@ static char_t* GetPathToKernel(const char_t* directoryPath)
         if (kernelName == NULL)
         {
             Log(LL_ERROR, 0, "Linux kernel not found in the directory '%s'.", directoryPath);
+            closedir(dir);
             return path;
         }
         // Create a full path to the kernel file
@@ -438,6 +434,12 @@ static char_t* GetKernelVersionString(const char_t* fullKernelFileName)
     versionStr[versionStrLen] = CHAR_NULL;
 
     return versionStr;
+}
+
+static inline void LogKeyRedefinition(const char_t* key, const char_t* curr, const char_t* ignored)
+{
+    Log(LL_WARNING, 0, "Ignoring '%s' redefinition in the same config entry. (current=%s, ignored=%s)", 
+        key, curr, ignored);
 }
 
 static void FreeConfigEntry(boot_entry_s* entry)

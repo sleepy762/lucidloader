@@ -48,7 +48,6 @@ void StartBootloader(void)
 
         // The config parsing is in this loop because we want the menu to update in case the user
         // decided to update the config through the bootloader shell
-        // TODO: only reparse if config was modified
         boot_entry_array_s bootEntries = ParseConfig();
 
         ST->ConIn->Reset(ST->ConIn, 0);

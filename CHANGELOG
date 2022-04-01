@@ -7,6 +7,8 @@ Version 1.2.0 - 01/04/2022
 - Updated POSIX-UEFI.
 - The config will now only be reparsed when the user presses F5 in the menu.
 - Added command that prints firmware vendor + revision and EFI revision (about).
+- Added timer to the menu which will automatically boot the 1st entry when it times out.
+- (Probably) Added license for the bootloader.
 
 Version 1.1 - 17/03/2022
 - Added -O2 compiler flag to the Makefile.

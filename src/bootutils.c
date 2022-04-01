@@ -259,7 +259,7 @@ int32_t WaitForInput(uint32_t timeoutms)
     status = BS->SetTimer(*timerEvent, TimerRelative, timeoutms * 10000);
     if (EFI_ERROR(status))
     {
-        Log(LL_ERROR, status, "Failed to set timer to %d seconds.", timeoutms);
+        Log(LL_ERROR, status, "Failed to set timer to %d milliseconds.", timeoutms);
         return INPUT_TIMER_ERROR;
     }
 
