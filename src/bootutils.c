@@ -1,4 +1,9 @@
 #include "bootutils.h"
+#include "logger.h"
+
+// Taken from the UEFI Specification v2.9
+#define EFI_OS_INDICATIONS_BOOT_TO_FW_UI (0x0000000000000001)
+
 
 wchar_t* StringToWideString(char_t* str)
 {
@@ -230,6 +235,47 @@ efi_status_t ShutdownDevice(void)
     // Will be reached only if shutting down failed
     Log(LL_ERROR, status, "Failed to shutdown!");
     return status;
+}
+
+// The unit for 'timeoutms' is milliseconds
+// Waits a certain amount of time before returning 
+// or returns immediately upon a key press
+int32_t WaitForInput(uint32_t timeoutms)
+{
+    // The first index is for the timer event, and the second is for WaitForKey event
+    uintn_t idx;
+    efi_event_t events[2];
+
+    efi_event_t* timerEvent = events;  // Index 0 (Timer)
+    events[1] = ST->ConIn->WaitForKey; // Index 1 (Input)
+
+    efi_status_t status = BS->CreateEvent(EVT_TIMER, 0, NULL, NULL, timerEvent);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to create timer event.");
+        return INPUT_TIMER_ERROR;
+    }
+
+    status = BS->SetTimer(*timerEvent, TimerRelative, timeoutms * 10000);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to set timer to %d milliseconds.", timeoutms);
+        return INPUT_TIMER_ERROR;
+    }
+
+    status = BS->WaitForEvent(2, events, &idx);
+    BS->CloseEvent(*timerEvent);
+
+    if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to wait for timer event.");
+        return INPUT_TIMER_ERROR;
+    }
+    else if (idx == 1) // If a key was pressed during the timer
+    {
+        return INPUT_TIMER_KEY;
+    }
+    return INPUT_TIMER_TIMEOUT;
 }
 
 void DisableWatchdogTimer(void)

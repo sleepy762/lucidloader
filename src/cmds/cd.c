@@ -1,4 +1,7 @@
 #include "cmds/cd.h"
+#include "shellutils.h"
+#include "bootutils.h"
+#include "shellerr.h"
 
 boolean_t CdCmd(cmd_args_s** args, char_t** currPathPtr)
 {

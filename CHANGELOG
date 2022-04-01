@@ -1,0 +1,30 @@
+Version 1.2.0 - 01/04/2022
+- Added new configuration key - `kerneldir`. Refer to CONFIGURING.md to get more info.
+- Added license in editor.
+- The bootloader will show a message on screen while the config is being parsed.
+- Fixed memory leaks.
+- Removed redundant rm in uefi/Makefile (clean).
+- Updated POSIX-UEFI.
+- The config will now only be reparsed when the user presses F5 in the menu.
+- Added command that prints firmware vendor + revision and EFI revision (about).
+- Added timer to the menu which will automatically boot the 1st entry when it times out.
+- (Probably) Added license for the bootloader.
+
+Version 1.1 - 17/03/2022
+- Added -O2 compiler flag to the Makefile.
+- Updated README.md
+- Removed cleanScript.sh
+- Changed the boot menu to a dynamic menu.
+- Added copy command (cp).
+- Changed config file name to `ezboot-entries.cfg`
+- Entry names are now limited to 70 characters.
+- Boot entries are now stored in a dynamic array instead of a linked list.
+- The logger now keeps the old log in a separate file instead of overwriting it with a new log.
+- Removed the `make` command from `launch_qemu.sh`.
+- Added a way to get info about a highlighted entry in the menu (by pressing 'i').
+- Changed all calls to AllocatePool and FreePool into malloc and free respectively.
+- The bootloader now performs cold reboots instead of warm reboots.
+- Fixed some memory leaks.
+
+Version 1.0 - 01/03/2022
+- Pre-initial release

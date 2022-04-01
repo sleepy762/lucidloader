@@ -1,4 +1,7 @@
 #include "cmds/mkdir.h"
+#include "shellutils.h"
+#include "bootutils.h"
+#include "shellerr.h"
 
 boolean_t MkdirCmd(cmd_args_s** args, char_t** currPathPtr)
 {

@@ -1,4 +1,5 @@
 #include "cmds/pwd.h"
+#include "bootutils.h"
 
 boolean_t PwdCmd(cmd_args_s** args, char_t** currPathPtr)
 {

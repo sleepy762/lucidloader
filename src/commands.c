@@ -1,4 +1,23 @@
 #include "commands.h"
+#include "shellutils.h"
+#include "shellerr.h"
+#include "bootutils.h"
+#include "commanddefs.h"
+
+#include "cmds/pwd.h"
+#include "cmds/ls.h"
+#include "cmds/cd.h"
+#include "cmds/touch.h"
+#include "cmds/mkdir.h"
+#include "cmds/clear.h"
+#include "cmds/cat.h"
+#include "cmds/reboot.h"
+#include "cmds/shutdown.h"
+#include "cmds/rm.h"
+#include "cmds/edit.h"
+#include "cmds/passwd.h"
+#include "cmds/cp.h"
+#include "cmds/about.h"
 
 // List of all the commands
 const shell_cmd_s commands[] = {
@@ -16,8 +35,10 @@ const shell_cmd_s commands[] = {
 { "edit",     EditCmd,     EditBrief,     EditLong },
 { "passwd",   PasswdCmd,   PasswdBrief,   PasswdLong },
 { "cp",       CpCmd,       CpBrief,       CpLong },
+{ "about",    AboutCmd,    AboutBrief,    NULL },
 { "", NULL, NULL, NULL } // Has to be here in order to terminate the command counter
 };
+
 
 // Count the amount of commands
 uint8_t CommandCount(void)

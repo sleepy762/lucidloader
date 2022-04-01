@@ -1,6 +1,16 @@
 #include "logger.h"
+#include "shellutils.h"
+#include "version.h"
 
-efi_time_t timeSinceInit = {0};
+#define LOG_PATH        ("\\EFI\\ezboot\\ezboot-log.txt")
+#define OLD_LOG_PATH    ("\\EFI\\ezboot\\ezboot-log.txt.old")
+
+#define SECONDS_IN_DAY (86400)
+#define SECONDS_IN_HOUR (3600)
+#define SECONDS_IN_MINUTE (60)
+
+static efi_time_t timeSinceInit = {0};
+
 
 // Creates an empty log file and initializes the timeSinceInit variable
 // Returns 1 on success and 0 on failure
@@ -20,7 +30,8 @@ int8_t InitLogger(void)
         fclose(fp);
         RT->GetTime(&timeSinceInit, NULL);
 
-        // Print the date of the log
+        // Print the date of the log and the version of the bootloader
+        Log(LL_INFO, 0, "Starting %s v%s", EZBOOT_NAME_STR, EZBOOT_VERSION);
         Log(LL_INFO, 0, "Log date: %02d/%02d/%04d %02d:%02d:%02d.", 
             timeSinceInit.Day, timeSinceInit.Month, timeSinceInit.Year,
             timeSinceInit.Hour, timeSinceInit.Minute, timeSinceInit.Second);
@@ -54,8 +65,7 @@ void Log(log_level_t loglevel, efi_status_t status, const char_t* fmtMessage, ..
     // Append a UEFI error message if the status argument is an error status
     if (EFI_ERROR(status))
     {
-        // We must turn off the sign bit in status, therefore we subtract 0x8000000000000000
-        fprintf(log, " (EFI Error: %s (%d))", EfiErrorString(status), (status - EFI_ERROR_MASK));
+        fprintf(log, " (EFI Error: %s)", EfiErrorString(status));
     }
 
     fprintf(log, "\n");
@@ -78,6 +88,15 @@ time_t GetSecondsSinceInit(void)
     seconds += currTime.Second - timeSinceInit.Second;
     
     return seconds;
+}
+
+void PrintLogFile(void)
+{
+    uint8_t res = PrintFileContent(LOG_PATH);
+    if (res != 0)
+    {
+        printf("Failed to open log file!\n");
+    }
 }
 
 const char_t* LogLevelString(log_level_t loglevel)
