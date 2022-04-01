@@ -8,6 +8,8 @@
 #include "editor.h"
 #include "shellutils.h"
 
+#define F5_KEY_SCANCODE (0x0F) // Used to refresh the menu (reparse config)
+
 #define SHELL_CHAR  ('c')
 #define INFO_CHAR   ('i')
 
@@ -136,7 +138,7 @@ static void PrintBootMenu(boot_entry_array_s* entryArr)
     
     printf("\nUse the up and down arrow keys to select which entry is highlighted.\n"
            "Press enter to boot the selected entry, 'c' to open the shell\n"
-           "or 'i' to get info about a highlighted entry.\n");
+           "'i' to get info about a highlighted entry, or F5 to refresh the menu.\n");
 
     // Show the timeout
     if (!bmcfg.timeoutCancelled)
@@ -197,17 +199,20 @@ static void BootMenu(boot_entry_array_s* entryArr)
                     ScrollEntryList();
                 }
                 break;
+            case F5_KEY_SCANCODE:
+                // Return to reparse the config
+                return;
 
             default:
                 switch (key.UnicodeChar)
                 {
                     case CHAR_CARRIAGE_RETURN:
                         BootHighlightedEntry(entryArr);
-                        return;
+                        break;
 
                     case SHELL_CHAR:
                         StartShell();
-                        return;
+                        break;
 
                     case INFO_CHAR:
                         PrintHighlightedEntryInfo(entryArr);

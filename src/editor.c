@@ -616,13 +616,13 @@ static void EditorDrawStatusBar(void)
         }
         else // Print spaces to fill the entire line with the background color
         {
-            ST->ConOut->OutputString(ST->ConOut, L" ");
+            putchar(' ');
         }
         len++;
     }
     // Reset the colors
     ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
-    ST->ConOut->OutputString(ST->ConOut, L"\r\n");
+    putchar('\n');
 }
 
 static void EditorSetStatusMessage(const char_t* fmt, ...)

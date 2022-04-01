@@ -1,10 +1,11 @@
-Version 1.2.0 - 29/03/2022
+Version 1.2.0 - 01/04/2022
 - Added new configuration key - `kerneldir`. Refer to CONFIGURING.md to get more info.
 - Added license in editor.
 - The bootloader will show a message on screen while the config is being parsed.
 - Fixed memory leaks.
 - Removed redundant rm in uefi/Makefile (clean).
 - Updated POSIX-UEFI.
+- The config will now only be reparsed when the user presses F5 in the menu.
 
 Version 1.1 - 17/03/2022
 - Added -O2 compiler flag to the Makefile.
