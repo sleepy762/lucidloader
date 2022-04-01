@@ -315,7 +315,7 @@ static void FailMenu(const char_t* errorMsg)
         {
             case '1':
                 StartShell();
-                return; // Return in order to parse the config again
+                break;
             case '2':
                 ShowLogFile();
                 break;

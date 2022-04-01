@@ -17,6 +17,7 @@
 #include "cmds/edit.h"
 #include "cmds/passwd.h"
 #include "cmds/cp.h"
+#include "cmds/about.h"
 
 // List of all the commands
 const shell_cmd_s commands[] = {
@@ -34,6 +35,7 @@ const shell_cmd_s commands[] = {
 { "edit",     EditCmd,     EditBrief,     EditLong },
 { "passwd",   PasswdCmd,   PasswdBrief,   PasswdLong },
 { "cp",       CpCmd,       CpBrief,       CpLong },
+{ "about",    AboutCmd,    AboutBrief,    NULL },
 { "", NULL, NULL, NULL } // Has to be here in order to terminate the command counter
 };
 

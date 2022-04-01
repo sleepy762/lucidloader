@@ -6,6 +6,7 @@ Version 1.2.0 - 01/04/2022
 - Removed redundant rm in uefi/Makefile (clean).
 - Updated POSIX-UEFI.
 - The config will now only be reparsed when the user presses F5 in the menu.
+- Added command that prints firmware vendor + revision and EFI revision (about).
 
 Version 1.1 - 17/03/2022
 - Added -O2 compiler flag to the Makefile.
