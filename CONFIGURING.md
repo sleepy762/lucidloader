@@ -2,7 +2,7 @@
 
 ## Bootable entries
 
-The configuration file is named `lucidloader-config.cfg` and it is saved in the directory of the bootloader `ESP/EFI/lucidloader` (ESP is the EFI System Partition, which is usually mounted as `/boot` or `/boot/efi`). 
+The configuration file is named `config.cfg` and it is saved in the directory of the bootloader `ESP/EFI/lucidloader` (ESP is the EFI System Partition, which is usually mounted as `/boot` or `/boot/efi`). 
 
 Every entry in the config file will be a section of text that must contain the `name` and `path` keys OR `name` and `kerneldir` keys. Each entry is separated by an empty line. In addition, the first entry is considered as the default entry.
 
