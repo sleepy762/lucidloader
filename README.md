@@ -1,6 +1,6 @@
-# EZboot Bootloader
+# LucidLoader
 
-A UEFI bootloader that aims to be light and easy to use.
+An interactive UEFI bootloader that aims to be light and easy to use.
 
 This bootloader is being developed using the [POSIX-UEFI](https://gitlab.com/bztsrc/posix-uefi) wrapper library.
 

@@ -357,7 +357,7 @@ static void AppendEditorWelcomeMessage(buffer_s* buf)
 {
     // Add our welcome message into a buffer
     char_t welcome[EDITOR_WELCOME_MSG_ARR_SIZE];
-    int32_t welcomelen = snprintf(welcome, sizeof(welcome), "EZBoot Editor");
+    int32_t welcomelen = snprintf(welcome, sizeof(welcome), "LucidLoader Editor");
     if (welcomelen > cfg.screenCols)
     {
         welcomelen = cfg.screenCols;
