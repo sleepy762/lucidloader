@@ -21,7 +21,7 @@ Gentoo GNU/Linux (emerge): `sys-devel/make` `sys-devel/clang` `sys-devel/lld` `s
 
 ## Building
 
-Running `make` in the root directory will create the bootloader `.efi` file.
+Run `make` in the root directory of the project to create the bootloader `.efi` file.
 
 The bootloader fully supports the `x86_64` architecture. Compiling for `aarch64` is possible, but untested. It is possible to change the architecture to `aarch64` by editing the Makefile in the root directory of the bootloader source code and changing the `ARCH` variable. 
 #

@@ -2,8 +2,8 @@
 #include "shellutils.h"
 #include "version.h"
 
-#define LOG_PATH        ("\\EFI\\lucidloader\\lucidloader-log.txt")
-#define OLD_LOG_PATH    ("\\EFI\\lucidloader\\lucidloader-log.txt.old")
+#define LOG_PATH        ("\\EFI\\lucidloader\\log.txt")
+#define OLD_LOG_PATH    ("\\EFI\\lucidloader\\log.txt.old")
 
 #define SECONDS_IN_DAY (86400)
 #define SECONDS_IN_HOUR (3600)
