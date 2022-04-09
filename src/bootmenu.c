@@ -33,7 +33,7 @@ boot_menu_cfg_s bmcfg;
 
 void PrintBootloaderVersion(void)
 {
-    printf("%s v%s\n\n", EZBOOT_NAME_STR, EZBOOT_VERSION);
+    printf("%s v%s\n\n", LUCIDLOADER_NAME_STR, LUCIDLOADER_VERSION);
 }
 
 void StartBootloader(void)

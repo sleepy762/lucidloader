@@ -4,7 +4,7 @@
 
 boolean_t AboutCmd(cmd_args_s** args, char_t** currPathPtr)
 {   
-    printf("%s v%s\nBuilt with POSIX-UEFI\n\n", EZBOOT_NAME_STR, EZBOOT_VERSION);
+    printf("%s v%s\nBuilt with POSIX-UEFI\n\n", LUCIDLOADER_NAME_STR, LUCIDLOADER_VERSION);
 
     printf("Running on:\n"
            "  Firmware: ");

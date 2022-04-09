@@ -10,11 +10,11 @@ mformat -i fat.img -s 64 -t 225 -h 16 ::
 # Create the necessary directories
 mmd -i fat.img ::/EFI
 mmd -i fat.img ::/EFI/BOOT
-mmd -i fat.img ::/EFI/ezboot
+mmd -i fat.img ::/EFI/lucidloader
 # Copy the files
-cp ezboot_x64.efi bootx64.efi # This is done in order to boot directly into the bootloader
+cp lucidloader_x64.efi bootx64.efi # This is done in order to boot directly into the bootloader
 mcopy -i fat.img bootx64.efi ::/EFI/BOOT
-mcopy -i fat.img add-to-image/* ::/EFI/ezboot
+mcopy -i fat.img add-to-image/* ::/EFI/lucidloader
 
 # Create an ISO image with our EFI file and start uefi qemu to test it
 cp fat.img iso

@@ -2,8 +2,8 @@
 #include "shellutils.h"
 #include "version.h"
 
-#define LOG_PATH        ("\\EFI\\ezboot\\ezboot-log.txt")
-#define OLD_LOG_PATH    ("\\EFI\\ezboot\\ezboot-log.txt.old")
+#define LOG_PATH        ("\\EFI\\lucidloader\\lucidloader-log.txt")
+#define OLD_LOG_PATH    ("\\EFI\\lucidloader\\lucidloader-log.txt.old")
 
 #define SECONDS_IN_DAY (86400)
 #define SECONDS_IN_HOUR (3600)
@@ -31,7 +31,7 @@ int8_t InitLogger(void)
         RT->GetTime(&timeSinceInit, NULL);
 
         // Print the date of the log and the version of the bootloader
-        Log(LL_INFO, 0, "Starting %s v%s", EZBOOT_NAME_STR, EZBOOT_VERSION);
+        Log(LL_INFO, 0, "Starting %s v%s", LUCIDLOADER_NAME_STR, LUCIDLOADER_VERSION);
         Log(LL_INFO, 0, "Log date: %02d/%02d/%04d %02d:%02d:%02d.", 
             timeSinceInit.Day, timeSinceInit.Month, timeSinceInit.Year,
             timeSinceInit.Hour, timeSinceInit.Minute, timeSinceInit.Second);

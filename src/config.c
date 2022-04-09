@@ -6,7 +6,7 @@
 #include "shellerr.h"
 
 // Entries config path
-#define CFG_PATH ("\\EFI\\ezboot\\ezboot-config.cfg")
+#define CFG_PATH ("\\EFI\\lucidloader\\lucidloader-config.cfg")
 
 #define CFG_LINE_DELIMITER      ("\n")
 #define CFG_ENTRY_DELIMITER     ("\n\n")
