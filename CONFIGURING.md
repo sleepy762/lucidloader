@@ -4,7 +4,7 @@
 
 The configuration file is named `ezboot-config.cfg` and it is saved in the directory of the bootloader `ESP/EFI/ezboot` (ESP is the EFI System Partition, which is usually mounted as `/boot` or `/boot/efi`). 
 
-Every entry in the config file will be a block of text that must contain the `name` and `path` keys. Each entry is separated by an empty line. In addition, the first entry is considered as the default entry.
+Every entry in the config file will be a section of text that must contain the `name` and `path` keys OR `name` and `kerneldir` keys. Each entry is separated by an empty line. In addition, the first entry is considered as the default entry.
 
 The path specified in `path`, begins at the mount point of the EFI System Partition(ESP). For instance, if it is mounted at `/boot`, then `/boot` is the root directory for the bootloader. You can find out where the ESP is mounted using `lsblk`. It is also worth noting that the delimiter between directories in UEFI is `\` and not `/`. Spaces are also allowed and don't need to be escaped. So an example path will look like this: `\EFI\Arch Linux\vmlinuz-linux`. 
 

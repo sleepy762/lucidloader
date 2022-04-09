@@ -4,6 +4,12 @@ A UEFI bootloader that aims to be light and easy to use.
 
 This bootloader is being developed using the [POSIX-UEFI](https://gitlab.com/bztsrc/posix-uefi) wrapper library.
 
+## Features
+- Very lightweight.
+- Simple and easy to use configuration.
+- Shell environment with useful commands.
+- Text editor.
+- Able to boot operating systems and UEFI apps.
 
 ## Dependencies
 
