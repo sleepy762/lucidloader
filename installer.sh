@@ -14,13 +14,13 @@ mkdir ${lucidloader_dir} 2>/dev/null
 cp lucidloader_x64.efi ${lucidloader_dir} || exit 1
 touch ${lucidloader_dir}/config.cfg
 
-# Parses lsblk to get the boot disk + partition
-boot_disk="/dev/$(lsblk | grep boot | cut -c7- | cut -d " " -f 1)"
-boot_partition="${boot_disk: -1}"
-boot_disk="${boot_disk%?}"
+# Parses lsblk to get the boot disk + partition number
+boot_disk="/dev/$(lsblk -no pkname $(findmnt -n ${mounted_boot_dir} | awk '{print $2}'))"
+boot_disk_with_partnum="$(lsblk | grep boot | cut -c7- | cut -d " " -f 1)"
+boot_partition_num="${boot_disk_with_partnum: -1}"
 
 # Create the UEFI boot entry, if it doesn't exist already
-efibootmgr | grep lucidloader >/dev/null || efibootmgr -c -d $boot_disk -p $boot_partition -L lucidloader -l \\EFI\\lucidloader\\lucidloader_x64.efi >/dev/null
+efibootmgr | grep lucidloader >/dev/null || efibootmgr -c -d $boot_disk -p $boot_partition_num -L lucidloader -l \\EFI\\lucidloader\\lucidloader_x64.efi >/dev/null
 
 echo "Installation complete! Make sure to configure the bootloader."
 echo "The configuration file is located at ${lucidloader_dir}/config.cfg"

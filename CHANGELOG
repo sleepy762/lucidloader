@@ -10,6 +10,8 @@ Version 1.2.0 - 01/04/2022
 - Added timer to the menu which will automatically boot the 1st entry when it times out.
 - Added license for the bootloader.
 - Changed the name of the bootloader.
+- Changed the config name to "config.cfg" and log name to "log.txt". I promise it's the last time.
+- Fixed bug in installer.sh where it didn't work on systems with boot partitions mounted on NVMe drives.
 
 Version 1.1 - 17/03/2022
 - Added -O2 compiler flag to the Makefile.
