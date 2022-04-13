@@ -10,6 +10,7 @@ This bootloader is being developed using the [POSIX-UEFI](https://gitlab.com/bzt
 - Shell environment with useful commands.
 - Text editor.
 - Able to boot operating systems and UEFI apps.
+- Can automatically detect a Linux kernel along with its version.
 
 ## Dependencies
 
