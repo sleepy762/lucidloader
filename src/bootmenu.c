@@ -16,17 +16,25 @@
 #define BAD_CONFIGURATION_ERR_MSG ("An error has occurred while parsing the config file.")
 #define FAILED_BOOT_ERR_MSG ("An error has occurred during the booting process.")
 
+/* Menu functions */
 static void BootMenu(boot_entry_array_s* entryArr);
 static void FailMenu(const char_t* errorMsg);
 
+/* Wrappers */
 static inline void BootHighlightedEntry(boot_entry_array_s* entryArr);
 static inline void PrintHighlightedEntryInfo(boot_entry_array_s* entryArr);
 
+/* Etc */
 static void InitBootMenuConfig(void);
 static void BootEntry(boot_entry_s* selectedEntry);
 static void PrintEntryInfo(boot_entry_s* selectedEntry);
-static void PrintBootMenu(boot_entry_array_s* entryArr);
 static void ScrollEntryList(void);
+
+/* Output */
+static void PrintBootMenu(boot_entry_array_s* entryArr);
+static void PrintMenuEntries(boot_entry_array_s* entryArr);
+static inline void PrintInstructions(void);
+static void PrintTimeout(void);
 
 boot_menu_cfg_s bmcfg;
 
@@ -87,11 +95,8 @@ static void InitBootMenuConfig(void)
     bmcfg.bootImmediately = FALSE;
 }
 
-static void PrintBootMenu(boot_entry_array_s* entryArr)
+static void PrintMenuEntries(boot_entry_array_s* entryArr)
 {
-    ST->ConOut->ClearScreen(ST->ConOut);
-    PrintBootloaderVersion();
-
     int32_t index = bmcfg.entryOffset; // The index at which the printed entries begin
 
     // Print how many hidden entries are at the top of the list
@@ -134,17 +139,34 @@ static void PrintBootMenu(boot_entry_array_s* entryArr)
     {
         putchar('\n');
     }
-    
-    printf("\nUse the up and down arrow keys to select which entry is highlighted.\n"
-           "Press enter to boot the selected entry, 'c' to open the shell\n"
-           "'i' to get info about a highlighted entry, or F5 to refresh the menu.\n");
+}
 
-    // Show the timeout
+static inline void PrintInstructions(void)
+{
+    printf("\nUse the up and down arrow keys to select which entry is highlighted.\n"
+        "Press enter to boot the selected entry, 'c' to open the shell\n"
+        "'i' to get info about a highlighted entry, or F5 to refresh the menu.\n");
+}
+
+static void PrintTimeout(void)
+{
+    ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_WHITE, EFI_BLACK));
+    printf("The highlighted selection will be booted automatically in %d seconds.\n", bmcfg.timeoutSeconds);
+    ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
+}
+
+static void PrintBootMenu(boot_entry_array_s* entryArr)
+{
+    ST->ConOut->ClearScreen(ST->ConOut);
+    PrintBootloaderVersion();
+
+    PrintMenuEntries(entryArr);
+    
+    PrintInstructions();
+
     if (!bmcfg.timeoutCancelled)
     {
-        ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_WHITE, EFI_BLACK));
-        printf("The highlighted selection will be booted automatically in %d seconds.\n", bmcfg.timeoutSeconds);
-        ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
+        PrintTimeout();
     }
 }
 
