@@ -27,16 +27,17 @@ timeout = 5
 # Example of a basic entry
 name=Arch Linux
 path=EFI\Arch\vmlinuz-linux
-args=root=UUID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx initrd=EFI\Arch\initramfs-linux.img rw loglevel=3
+args=root=UUID=4ec51638-9069-4a28-9b85-6f2352991ee5 initrd=EFI\Arch\initramfs-linux.img rw loglevel=3
 
 # Example usage of kerneldir
 # the kernel name is 'vmlinuz-5.15.7-gentoo', and the initramfs is 'initramfs-5.15.7-gentoo.img'
 name=Gentoo
 kerneldir=EFI\Gentoo
-args=root=UUID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx initrd=EFI\Gentoo\initramfs-%v-gentoo.img rw loglevel=3
+args=root=UUID=cf2aba83-e914-4613-89fd-9667bb734779 initrd=EFI\Gentoo\initramfs-%v-gentoo.img rw loglevel=3
 
+# This path is the same on every system with Windows 10, so you can copy this path and use it to boot Windows
 name=Windows
-path=EFI\Boot\Microsoft\bootmgfw.efi
+path=EFI\Microsoft\Boot\bootmgfw.efi
 
 # The bootloader can also load any UEFI app and not just operating systems
 name=Some UEFI App
@@ -52,3 +53,23 @@ These are special keys that you can put anywhere in the config file and they wil
 
 Available keys:
 - `timeout` - Controls the amount of time the bootloader waits before automatically booting the FIRST entry, if no keys are pressed during the count down. Setting the value to `0` will boot the first entry immediately. Setting the value to `-1` will disable the timeout.
+
+## Linux Kernel Args
+
+This is not a comprehensive explanation about Linux kernel parameters, it's here to help configure the bootloader to be able to boot a Linux kernel.
+
+In order to boot a Linux kernel, there are some arguments that it must get. Note that each kernel argument must be separated with a space. Refer to the example config above to see how to pass args to the kernel with the bootloader.
+
+First, we have to specify the UUID of the root filesystem. You can find what partition the root directory is mounted at with `lsblk`, and then get the UUID of that partition with `blkid`. The argument format is `root=UUID=uuid here`, for example:
+
+```root=UUID=4ec51638-9069-4a28-9b85-6f2352991ee5```
+
+Second, if you have an initramfs file, it must also be specified in the args. The argument format is `initrd=path to initramfs file`. The path must have backslashes, and not forward slashes.
+
+```initrd=EFI\Gentoo\initramfs-%v-gentoo.img```
+
+To also load a microcode, we use the same `initrd` arg and pass a path to the microcode file.
+
+It's also recommended to add the arguments `rw` and `loglevel=3`.
+
+Read more about Linux kernel parameters [here](https://www.kernel.org/doc/html/latest/admin-guide/kernel-parameters.html).
