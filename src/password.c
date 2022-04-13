@@ -13,9 +13,15 @@
 boolean_t ShellLoginWithPassword()
 {
     char_t* encPassword = GetFileContent(PASS_FILE_PATH, NULL);
-    if(encPassword == NULL && errno == ENOENT) // Password doesn't exist
+    // Check if password doesn't exist
+    if((encPassword == NULL && errno == ENOENT) || strlen(encPassword) == 0)
     {
         return TRUE;
+    }
+    else if (encPassword == NULL)
+    {
+        Log(LL_ERROR, 0, "Failed to open password file.");
+        return FALSE;
     }
 
     ST->ConOut->ClearScreen(ST->ConOut);
@@ -58,6 +64,13 @@ boolean_t CreateShellPassword()
     // Get and encrypt the password
     printf("Enter a new password: ");
     GetInputString(buffer, MAX_PASS_LEN, TRUE);
+
+    // Don't write empty password, but consider it successful
+    if (strlen(buffer) == 0)
+    {
+        fclose(out);
+        return TRUE;
+    }
 	
     HashString(buffer);
     
@@ -65,6 +78,7 @@ boolean_t CreateShellPassword()
     size_t ret = fwrite(buffer, 1, MAX_PASS_LEN, out);
     if (ret == 0)
     {
+        fclose(out);
         return FALSE;
     }
     fclose(out);

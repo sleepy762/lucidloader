@@ -112,9 +112,8 @@ boot_entry_array_s ParseConfig(void)
             }
             char_t* key = NULL;
             char_t* value = NULL;
-            ParseKeyValuePair(line, CFG_KEY_VALUE_DELIMITER, &key, &value);
 
-            if (key == NULL || value == NULL)
+            if (ParseKeyValuePair(line, CFG_KEY_VALUE_DELIMITER, &key, &value) == FALSE)
             {
                 free(key);
                 free(value);
@@ -231,6 +230,7 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
             LogKeyRedefinition(key, entry->kernelScanInfo->kernelDirectory, value);
             return FALSE;
         }
+
         entry->kernelScanInfo = malloc(sizeof(kernel_scan_info_s));
         entry->kernelScanInfo->kernelDirectory = value;
         entry->isDirectoryToKernel = TRUE;
@@ -281,12 +281,13 @@ static boolean_t EditRuntimeConfig(const char_t* key, char_t* value)
 }
 
 // Stores the key and value in separate strings, key and value are OUTPUT parameters
-void ParseKeyValuePair(char_t* token, const char_t delimiter, char_t** key, char_t** value)
+// Return value of FALSE means that there was a failure and the caller may have to free the key or value
+boolean_t ParseKeyValuePair(char_t* token, const char_t delimiter, char_t** key, char_t** value)
 {
     int32_t valueOffset = GetValueOffset(token, delimiter);
     if (valueOffset == -1)
     {
-        return;
+        return FALSE;
     }
 
     size_t tokenLen = strlen(token);
@@ -296,13 +297,13 @@ void ParseKeyValuePair(char_t* token, const char_t delimiter, char_t** key, char
     if (*key == NULL)
     {
         Log(LL_ERROR, 0, "Failed to allocate memory for the key string.");
-        return;
+        return FALSE;
     }
     *value = malloc(valueLength + 1);
     if (*value == NULL)
     {
         Log(LL_ERROR, 0, "Failed to allocate memory for the value string.");
-        return;
+        return FALSE;
     }
 
     memcpy(*key, token, valueOffset - 1);
@@ -310,6 +311,7 @@ void ParseKeyValuePair(char_t* token, const char_t delimiter, char_t** key, char
 
     memcpy(*value, token + valueOffset, valueLength);
     (*value)[valueLength] = CHAR_NULL;
+    return TRUE;
 }
 
 // Adds an entry to the end of the entries array
@@ -430,6 +432,11 @@ static char_t* GetKernelVersionString(const char_t* fullKernelFileName)
     // Store the version string in a dynamic buffer
     int32_t versionStrLen = kernelFileName - startOfVersionStr;
     char_t* versionStr = malloc(versionStrLen + 1);
+    if (versionStr == NULL)
+    {
+        return NULL;
+    }
+
     memcpy(versionStr, startOfVersionStr, versionStrLen);
     versionStr[versionStrLen] = CHAR_NULL;
 

@@ -207,7 +207,7 @@ char_t* TrimSpaces(char_t* str)
     {
         end--;
     }
-    end[1] = 0;
+    end[1] = CHAR_NULL;
 
     return str;
 }
@@ -389,6 +389,7 @@ int32_t CopyFile(const char_t* src, const char_t* dest)
     FILE* destFP = fopen(dest, "w");
     if (destFP == NULL)
     {
+        fclose(srcFP);
         return errno;
     }
 
@@ -411,6 +412,8 @@ int32_t CopyFile(const char_t* src, const char_t* dest)
             fwrite(buf, 1, bytesToCopy, destFP) != bytesToCopy)
         {
             Log(LL_ERROR, 0, "Error during file copy: %s", GetCommandErrorInfo(errno));
+            fclose(destFP);
+            fclose(srcFP);
             return errno;
         }
     }
