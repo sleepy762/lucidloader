@@ -51,6 +51,7 @@ void StartBootloader(void)
     {
         ST->ConOut->ClearScreen(ST->ConOut);
         ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
+        ST->ConOut->EnableCursor(ST->ConOut, FALSE);
         PrintBootloaderVersion();
         printf("Parsing config...\n");
 
