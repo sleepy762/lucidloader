@@ -1,3 +1,16 @@
+Version 1.2.1 - 13/04/2022
+- Fixed example config in CONFIGURING.md and added a short explanation about Linux kernel args.
+- Added note about secure boot. (The bootloader doesn't work with secure boot enabled, for now at least)
+- Fixed bugs in the installer script.
+- Removed flicker from the main menu.
+- Removed flicker from the editor.
+- Removed unnecessary calls to ST->ConOut->QueryMode to get the console size, the screen rows and columns are global variables now.
+- Fixed memory leaks.
+- Fixed potential way to bypass password locked shells.
+- It's no longer possible to set an empty password.
+- Fixed incorrect error message when copying a file and there's no more disk space left.
+- Fixed status bar being 1 character away from the edge of the right side of the screen in the editor.
+
 Version 1.2.0 - 01/04/2022
 - Added new configuration key - `kerneldir`. Refer to CONFIGURING.md to get more info.
 - Added license in editor.
