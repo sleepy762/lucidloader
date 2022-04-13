@@ -284,6 +284,7 @@ static void PrintEntryInfo(boot_entry_s* selectedEntry)
 
     printf("\nPress any key to return...");
     GetInputKey();
+    ST->ConOut->ClearScreen(ST->ConOut);
 }
 
 static inline void PrintHighlightedEntryInfo(boot_entry_array_s* entryArr)
