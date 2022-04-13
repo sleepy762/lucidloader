@@ -68,7 +68,7 @@ Second, if you have an initramfs file, it must also be specified in the args. Th
 
 ```initrd=EFI\Gentoo\initramfs-%v-gentoo.img```
 
-To also load a microcode, we use the same `initrd` arg and pass a path to the microcode file.
+To load a microcode, add another `initrd` arg and pass a path to the microcode file.
 
 It's also recommended to add the arguments `rw` and `loglevel=3`.
 
