@@ -55,7 +55,7 @@ void ChainloadImage(char_t* path, char_t* args)
     status = BS->StartImage(imgHandle, NULL, NULL);
     if (EFI_ERROR(status))
     {
-        Log(LL_ERROR, status, "Failed to start the image '%s' (chainload).", path);
+        Log(LL_ERROR, status, "Failed to start the image '%s'.", path);
         return;
     }
 

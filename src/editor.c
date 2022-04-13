@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "shellerr.h"
 #include "bootutils.h"
 #include "logger.h"
+#include "screen.h"
 
 #define EDITOR_STATUS_MSG_ARR_SIZE (80)
 #define EDITOR_WELCOME_MSG_ARR_SIZE (80)
@@ -71,8 +72,8 @@ typedef struct text_row_s
 typedef struct editor_config_s
 {
     // Size of the screen in rows and columns
-    intn_t screenRows;
-    intn_t screenCols;
+    intn_t editorRows;
+    intn_t editorCols;
 
     // The current cursor location
     intn_t cx;
@@ -185,17 +186,8 @@ static void FreeEditorMemory(void)
 
 static void InitEditorConfig(void)
 {
-    // Query the amount of rows and columns
-    efi_status_t status = ST->ConOut->QueryMode(ST->ConOut, ST->ConOut->Mode->Mode, 
-        (uintn_t*)&cfg.screenCols, (uintn_t*)&cfg.screenRows);
-    if (EFI_ERROR(status))
-    {
-        Log(LL_ERROR, status, "Failed to get console width and height.");
-        // Use default values on error
-        cfg.screenCols = DEFAULT_CONSOLE_COLUMNS;
-        cfg.screenRows = DEFAULT_CONSOLE_ROWS;
-    }
-    cfg.screenRows -= 2; // Making room for the status messages
+    cfg.editorCols = screenCols;
+    cfg.editorRows = screenRows - 2; // Making room for the status messages
     cfg.cx = 0;
     cfg.cy = 0;
     cfg.rx = 0;
@@ -293,14 +285,14 @@ static boolean_t ProcessEditorInput(void)
             }
             else if (scancode == PAGEDOWN_KEY_SCANCODE)
             {                
-                cfg.cy = cfg.rowOffset + cfg.screenRows - 1;
+                cfg.cy = cfg.rowOffset + cfg.editorRows - 1;
                 if (cfg.cy > cfg.numRows)
                 {
                     cfg.cy = cfg.numRows;
                 }
             }
 
-            intn_t times = cfg.screenRows;
+            intn_t times = cfg.editorRows;
             while (times--)
             {
                 EditorMoveCursor(scancode == PAGEUP_KEY_SCANCODE ? 
@@ -358,13 +350,13 @@ static void AppendEditorWelcomeMessage(buffer_s* buf)
     // Add our welcome message into a buffer
     char_t welcome[EDITOR_WELCOME_MSG_ARR_SIZE];
     int32_t welcomelen = snprintf(welcome, sizeof(welcome), "LucidLoader Editor");
-    if (welcomelen > cfg.screenCols)
+    if (welcomelen > cfg.editorCols)
     {
-        welcomelen = cfg.screenCols;
+        welcomelen = cfg.editorCols;
     }
 
     // Add padding to center the welcome message
-    intn_t padding = (cfg.screenCols - welcomelen) / 2;
+    intn_t padding = (cfg.editorCols - welcomelen) / 2;
     if (padding)
     {
         AppendToBuffer(buf, "~", 1);
@@ -387,7 +379,7 @@ static void EditorRefreshScreen(void)
     EditorDrawRows(&buf);
 
     ST->ConOut->EnableCursor(ST->ConOut, FALSE);
-    ST->ConOut->ClearScreen(ST->ConOut);
+    ST->ConOut->SetCursorPosition(ST->ConOut, 0, 0);
 
     PrintBuffer(&buf);
     EditorDrawStatusBar();
@@ -403,14 +395,14 @@ static void EditorRefreshScreen(void)
 
 static void EditorDrawRows(buffer_s* buf)
 {
-    for (intn_t y = 0; y < cfg.screenRows; y++)
+    for (intn_t y = 0; y < cfg.editorRows; y++)
     {
         // Add offset to know what row of the file the user is currently at
         intn_t fileRow = y + cfg.rowOffset;
         if (fileRow >= cfg.numRows)
         {
             // Write a welcome message if no file was loaded
-            if (cfg.numRows == 0 && y == cfg.screenRows / 3)
+            if (cfg.numRows == 0 && y == cfg.editorRows / 3)
             {
                 AppendEditorWelcomeMessage(buf);
             }
@@ -426,9 +418,9 @@ static void EditorDrawRows(buffer_s* buf)
             {
                 len = 0;
             }
-            if (len >= cfg.screenCols)
+            if (len >= cfg.editorCols)
             {
-                len = cfg.screenCols - 1;
+                len = cfg.editorCols - 1;
             }
             AppendToBuffer(buf, &cfg.row[fileRow].render[cfg.colOffset], len);
         }
@@ -569,18 +561,18 @@ static void EditorScroll(void)
     {
         cfg.rowOffset = cfg.cy;
     }
-    if (cfg.cy >= cfg.rowOffset + cfg.screenRows) // Scroll down
+    if (cfg.cy >= cfg.rowOffset + cfg.editorRows) // Scroll down
     {
-        cfg.rowOffset = cfg.cy - cfg.screenRows + 1;
+        cfg.rowOffset = cfg.cy - cfg.editorRows + 1;
     }
 
     if (cfg.rx < cfg.colOffset) // Scroll left
     {
         cfg.colOffset = cfg.rx;
     }
-    if (cfg.rx >= cfg.colOffset + cfg.screenCols) // Scroll right
+    if (cfg.rx >= cfg.colOffset + cfg.editorCols) // Scroll right
     {
-        cfg.colOffset = cfg.rx - cfg.screenCols + 1;
+        cfg.colOffset = cfg.rx - cfg.editorCols + 1;
     }
 }
 
@@ -600,16 +592,16 @@ static void EditorDrawStatusBar(void)
     int32_t rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d",
         cfg.cy + 1, cfg.numRows);
 
-    if (len >= cfg.screenCols)
+    if (len >= cfg.editorCols)
     {
-        len = cfg.screenCols - 1;
+        len = cfg.editorCols - 1;
     }
     printf("%s", status); // First half of the status
 
-    while (len < cfg.screenCols - 1)
+    while (len < cfg.editorCols - 1)
     {
         // Print the other half of the status (aligned to the right side)
-        if (cfg.screenCols - 1 - len == rlen)
+        if (cfg.editorCols - len == rlen)
         {
             printf("%s", rstatus);
             break;
@@ -622,7 +614,6 @@ static void EditorDrawStatusBar(void)
     }
     // Reset the colors
     ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
-    putchar('\n');
 }
 
 static void EditorSetStatusMessage(const char_t* fmt, ...)
@@ -634,9 +625,9 @@ static void EditorSetStatusMessage(const char_t* fmt, ...)
 
     // Ensure we don't go out of bounds
     intn_t msglen = strlen(cfg.statusmsg);
-    if (msglen >= cfg.screenCols)
+    if (msglen >= cfg.editorCols)
     {
-        cfg.statusmsg[cfg.screenCols - 1] = CHAR_NULL;
+        cfg.statusmsg[cfg.editorCols - 1] = CHAR_NULL;
     }
     cfg.statusmsgTime = time(NULL);
 }
@@ -649,6 +640,19 @@ static void EditorDrawMessageBar(void)
     {
         printf("%s", cfg.statusmsg);
     }
+
+    // Special buffer for the last row of the screen which is 1 character smaller
+    // This is to prevent the cursor from moving down a row and scrolling the screen
+    const int32_t size = screenCols - ST->ConOut->Mode->CursorColumn - 1;
+    if (size <= 0)
+    {
+        return;
+    }
+
+    char_t buf[size];
+    memset(buf, ' ', size);
+    buf[size - 1] = CHAR_NULL;
+    printf("%s", buf);
 }
 
 static void EditorInsertRow(int32_t at, char_t* str, size_t len)
@@ -1056,7 +1060,15 @@ void PrintBuffer(buffer_s* buf)
     // Printing this way allows printing of binary files
     for (int32_t i = 0; i < buf->len; i++)
     {
-        putchar(buf->b[i]);
+        if (buf->b[i] == CHAR_LINEFEED)
+        {
+            // Overwrite the rest of the row
+            PadRow();
+        }
+        else
+        {
+            putchar(buf->b[i]);
+        }
     }
 }
 

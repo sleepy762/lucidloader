@@ -2,6 +2,7 @@
 #include "logger.h"
 #include "bootutils.h"
 #include "shellerr.h"
+#include "screen.h"
 
 #define DIRECTORY_DELIM ('\\')
 #define DIRECTORY_DELIM_STR ("\\")
@@ -207,7 +208,7 @@ char_t* TrimSpaces(char_t* str)
     {
         end--;
     }
-    end[1] = 0;
+    end[1] = CHAR_NULL;
 
     return str;
 }
@@ -389,6 +390,7 @@ int32_t CopyFile(const char_t* src, const char_t* dest)
     FILE* destFP = fopen(dest, "w");
     if (destFP == NULL)
     {
+        fclose(srcFP);
         return errno;
     }
 
@@ -410,8 +412,12 @@ int32_t CopyFile(const char_t* src, const char_t* dest)
         if (fread(buf, 1, bytesToCopy, srcFP) != bytesToCopy ||
             fwrite(buf, 1, bytesToCopy, destFP) != bytesToCopy)
         {
-            Log(LL_ERROR, 0, "Error during file copy: %s", GetCommandErrorInfo(errno));
-            return errno;
+            // errno may change here after each call if there is no more space left on disk
+            int32_t err = errno;
+            Log(LL_ERROR, 0, "Error during file copy: %s", GetCommandErrorInfo(err));
+            fclose(destFP);
+            fclose(srcFP);
+            return err;
         }
     }
     fclose(destFP);
@@ -493,4 +499,28 @@ char_t* StringReplace(const char_t* orig, const char_t* pattern, const char_t* r
     }
     strcpy(tmp, orig);
     return result;
+}
+
+// Prints space characters to fill an entire screen row. Used to overwrite dead text.
+void PrintEmptyLine(void)
+{
+    // Including null char
+    int32_t amount = screenCols + 1;
+
+    char_t buf[amount];
+    memset(buf, ' ', amount);
+    buf[screenCols] = CHAR_NULL;
+    printf("%s", buf);
+}
+
+// Prints space characters to fill the row. Used to overwrite dead text.
+void PadRow(void)
+{
+    // Find the amount of spaces left to print, and add 1 for the null char
+    int32_t amount = screenCols - ST->ConOut->Mode->CursorColumn + 1;
+
+    char_t buf[amount];
+    memset(buf, ' ', amount);
+    buf[amount - 1] = CHAR_NULL;
+    printf("%s", buf);
 }
