@@ -22,7 +22,7 @@ Let's see an example.
 
 ```
 # Runtime settings (see below)
-timeout = 5
+timeout=5
 
 # Example of a basic entry
 name=Arch Linux
