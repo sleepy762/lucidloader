@@ -361,6 +361,7 @@ static void FailMenu(const char_t* errorMsg)
                 break;
         }
     }
+    ST->ConOut->ClearScreen(ST->ConOut);
 }
 
 void ShowLogFile(void)
