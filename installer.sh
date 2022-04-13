@@ -6,7 +6,7 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-mounted_boot_dir=$(lsblk | awk '{print $7}' | grep boot)
+mounted_boot_dir="$(lsblk | awk '{print $7}' | grep '/boot')"
 lucidloader_dir="${mounted_boot_dir}/EFI/lucidloader"
 
 # Move the bootloader into the created directory
@@ -15,9 +15,9 @@ cp lucidloader_x64.efi ${lucidloader_dir} || exit 1
 touch ${lucidloader_dir}/config.cfg
 
 # Parses lsblk to get the boot disk + partition number
-boot_disk="/dev/$(lsblk -no pkname $(findmnt -n ${mounted_boot_dir} | awk '{print $2}'))"
-boot_disk_with_partnum="$(lsblk | grep boot | cut -c7- | cut -d " " -f 1)"
-boot_partition_num="${boot_disk_with_partnum: -1}"
+full_dev_name="$(findmnt -n ${mounted_boot_dir} | awk '{print $2}')"
+boot_disk="/dev/$(lsblk -no pkname ${full_dev_name})"
+boot_partition_num="$(partx -g ${full_dev_name} | awk '{print $1}')"
 
 # Create the UEFI boot entry, if it doesn't exist already
 efibootmgr | grep lucidloader >/dev/null || efibootmgr -c -d $boot_disk -p $boot_partition_num -L lucidloader -l \\EFI\\lucidloader\\lucidloader_x64.efi >/dev/null
