@@ -601,7 +601,7 @@ static void EditorDrawStatusBar(void)
     while (len < cfg.editorCols - 1)
     {
         // Print the other half of the status (aligned to the right side)
-        if (cfg.editorCols - 1 - len == rlen)
+        if (cfg.editorCols - len == rlen)
         {
             printf("%s", rstatus);
             break;
@@ -614,7 +614,6 @@ static void EditorDrawStatusBar(void)
     }
     // Reset the colors
     ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
-    putchar('\n');
 }
 
 static void EditorSetStatusMessage(const char_t* fmt, ...)
