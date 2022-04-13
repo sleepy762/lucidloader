@@ -411,10 +411,12 @@ int32_t CopyFile(const char_t* src, const char_t* dest)
         if (fread(buf, 1, bytesToCopy, srcFP) != bytesToCopy ||
             fwrite(buf, 1, bytesToCopy, destFP) != bytesToCopy)
         {
-            Log(LL_ERROR, 0, "Error during file copy: %s", GetCommandErrorInfo(errno));
+            // errno may change here after each call if there is no more space left on disk
+            int32_t err = errno;
+            Log(LL_ERROR, 0, "Error during file copy: %s", GetCommandErrorInfo(err));
             fclose(destFP);
             fclose(srcFP);
-            return errno;
+            return err;
         }
     }
     fclose(destFP);
