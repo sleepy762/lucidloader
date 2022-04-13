@@ -379,7 +379,7 @@ static void EditorRefreshScreen(void)
     EditorDrawRows(&buf);
 
     ST->ConOut->EnableCursor(ST->ConOut, FALSE);
-    ST->ConOut->ClearScreen(ST->ConOut);
+    ST->ConOut->SetCursorPosition(ST->ConOut, 0, 0);
 
     PrintBuffer(&buf);
     EditorDrawStatusBar();
@@ -641,6 +641,19 @@ static void EditorDrawMessageBar(void)
     {
         printf("%s", cfg.statusmsg);
     }
+
+    // Special buffer for the last row of the screen which is 1 character smaller
+    // This is to prevent the cursor from moving down a row and scrolling the screen
+    const int32_t size = screenCols - ST->ConOut->Mode->CursorColumn - 1;
+    if (size <= 0)
+    {
+        return;
+    }
+
+    char_t buf[size];
+    memset(buf, ' ', size);
+    buf[size - 1] = CHAR_NULL;
+    printf("%s", buf);
 }
 
 static void EditorInsertRow(int32_t at, char_t* str, size_t len)
@@ -1048,7 +1061,15 @@ void PrintBuffer(buffer_s* buf)
     // Printing this way allows printing of binary files
     for (int32_t i = 0; i < buf->len; i++)
     {
-        putchar(buf->b[i]);
+        if (buf->b[i] == CHAR_LINEFEED)
+        {
+            // Overwrite the rest of the row
+            PadRow();
+        }
+        else
+        {
+            putchar(buf->b[i]);
+        }
     }
 }
 
