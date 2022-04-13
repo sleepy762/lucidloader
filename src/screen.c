@@ -2,6 +2,9 @@
 #include "logger.h"
 #include "bootutils.h"
 
+uintn_t screenRows = DEFAULT_CONSOLE_ROWS;
+uintn_t screenCols = DEFAULT_CONSOLE_COLUMNS;
+
 boolean_t SetMaxConsoleSize(void)
 {
     int32_t maxMode = ST->ConOut->Mode->MaxMode - 1;
@@ -29,6 +32,11 @@ boolean_t SetMaxConsoleSize(void)
             maxModeCols, maxModeRows, maxMode);
         return FALSE;
     }
+
+    // Set the global variables
+    screenRows = maxModeRows;
+    screenCols = maxModeCols;
+
     Log(LL_INFO, 0, "Console size set to %dx%d (Mode %d).", 
         maxModeCols, maxModeRows, maxMode);
 

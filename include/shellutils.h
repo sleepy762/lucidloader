@@ -24,3 +24,6 @@ int32_t CreateDirectory(char_t* path);
 int32_t CopyFile(const char_t* src, const char_t* dest);
 
 char_t* StringReplace(const char_t* orig, const char_t* pattern, const char_t* replacement);
+
+void PrintEmptyLine(void);
+void PadRow(void);

@@ -7,6 +7,7 @@
 #include "bootutils.h"
 #include "editor.h"
 #include "shellutils.h"
+#include "screen.h"
 
 #define F5_KEY_SCANCODE (0x0F) // Used to refresh the menu (reparse config)
 
@@ -77,17 +78,9 @@ void StartBootloader(void)
 
 static void InitBootMenuConfig(void)
 {
-    uintn_t rows = DEFAULT_CONSOLE_ROWS;
-    efi_status_t status = ST->ConOut->QueryMode(ST->ConOut, ST->ConOut->Mode->Mode, NULL, &rows);
-    if (EFI_ERROR(status))
-    {
-        Log(LL_WARNING, status, "Failed to query the console size in the boot menu.");
-        rows = DEFAULT_CONSOLE_ROWS;
-    }
-
     // This variable defines the amount of entries that can be shown on screen at once
     // We subtract because there are rows that we have reserved for other printing
-    bmcfg.maxEntriesOnScreen = rows - 10;
+    bmcfg.maxEntriesOnScreen = screenRows - 10;
 
     bmcfg.selectedEntryIndex = 0;
     bmcfg.entryOffset = 0;
@@ -103,42 +96,48 @@ static void PrintMenuEntries(boot_entry_array_s* entryArr)
     // Print how many hidden entries are at the top of the list
     if (index > 0)
     {
-        printf(" . . . %d more\n", index);
+        printf(" . . . %d more", index);
+        PadRow();
     }
     else
     {
-        putchar('\n');
+        PrintEmptyLine();
     }
 
     for (int32_t i = 0; i < bmcfg.maxEntriesOnScreen; i++)
-    {   
+    {
         // Prevent going out of bounds
         if (index >= entryArr->numOfEntries)
         {
             break;
         }
 
+        int32_t entryNum = index + 1;
+        char_t* entryName = entryArr->entries[index].name;
         if (index == bmcfg.selectedEntryIndex) // Highlight the selected entry
         {
             ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_BLACK, EFI_LIGHTGRAY));
-            printf(" %d) %s \n", index + 1, entryArr->entries[index].name);
+            printf(" %d) %s ", entryNum, entryName);
             ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
         }
         else // Print normally
         {
-            printf(" %d) %s \n", index + 1, entryArr->entries[index].name);
+            printf(" %d) %s ", entryNum, entryName);
         }
+        PadRow();
+
         index++;
     }
 
     // Print how many hidden entries are at the bottom of the list
     if (index < entryArr->numOfEntries)
     {
-        printf(" . . . %d more\n", entryArr->numOfEntries - index);
+        printf(" . . . %d more", entryArr->numOfEntries - index);
+        PadRow();
     }
     else
     {
-        putchar('\n');
+        PrintEmptyLine();
     }
 }
 
@@ -152,13 +151,15 @@ static inline void PrintInstructions(void)
 static void PrintTimeout(void)
 {
     ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_WHITE, EFI_BLACK));
-    printf("The highlighted selection will be booted automatically in %d seconds.\n", bmcfg.timeoutSeconds);
+    printf("The highlighted selection will be booted automatically in %d seconds.", bmcfg.timeoutSeconds);
     ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
+    PadRow();
 }
 
 static void PrintBootMenu(boot_entry_array_s* entryArr)
 {
-    ST->ConOut->ClearScreen(ST->ConOut);
+    // Setting cursor position instead of clearing screen in order to prevent flicker
+    ST->ConOut->SetCursorPosition(ST->ConOut, 0, 0);
     PrintBootloaderVersion();
 
     PrintMenuEntries(entryArr);
@@ -168,6 +169,10 @@ static void PrintBootMenu(boot_entry_array_s* entryArr)
     if (!bmcfg.timeoutCancelled)
     {
         PrintTimeout();
+    }
+    else
+    {
+        PrintEmptyLine();
     }
 }
 
