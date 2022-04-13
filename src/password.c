@@ -16,6 +16,7 @@ boolean_t ShellLoginWithPassword()
     // Check if password doesn't exist
     if((encPassword == NULL && errno == ENOENT) || strlen(encPassword) == 0)
     {
+        free(encPassword);
         return TRUE;
     }
     else if (encPassword == NULL)
@@ -39,11 +40,14 @@ boolean_t ShellLoginWithPassword()
     {
         // The correct password was entered
         Log(LL_INFO, 0, "Shell login succeeded.");
+        free(encPassword);
         return TRUE;
     }
 
     Log(LL_INFO, 0, "Shell login failed with an incorrect password.");
     printf("\nIncorrect password.\n");
+    free(encPassword);
+
     sleep(SLEEP_LENGTH_FOR_BAD_PASS);
 
     return FALSE;
@@ -53,7 +57,7 @@ boolean_t ShellLoginWithPassword()
 boolean_t CreateShellPassword()
 {
     // Open the password file
-    FILE *out = fopen(PASS_FILE_PATH,"w");
+    FILE* out = fopen(PASS_FILE_PATH,"w");
     if (out == NULL)
     {
         return FALSE;
@@ -69,6 +73,7 @@ boolean_t CreateShellPassword()
     if (strlen(buffer) == 0)
     {
         fclose(out);
+        remove(PASS_FILE_PATH); // Remove the empty password file
         return TRUE;
     }
 	
