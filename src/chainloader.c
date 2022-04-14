@@ -4,6 +4,11 @@
 
 void ChainloadImage(char_t* path, char_t* args)
 {
+    // These are used later in the code, but they are initialized here for the
+    // cleanup label to work properly
+    char_t* imgData = NULL;
+    efi_loaded_image_protocol_t* imgProtocol = NULL;
+
     efi_device_path_t* devPath = NULL;
     efi_file_handle_t* rootDir = NULL;
     efi_file_handle_t* imgFileHandle = NULL;
@@ -16,11 +21,11 @@ void ChainloadImage(char_t* path, char_t* args)
 
     // Read the file data into a buffer
     uintn_t imgFileSize = 0;
-    char_t* imgData = GetFileContent(path, &imgFileSize);
+    imgData = GetFileContent(path, &imgFileSize);
     if (imgData == NULL)
     {
         Log(LL_ERROR, 0, "Failed to read file '%s' for chainloading.", path);
-        return;
+        goto cleanup;
     }
 
     // Load the image
@@ -29,12 +34,10 @@ void ChainloadImage(char_t* path, char_t* args)
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to load the image for chainloading '%s'.", path);
-        return;
+        goto cleanup;
     }
-    free(imgData);
 
     // Adds arguments to the loaded image, if there are any
-    efi_loaded_image_protocol_t* imgProtocol = NULL;
     if (args != NULL)
     {
         efi_guid_t loadedImageGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
@@ -42,7 +45,7 @@ void ChainloadImage(char_t* path, char_t* args)
         if (EFI_ERROR(status))
         {
             Log(LL_ERROR, status, "Failed to get loaded image protocol when passing args.");
-            return;
+            goto cleanup;
         }
         else
         {
@@ -56,11 +59,15 @@ void ChainloadImage(char_t* path, char_t* args)
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to start the image '%s'.", path);
-        return;
     }
 
+cleanup:
     // We shouldn't reach this, but in case the chainload fails we don't want memory leaks
-    free(imgProtocol->LoadOptions);
+    if (imgProtocol != NULL)
+    {
+        free(imgProtocol->LoadOptions);
+    }
+    free(imgData);
     imgFileHandle->Close(imgFileHandle);
     rootDir->Close(rootDir);
 }

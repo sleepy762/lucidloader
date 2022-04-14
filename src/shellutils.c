@@ -504,6 +504,12 @@ char_t* StringReplace(const char_t* orig, const char_t* pattern, const char_t* r
 // Prints space characters to fill an entire screen row. Used to overwrite dead text.
 void PrintEmptyLine(void)
 {
+    if (!screenModeSet)
+    {
+        putchar('\n');
+        return;
+    }
+
     // Including null char
     int32_t amount = screenCols + 1;
 
@@ -518,6 +524,12 @@ void PadRow(void)
 {
     // Find the amount of spaces left to print, and add 1 for the null char
     int32_t amount = screenCols - ST->ConOut->Mode->CursorColumn + 1;
+    // Prevent creating a negative sized array
+    if (amount < 1 || !screenModeSet)
+    {
+        putchar('\n');
+        return;
+    }
 
     char_t buf[amount];
     memset(buf, ' ', amount);

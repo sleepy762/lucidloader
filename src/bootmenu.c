@@ -56,8 +56,8 @@ void StartBootloader(void)
         PrintBootloaderVersion();
         printf("Parsing config...\n");
 
-        // The config parsing is in this loop because we want the menu to update in case the user
-        // decided to update the config through the bootloader shell
+        // The config parsing is in this loop because we want the menu to update in case
+        // the user decided to update the config through the bootloader shell
         boot_entry_array_s bootEntries = ParseConfig();
 
         ST->ConIn->Reset(ST->ConIn, 0);
@@ -159,7 +159,7 @@ static void PrintTimeout(void)
 static void PrintBootMenu(boot_entry_array_s* entryArr)
 {
     // Setting cursor position instead of clearing screen in order to prevent flicker
-    ST->ConOut->SetCursorPosition(ST->ConOut, 0, 0);
+    PrepareScreenForRedraw();
     PrintBootloaderVersion();
 
     PrintMenuEntries(entryArr);
@@ -361,6 +361,7 @@ static void FailMenu(const char_t* errorMsg)
                 break;
         }
     }
+    ST->ConOut->ClearScreen(ST->ConOut);
 }
 
 void ShowLogFile(void)

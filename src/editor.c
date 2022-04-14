@@ -379,7 +379,7 @@ static void EditorRefreshScreen(void)
     EditorDrawRows(&buf);
 
     ST->ConOut->EnableCursor(ST->ConOut, FALSE);
-    ST->ConOut->SetCursorPosition(ST->ConOut, 0, 0);
+    PrepareScreenForRedraw();
 
     PrintBuffer(&buf);
     EditorDrawStatusBar();
