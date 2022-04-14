@@ -93,10 +93,11 @@ efi_status_t GetFileProtocols(char_t* path, efi_device_path_t** devPath, efi_fil
 
         // Get a handle to the file
         wchar_t* wpath = StringToWideString(path);
-        status = (*rootDir)->Open((*rootDir), fileHandle, wpath, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
+        status = (*rootDir)->Open(*rootDir, fileHandle, wpath, EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
         if (EFI_ERROR(status))
         {
             Log(LL_INFO, 0, "Checking another partition for the file '%s'...", path);
+            (*rootDir)->Close(*rootDir);
         }
         free(wpath);
     }
