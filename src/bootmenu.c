@@ -78,9 +78,17 @@ void StartBootloader(void)
 
 static void InitBootMenuConfig(void)
 {
-    // This variable defines the amount of entries that can be shown on screen at once
+    // maxEntriesOnScreen defines the amount of entries that can be shown on screen at once
     // We subtract because there are rows that we have reserved for other printing
-    bmcfg.maxEntriesOnScreen = screenRows - 10;
+    const int32_t reserveRows = 10;
+    if (screenModeSet)
+    {
+        bmcfg.maxEntriesOnScreen = screenRows - reserveRows;
+    }
+    else
+    {
+        bmcfg.maxEntriesOnScreen = DEFAULT_CONSOLE_ROWS - reserveRows;
+    }
 
     bmcfg.selectedEntryIndex = 0;
     bmcfg.entryOffset = 0;
