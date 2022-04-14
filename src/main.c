@@ -9,7 +9,14 @@ int main(int argc, char** argv)
         printf("Failed to initialize logger. Logging disabled.\n");
     }
 
-    SetMaxConsoleSize();
+    // Try to set max console size and store the size in global variables
+    if (!SetMaxConsoleSize())
+    {
+        if (!QueryCurrentConsoleSize())
+        {
+            Log(LL_WARNING, 0, "Falling back to the ClearScreen method to redraw the screen.");
+        }
+    }
 
     StartBootloader();
 
