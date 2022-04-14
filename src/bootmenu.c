@@ -317,6 +317,11 @@ static void BootEntry(boot_entry_s* selectedEntry)
             selectedEntry->name, selectedEntry->imgToLoad, selectedEntry->imgArgs);
 
     ChainloadImage(selectedEntry->imgToLoad, selectedEntry->imgArgs);
+
+    // Block the flow because there may be errors written on screen
+    printf("\nFailed to boot.\n"
+            "Press any key to return...");
+    GetInputKey();
 }
 
 static void FailMenu(const char_t* errorMsg)
