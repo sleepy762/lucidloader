@@ -56,8 +56,8 @@ void StartBootloader(void)
         PrintBootloaderVersion();
         printf("Parsing config...\n");
 
-        // The config parsing is in this loop because we want the menu to update in case the user
-        // decided to update the config through the bootloader shell
+        // The config parsing is in this loop because we want the menu to update in case
+        // the user decided to update the config through the bootloader shell
         boot_entry_array_s bootEntries = ParseConfig();
 
         ST->ConIn->Reset(ST->ConIn, 0);
@@ -78,9 +78,17 @@ void StartBootloader(void)
 
 static void InitBootMenuConfig(void)
 {
-    // This variable defines the amount of entries that can be shown on screen at once
+    // maxEntriesOnScreen defines the amount of entries that can be shown on screen at once
     // We subtract because there are rows that we have reserved for other printing
-    bmcfg.maxEntriesOnScreen = screenRows - 10;
+    const int32_t reserveRows = 10;
+    if (screenModeSet)
+    {
+        bmcfg.maxEntriesOnScreen = screenRows - reserveRows;
+    }
+    else
+    {
+        bmcfg.maxEntriesOnScreen = DEFAULT_CONSOLE_ROWS - reserveRows;
+    }
 
     bmcfg.selectedEntryIndex = 0;
     bmcfg.entryOffset = 0;
@@ -159,7 +167,7 @@ static void PrintTimeout(void)
 static void PrintBootMenu(boot_entry_array_s* entryArr)
 {
     // Setting cursor position instead of clearing screen in order to prevent flicker
-    ST->ConOut->SetCursorPosition(ST->ConOut, 0, 0);
+    PrepareScreenForRedraw();
     PrintBootloaderVersion();
 
     PrintMenuEntries(entryArr);

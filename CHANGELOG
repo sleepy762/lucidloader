@@ -1,4 +1,10 @@
-Version 1.2.1 - 14/04/2022
+Version 1.2.2 - 14/04/2022
+- Added fallback method to redrawing the screen if the console size is unknown.
+- Fixed flicker when setting max mode failed but the console size could be queried.
+- Fixed issue where screen size could be incorrectly set.
+- Fixed possible negative sized array causing a bootloop.
+
+Version 1.2.1 - 13/04/2022
 - Fixed example config in CONFIGURING.md and added a short explanation about Linux kernel args.
 - Added note about secure boot. (The bootloader doesn't work with secure boot enabled, for now at least)
 - Fixed bugs in the installer script.

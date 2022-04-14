@@ -186,8 +186,18 @@ static void FreeEditorMemory(void)
 
 static void InitEditorConfig(void)
 {
-    cfg.editorCols = screenCols;
-    cfg.editorRows = screenRows - 2; // Making room for the status messages
+    const int32_t reserveRows = 2;
+    if (screenModeSet)
+    {
+        cfg.editorCols = screenCols;
+        cfg.editorRows = screenRows - reserveRows; // Making room for the status messages
+    }
+    else
+    {
+        cfg.editorCols = DEFAULT_CONSOLE_COLUMNS;
+        cfg.editorRows = DEFAULT_CONSOLE_ROWS - reserveRows;
+    }
+
     cfg.cx = 0;
     cfg.cy = 0;
     cfg.rx = 0;
@@ -379,7 +389,7 @@ static void EditorRefreshScreen(void)
     EditorDrawRows(&buf);
 
     ST->ConOut->EnableCursor(ST->ConOut, FALSE);
-    ST->ConOut->SetCursorPosition(ST->ConOut, 0, 0);
+    PrepareScreenForRedraw();
 
     PrintBuffer(&buf);
     EditorDrawStatusBar();
@@ -634,6 +644,12 @@ static void EditorSetStatusMessage(const char_t* fmt, ...)
 
 static void EditorDrawMessageBar(void)
 {
+    // Fix issue where message bar could be in a bad position
+    if (!screenModeSet && ST->ConOut->Mode->CursorColumn != 0)
+    {
+        putchar('\n');
+    }
+
     // Remove the status message after 5 seconds
     if (cfg.statusmsg[0] != CHAR_NULL &&
         time(NULL) - cfg.statusmsgTime < EDITOR_STATUS_MSG_TIMEOUT)
@@ -644,7 +660,7 @@ static void EditorDrawMessageBar(void)
     // Special buffer for the last row of the screen which is 1 character smaller
     // This is to prevent the cursor from moving down a row and scrolling the screen
     const int32_t size = screenCols - ST->ConOut->Mode->CursorColumn - 1;
-    if (size <= 0)
+    if (size < 1 || !screenModeSet)
     {
         return;
     }
