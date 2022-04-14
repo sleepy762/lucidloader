@@ -18,6 +18,10 @@ boolean_t SetMaxConsoleSize(void)
         return FALSE;
     }
 
+    // Set the global variables
+    screenRows = maxModeRows;
+    screenCols = maxModeCols;
+
     if (ST->ConOut->Mode->Mode == maxMode)
     {
         Log(LL_INFO, 0, "Max mode console size of %dx%d is already set (Mode %d).", 
@@ -32,10 +36,6 @@ boolean_t SetMaxConsoleSize(void)
             maxModeCols, maxModeRows, maxMode);
         return FALSE;
     }
-
-    // Set the global variables
-    screenRows = maxModeRows;
-    screenCols = maxModeCols;
 
     Log(LL_INFO, 0, "Console size set to %dx%d (Mode %d).", 
         maxModeCols, maxModeRows, maxMode);
