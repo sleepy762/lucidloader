@@ -645,7 +645,7 @@ static void EditorSetStatusMessage(const char_t* fmt, ...)
 static void EditorDrawMessageBar(void)
 {
     // Fix issue where message bar could be in a bad position
-    if (ST->ConOut->Mode->CursorColumn != 0)
+    if (!screenModeSet && ST->ConOut->Mode->CursorColumn != 0)
     {
         putchar('\n');
     }
