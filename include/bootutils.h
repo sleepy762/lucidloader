@@ -15,7 +15,7 @@
 
 wchar_t* StringToWideString(char_t* str);
 
-efi_status_t GetFileProtocols(char_t* path, efi_device_path_t** devPath, efi_file_handle_t** rootDir, efi_file_handle_t** fileHandle);
+efi_handle_t GetFileDeviceHandle(char_t* path);
 efi_status_t GetFileInfo(efi_file_handle_t* fileHandle, efi_file_info_t* fileInfo);
 efi_status_t ReadFile(efi_file_handle_t* fileHandle, uintn_t fileSize, char_t** buffer);
 

@@ -4,54 +4,63 @@
 
 void ChainloadImage(char_t* path, char_t* args)
 {
-    // These are used later in the code, but they are initialized here for the
-    // cleanup label to work properly
-    char_t* imgData = NULL;
-    efi_loaded_image_protocol_t* imgProtocol = NULL;
+    // Device handle must be passed to the loaded image protocol because of
+    // the way we call LoadImage()
+    efi_handle_t devHandle = GetFileDeviceHandle(path);
+    if (devHandle == NULL)
+    {
+        Log(LL_ERROR, 0, "Failed to file device handle for chainloading '%s'.", path);
+        return;
+    }
 
     efi_device_path_t* devPath = NULL;
-    efi_file_handle_t* rootDir = NULL;
-    efi_file_handle_t* imgFileHandle = NULL;
-    efi_status_t status = GetFileProtocols(path, &devPath, &rootDir, &imgFileHandle);
+    efi_guid_t devPathGuid = EFI_DEVICE_PATH_PROTOCOL_GUID;
+    efi_status_t status = BS->HandleProtocol(devHandle, &devPathGuid, (void**)&devPath);
     if (EFI_ERROR(status))
     {
-        Log(LL_ERROR, status, "Failed to get image file protocols for chainloading '%s'.", path);
+        Log(LL_ERROR, status, "Failed to handle device path.");
         return;
     }
 
     // Read the file data into a buffer
     uintn_t imgFileSize = 0;
-    imgData = GetFileContent(path, &imgFileSize);
+    char_t* imgData = GetFileContent(path, &imgFileSize);
     if (imgData == NULL)
     {
         Log(LL_ERROR, 0, "Failed to read file '%s' for chainloading.", path);
-        goto cleanup;
+        return;
     }
 
     // Load the image
     efi_handle_t imgHandle;
-    status = BS->LoadImage(0, IM, devPath, imgData, imgFileSize, &imgHandle);
+    status = BS->LoadImage(FALSE, IM, devPath, imgData, imgFileSize, &imgHandle);
     if (EFI_ERROR(status))
     {
         Log(LL_ERROR, status, "Failed to load the image for chainloading '%s'.", path);
         goto cleanup;
     }
 
-    // Adds arguments to the loaded image, if there are any
-    if (args != NULL)
+    efi_guid_t loadedImageGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
+    efi_loaded_image_protocol_t* imgProtocol = NULL;
+    status = BS->HandleProtocol(imgHandle, &loadedImageGuid, (void**)&imgProtocol);
+    if (EFI_ERROR(status))
     {
-        efi_guid_t loadedImageGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
-        status = BS->HandleProtocol(imgHandle, &loadedImageGuid, (void**)&imgProtocol);
-        if (EFI_ERROR(status))
-        {
-            Log(LL_ERROR, status, "Failed to get loaded image protocol when passing args.");
-            goto cleanup;
-        }
-        else
+        Log(LL_ERROR, status, "Failed to get loaded image protocol when passing args.");
+        goto cleanup;
+    }
+    else
+    {
+        // Adds arguments to the loaded image, if there are any
+        if (args != NULL)
         {
             imgProtocol->LoadOptions = StringToWideString(args);
             imgProtocol->LoadOptionsSize = (strlen(args) + 1) * sizeof(wchar_t);
         }
+        // Calling LoadImage() with the image data isn't going to set the device handle
+        // so we have to do it. This also fixes an EFI stub issue with linux kernels on
+        // some firmwares, where kernel efi_mains would fail with the error
+        // 'failed to handle fs_proto' 
+        imgProtocol->DeviceHandle = devHandle;
     }
 
     Log(LL_INFO, 0, "Chainloading image '%s'...", path);
@@ -63,11 +72,9 @@ void ChainloadImage(char_t* path, char_t* args)
 
 cleanup:
     // We shouldn't reach this, but in case the chainload fails we don't want memory leaks
-    if (imgProtocol != NULL)
+    if (args != NULL)
     {
         free(imgProtocol->LoadOptions);
     }
     free(imgData);
-    imgFileHandle->Close(imgFileHandle);
-    rootDir->Close(rootDir);
 }
