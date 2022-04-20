@@ -18,7 +18,7 @@ int main(int argc, char** argv)
         }
     }
 
-    StartBootloader();
+    StartBootManager();
 
     // This should never be reached
     return 1;

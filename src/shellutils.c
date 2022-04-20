@@ -23,22 +23,20 @@ char_t* ConcatPaths(const char_t* lhs, const char_t* rhs)
         Log(LL_ERROR, 0, "Failed to allocate memory to concatenate two paths.");
         return NULL;
     }
-
-    memcpy(newPath, lhs, lhsLen + 1); // Copy with null terminator
+    strncpy(newPath, lhs, lhsLen);
 
     // If the last char in lhs and the first char in rhs are *not* '\', then append it
     size_t lhsLastIndex = strlen(lhs) - 1;
     if (lhs[lhsLastIndex] != '\\' && rhs[0] != '\\')
     {
-        strcat(newPath, "\\");
+        strncpy(newPath + lhsLen, "\\", 1);
     }
     // Avoid duplicating '\' char in the path
     else if (lhs[lhsLastIndex] == '\\' && rhs[0] == '\\')
     {
         rhs++;
     }
-
-    strcat(newPath, rhs);
+    strncat(newPath, rhs, rhsLen);
 
     return newPath;
 }
@@ -181,12 +179,12 @@ char_t* MakeFullPath(char_t* pathArg, char_t* currPathPtr, boolean_t* isDynamicM
     return fullPath;
 }
 
-boolean_t IsPrintableChar(char_t c)
+boolean_t IsPrintableChar(const char_t c)
 {
     return (c  >= ' ' && c <= '~');
 }
 
-boolean_t IsSpace(char_t c)
+boolean_t IsSpace(const char_t c)
 {
     return (c == ' ' || c == CHAR_TAB);
 }

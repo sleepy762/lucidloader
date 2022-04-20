@@ -63,10 +63,10 @@ boolean_t QueryCurrentConsoleSize(void)
     return screenModeSet;
 }
 
-// Used wherever the bootloader is about to redraw the screen.
-// If the screen size was properly set, then the bootloader will try to change
+// Used wherever the boot manager is about to redraw the screen.
+// If the screen size was properly set, then the boot manager will try to change
 // the cursor position to the top left corner and redraw without clearing the screen
-// to prevent flickering. However if it wasn't set correctly, then the bootloader has
+// to prevent flickering. However if it wasn't set correctly, then the boot manager has
 // to clear the screen because it doesn't know the console size.
 void PrepareScreenForRedraw(void)
 {

@@ -13,7 +13,7 @@ typedef struct boot_entry_s
     char_t* imgToLoad; // Holds a path to the file to load
     char_t* imgArgs; // Used if the image needs args
 
-    // The purpose is to have the bootloader automatically detect the version string of
+    // The purpose is to have the boot manager automatically detect the version string of
     // the (linux, for now) kernel and substitute it wherever needed in the args, in order to
     // avoid having to edit the config file with every kernel version update
     boolean_t isDirectoryToKernel;

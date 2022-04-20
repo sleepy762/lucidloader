@@ -1,74 +1,79 @@
-# Configuring the bootloader
+# Configuring the boot manager
 
 ## Bootable entries
 
-The configuration file is named `config.cfg` and it is saved in the directory of the bootloader `ESP/EFI/lucidloader` (ESP is the EFI System Partition, which is usually mounted as `/boot` or `/boot/efi`). 
+The configuration file is named `config.cfg` and it is saved in the directory of the boot manager `ESP/EFI/lucidloader` (ESP is the EFI System Partition, which is usually mounted as `/boot` or `/boot/efi`). 
 
 Every entry in the config file will be a section of text that must contain the `name` and `path` keys OR `name` and `kerneldir` keys. Each entry is separated by an empty line. In addition, the first entry is considered as the default entry.
 
-The path specified in `path`, begins at the mount point of the EFI System Partition(ESP). For instance, if it is mounted at `/boot`, then `/boot` is the root directory for the bootloader. You can find out where the ESP is mounted using `lsblk`. It is also worth noting that the delimiter between directories in UEFI is `\` and not `/`. Spaces are also allowed and don't need to be escaped. So an example path will look like this: `\EFI\Arch Linux\vmlinuz-linux`. 
+The path specified in `path`, begins at the mount point of the EFI System Partition(ESP). For instance, if it is mounted at `/boot`, then `/boot` is the root directory for the boot manager. You can find out where the ESP is mounted using `lsblk`. It is also worth noting that the delimiter between directories in UEFI is `\` and not `/`. Spaces are also allowed and don't need to be escaped. So an example path will look like this: `\EFI\Arch Linux\vmlinuz-linux`. 
 
 Lines that start with `#` are treated as comments and will be ignored by the config parser.
 
 Available keys:
 - `name` - The name of the entry which will be shown in the boot menu.
-- `path` - The absolute path to the binary which the bootloader is going to load. **Incompatible with `kerneldir`.**
-- `kerneldir` - The absolute path to a directory with a (Linux) kernel (whose name begins with `vmlinuz`). The bootloader will automatically detect the kernel file and the kernel version. It will also replace the characters `%v` in the args with the kernel version string. As a result, the user won't have to edit the config with every kernel update. Highly recommended for Linux systems whose kernel file name can change. Make sure there is only ONE kernel in the specified directory. **Incompatible with `path`.**
-- `args` - (Optional) Arguments which will be passed to the binary. When `kerneldir` is defined and the bootloader detects the kernel version, it will substitute the characters `%v` with the kernel version string.
+- `path` - The absolute path to the binary which the boot manager is going to load. **Incompatible with `kerneldir`.**
+- `kerneldir` - The absolute path to a directory with a (Linux) kernel (whose name begins with `vmlinuz`). The boot manager will automatically detect the kernel file and the kernel version. It will also replace the characters `%v` in the args with the kernel version string. As a result, the user won't have to edit the config with every kernel update. Highly recommended for Linux systems whose kernel file name can change. Make sure there is only ONE kernel in the specified directory. **Incompatible with `path`.**
+- `args` - (Optional) Arguments which will be passed to the binary. When `kerneldir` is defined and the boot manager detects the kernel version, it will substitute the characters `%v` with the kernel version string. It's possible to have multiple lines with this key, they will be concatenated into the full arguments string in order.
+- `initrd` - (Optional) The absolute path to an initrd file(initramfs file and/or microcode file) which is used when booting Linux kernels. The boot manager will substitute the characters `%v` with the kernel version string here too. It's possible to have multiple lines with this key, they will be concatenated into the full arguments string in order. If a microcode is present, make sure its loaded before the initramfs.
 
-Writing key and value pairs is in the following format: `key=value`. Note that there are NO SPACES to the right and to the left of the `=` character. 
+Writing key and value pairs is in the following format: `key:value`. The config is flexible with spaces and you can add as many spaces as you want before and after the delimiter, the key, and the value. Only leading and trailing spaces will be trimmed.
 
-Let's see an example.
+The following is an example of a configuration file:
 
 ```
 # Runtime settings (see below)
-timeout=5
+timeout: 5
 
 # Example of a basic entry
-name=Arch Linux
-path=EFI\Arch\vmlinuz-linux
-args=root=UUID=4ec51638-9069-4a28-9b85-6f2352991ee5 initrd=EFI\Arch\initramfs-linux.img rw loglevel=3
+name:   Arch Linux
+path:   EFI\Arch\vmlinuz-linux
+initrd: EFI\Arch\intel-ucode.img
+initrd: EFI\Arch\initramfs-linux.img
+args:   root=UUID=4ec51638-9069-4a28-9b85-6f2352991ee5 rw loglevel=3
 
 # Example usage of kerneldir
 # the kernel name is 'vmlinuz-5.15.7-gentoo', and the initramfs is 'initramfs-5.15.7-gentoo.img'
-name=Gentoo
-kerneldir=EFI\Gentoo
-args=root=UUID=cf2aba83-e914-4613-89fd-9667bb734779 initrd=EFI\Gentoo\initramfs-%v-gentoo.img rw loglevel=3
+name:       Gentoo
+kerneldir:  EFI\Gentoo
+initrd:     EFI\Gentoo\intel-uc.img
+initrd:     EFI\Gentoo\initramfs-%v-gentoo.img
+args:       root=UUID=cf2aba83-e914-4613-89fd-9667bb734779 rw loglevel=3
 
 # This path is the same on every system with Windows 10, so you can copy this path and use it to boot Windows
-name=Windows
-path=EFI\Microsoft\Boot\bootmgfw.efi
+name: Windows
+path: EFI\Microsoft\Boot\bootmgfw.efi
 
-# The bootloader can also load any UEFI app and not just operating systems
-name=Some UEFI App
-path=\path\to\UEFI\app
-args=args to pass to the app
+# The boot manager can also load any UEFI app and not just operating systems
+name: Some UEFI App
+path: \path\to\UEFI\app
+args: arg1
+args: arg2
+args: arg3 arg4 arg5....
 ```
 
-Here we can see 4 entries, each entry is separated by an empty line, and each has the keys `name` and `path`, or `name` and `kerneldir`.
+There are 4 entries in this configuration, each entry is separated by an empty line, and each entry has the keys `name` and `path`, or `name` and `kerneldir`.
 
 ## Global runtime configuration
 
-These are special keys that you can put anywhere in the config file and they will change runtime configuration in the bootloader.
+These are special keys that you can put anywhere in the config file and they will change runtime configuration in the boot manager.
 
 Available keys:
-- `timeout` - Controls the amount of time the bootloader waits before automatically booting the FIRST entry, if no keys are pressed during the count down. Setting the value to `0` will boot the first entry immediately. Setting the value to `-1` will disable the timeout.
+- `timeout` - Controls the amount of time the boot manager waits before automatically booting the FIRST entry, if no keys are pressed during the count down. Setting the value to `0` will boot the first entry immediately. Setting the value to `-1` will disable the timeout.
 
 ## Linux Kernel Args
 
-This is not a comprehensive explanation about Linux kernel parameters, it's here to help configure the bootloader to be able to boot a Linux kernel.
+This is not a comprehensive explanation about Linux kernel parameters, it's here to help configure the boot manager to be able to boot a Linux kernel.
 
-In order to boot a Linux kernel, there are some arguments that it must get. Note that each kernel argument must be separated with a space. Refer to the example config above to see how to pass args to the kernel with the bootloader.
+In order to boot a Linux kernel, there are some arguments that it must get. Note that each kernel argument must be separated with a space. Refer to the example config above to see how to pass args to the kernel with the boot manager.
 
 First, we have to specify the UUID of the root filesystem. You can find what partition the root directory is mounted at with `lsblk`, and then get the UUID of that partition with `blkid`. The argument format is `root=UUID=uuid here`, for example:
 
 ```root=UUID=4ec51638-9069-4a28-9b85-6f2352991ee5```
 
-Second, if you have an initramfs file, it must also be specified in the args. The argument format is `initrd=path to initramfs file`. The path must have backslashes, and not forward slashes.
+Second, if you have an initramfs file, it should be specified with the `initrd` key, or added with `args`. The argument format is `initrd=path to initramfs file` (if using `args`). The path must have backslashes, and not forward slashes.
 
-```initrd=EFI\Gentoo\initramfs-%v-gentoo.img```
-
-To load a microcode, add another `initrd` arg and pass a path to the microcode file.
+To load a microcode, add another `initrd` key before the initramfs one, and pass a path to the microcode file. **Make sure the microcode initrd line is placed before the initramfs initrd line, the order matters.**
 
 It's also recommended to add the arguments `rw` and `loglevel=3`.
 

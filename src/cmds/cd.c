@@ -50,7 +50,7 @@ boolean_t CdCmd(cmd_args_s** args, char_t** currPathPtr)
                 PrintCommandError(cmdArg->argString, arg->argString, CMD_OUT_OF_MEMORY);
                 return FALSE;
             }
-            memcpy(*currPathPtr, dirToChangeTo, newDirLen + 1);
+            strncpy(*currPathPtr, dirToChangeTo, newDirLen);
         }
     }
     else

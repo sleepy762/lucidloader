@@ -16,5 +16,5 @@ boolean_t AboutCmd(cmd_args_s** args, char_t** currPathPtr)
 }
 const char_t* AboutBrief(void)
 {
-    return "Shows information about the system and the bootloader.";
+    return "Shows information about the system and the boot manager.";
 }

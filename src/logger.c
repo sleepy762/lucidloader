@@ -30,7 +30,7 @@ int8_t InitLogger(void)
         fclose(fp);
         RT->GetTime(&timeSinceInit, NULL);
 
-        // Print the date of the log and the version of the bootloader
+        // Print the date of the log and the version of the boot manager
         Log(LL_INFO, 0, "Starting %s v%s", LUCIDLOADER_NAME_STR, LUCIDLOADER_VERSION);
         Log(LL_INFO, 0, "Log date: %02d/%02d/%04d %02d:%02d:%02d.", 
             timeSinceInit.Day, timeSinceInit.Month, timeSinceInit.Year,

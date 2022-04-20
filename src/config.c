@@ -10,7 +10,7 @@
 
 #define CFG_LINE_DELIMITER      ("\n")
 #define CFG_ENTRY_DELIMITER     ("\n\n")
-#define CFG_KEY_VALUE_DELIMITER ('=')
+#define CFG_KEY_VALUE_DELIMITER (':')
 #define CFG_COMMENT_CHAR        ('#')
 
 #define MAX_ENTRY_NAME_LEN (70)
@@ -21,6 +21,8 @@
 #define LINUX_KERNEL_IDENTIFIER_STR ("vmlinuz")
 #define STR_TO_SUBSTITUTE_WITH_VERSION ("%v")
 
+#define INITRD_ARG_STR ("initrd=")
+
 /* Basic config parser functions */
 static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry);
 static boolean_t ValidateEntry(boot_entry_s* newEntry);
@@ -28,12 +30,14 @@ static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry);
 static boolean_t EditRuntimeConfig(const char_t* key, char_t* value);
 
 /* Functions related to the "kerneldir" key in the config */
-static void ParseKernelDirEntry(boot_entry_s* entry);
+static void PrepareKernelDirEntry(boot_entry_s* entry);
 static char_t* GetPathToKernel(const char_t* directoryPath);
 static char_t* GetKernelVersionString(const char_t* fullKernelFileName);
 
 static void FreeConfigEntry(boot_entry_s* entry);
 static inline void LogKeyRedefinition(const char_t* key, const char_t* curr, const char_t* ignored);
+
+static void AppendToArgs(boot_entry_s* entry, char_t* value);
 
 static boolean_t ignoreEntryWarnings;
 
@@ -94,9 +98,7 @@ boot_entry_array_s ParseConfig(void)
             free(configData);
             return bootEntryArr;
         }
-
-        memcpy(strippedEntry, filePtr, entryStrLen);
-        strippedEntry[entryStrLen] = CHAR_NULL;
+        strncpy(strippedEntry, filePtr, entryStrLen);
 
         // We create a copy because we need to keep the original pointer to free it
         // since strtok modifies the pointer
@@ -110,9 +112,10 @@ boot_entry_array_s ParseConfig(void)
             {
                 continue;
             }
+
+            // Get the key and value pair in this line
             char_t* key = NULL;
             char_t* value = NULL;
-
             if (ParseKeyValuePair(line, CFG_KEY_VALUE_DELIMITER, &key, &value) == FALSE)
             {
                 free(key);
@@ -120,22 +123,25 @@ boot_entry_array_s ParseConfig(void)
                 continue;
             }
 
-            if (!AssignValueToEntry(key, value, &entry))
+            // Trim all the spaces before passing into AssignValueToEntry
+            const char_t* trimmedKey = TrimSpaces(key);
+            char_t* trimmedValue = TrimSpaces(value);
+            if (!AssignValueToEntry(trimmedKey, trimmedValue, &entry))
             {
                 // Free the value if it wasn't assigned to the entry
                 free(value);
             }
-
-            free(key);
+            free(key); // Keys are not needed in the end
         }
-
         free(strippedEntry);
 
+        // Fill the necessary data like kernel path, kernel version and args
         if (entry.isDirectoryToKernel)
         {
-            ParseKernelDirEntry(&entry);
+            PrepareKernelDirEntry(&entry);
         }
 
+        // Make sure the entry is valid, if it is, then append it to the array of entries
         if (ValidateEntry(&entry))
         {
             AppendEntry(&bootEntryArr, &entry);
@@ -144,7 +150,6 @@ boot_entry_array_s ParseConfig(void)
         {
             FreeConfigEntry(&entry);
         }
-
         filePtr += ptrIncrement; // Move the pointer to the next entry block
     }
 
@@ -183,10 +188,42 @@ static boolean_t ValidateEntry(boot_entry_s* newEntry)
     return TRUE;
 }
 
+// Adds a string to the entry args. A space is appended if args aren't NULL
+static void AppendToArgs(boot_entry_s* entry, char_t* value)
+{
+    size_t argsLen = strlen(entry->imgArgs);
+    size_t valueLen = strlen(value);
+    
+    // Resize the args
+    size_t newSize = argsLen + valueLen + 1;
+    entry->imgArgs = realloc(entry->imgArgs, newSize);
+
+    // Make sure to add a null character if there are no args yet
+    if (argsLen == 0)
+    {
+        entry->imgArgs[argsLen] = CHAR_NULL;
+    }
+    else // Add a space to separate arguments
+    {
+        entry->imgArgs[argsLen] = ' ';
+        argsLen++;
+        entry->imgArgs[argsLen] = CHAR_NULL;
+    }
+    // Append the new arg
+    strncpy(entry->imgArgs + argsLen, value, valueLen);
+}
+
 // FALSE means the value wasn't assigned and should be freed
 // TRUE means that value is in use and should not be freed
 static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry)
 {
+    // Ignore empty values
+    if (value[0] == CHAR_NULL)
+    {
+        Log(LL_WARNING, 0, "Ignoring empty value given to key '%s'.", key);
+        return FALSE;
+    }
+
     if (strcmp(key, "name") == 0)
     {
         if (entry->name != NULL)
@@ -235,14 +272,24 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
         entry->kernelScanInfo->kernelDirectory = value;
         entry->isDirectoryToKernel = TRUE;
     }
+    // Concatenates args
     else if (strcmp(key, "args") == 0)
     {
-        if (entry->imgArgs != NULL)
-        {
-            LogKeyRedefinition(key, entry->imgArgs, value);
-            return FALSE;
-        }
-        entry->imgArgs = value;
+        AppendToArgs(entry, value);
+    }
+    // This key simplifies the configuration but it just takes the value and adds it to the args
+    else if (strcmp(key, "initrd") == 0)
+    {
+        size_t initrdLen = strlen(INITRD_ARG_STR);
+        size_t valueLen = strlen(value);
+        size_t totalLen = initrdLen + valueLen + 1;
+
+        // Create the full arg string 'initrd=<value>'
+        char_t argStr[totalLen];
+        strncpy(argStr, INITRD_ARG_STR, initrdLen);
+        strncpy(argStr + initrdLen, value, valueLen);
+
+        AppendToArgs(entry, argStr);
     }
     else
     {
@@ -261,7 +308,7 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
     return TRUE;
 }
 
-// Special keys that control the settings of the bootloader during runtime
+// Special keys that control the settings of the boot manager during runtime
 static boolean_t EditRuntimeConfig(const char_t* key, char_t* value)
 {
     if (strcmp(key, "timeout") == 0)
@@ -292,6 +339,11 @@ boolean_t ParseKeyValuePair(char_t* token, const char_t delimiter, char_t** key,
 
     size_t tokenLen = strlen(token);
     size_t valueLength = tokenLen - valueOffset;
+    // Ignore empty lines or pairs with no value
+    if (tokenLen == 0 || valueLength == 0)
+    {
+        return FALSE;
+    }
 
     *key = malloc(valueOffset);
     if (*key == NULL)
@@ -306,11 +358,8 @@ boolean_t ParseKeyValuePair(char_t* token, const char_t delimiter, char_t** key,
         return FALSE;
     }
 
-    memcpy(*key, token, valueOffset - 1);
-    (*key)[valueOffset - 1] = CHAR_NULL;
-
-    memcpy(*value, token + valueOffset, valueLength);
-    (*value)[valueLength] = CHAR_NULL;
+    strncpy(*key, token, valueOffset - 1);
+    strncpy(*value, token + valueOffset, valueLength);
     return TRUE;
 }
 
@@ -342,7 +391,7 @@ static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry)
 }
 
 // Called when entry->isDirectoryToKernel is TRUE to fill in the rest of the entry data
-static void ParseKernelDirEntry(boot_entry_s* entry)
+static void PrepareKernelDirEntry(boot_entry_s* entry)
 {
     kernel_scan_info_s* scanInfo = entry->kernelScanInfo;
 
@@ -437,9 +486,7 @@ static char_t* GetKernelVersionString(const char_t* fullKernelFileName)
         return NULL;
     }
 
-    memcpy(versionStr, startOfVersionStr, versionStrLen);
-    versionStr[versionStrLen] = CHAR_NULL;
-
+    strncpy(versionStr, startOfVersionStr, versionStrLen);
     return versionStr;
 }
 

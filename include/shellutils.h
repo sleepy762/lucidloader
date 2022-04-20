@@ -10,8 +10,8 @@ char_t* MakeFullPath(char_t* pathArg, char_t* currPathPtr, boolean_t* isDynamicM
 efi_input_key_t GetInputKey(void);
 void GetInputString(char_t buffer[], const uint32_t maxInputSize, boolean_t hideInput);
 
-boolean_t IsPrintableChar(char_t c);
-boolean_t IsSpace(char_t c);
+boolean_t IsPrintableChar(const char_t c);
+boolean_t IsSpace(const char_t c);
 char_t* TrimSpaces(char_t* str);
 void RemoveRepeatedChars(char_t* str, char_t toRemove);
 int32_t GetValueOffset(char_t* line, const char_t delimiter);

@@ -40,12 +40,12 @@ static void PrintTimeout(void);
 boot_menu_cfg_s bmcfg;
 
 
-void PrintBootloaderVersion(void)
+void PrintBootManagerVersion(void)
 {
     printf("%s v%s\n\n", LUCIDLOADER_NAME_STR, LUCIDLOADER_VERSION);
 }
 
-void StartBootloader(void)
+void StartBootManager(void)
 {
     InitBootMenuConfig();
     while (TRUE)
@@ -53,11 +53,11 @@ void StartBootloader(void)
         ST->ConOut->ClearScreen(ST->ConOut);
         ST->ConOut->SetAttribute(ST->ConOut, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
         ST->ConOut->EnableCursor(ST->ConOut, FALSE);
-        PrintBootloaderVersion();
+        PrintBootManagerVersion();
         printf("Parsing config...\n");
 
         // The config parsing is in this loop because we want the menu to update in case
-        // the user decided to update the config through the bootloader shell
+        // the user decided to update the config through the boot manager shell
         boot_entry_array_s bootEntries = ParseConfig();
 
         ST->ConIn->Reset(ST->ConIn, 0);
@@ -168,7 +168,7 @@ static void PrintBootMenu(boot_entry_array_s* entryArr)
 {
     // Setting cursor position instead of clearing screen in order to prevent flicker
     PrepareScreenForRedraw();
-    PrintBootloaderVersion();
+    PrintBootManagerVersion();
 
     PrintMenuEntries(entryArr);
     
@@ -276,7 +276,7 @@ static void ScrollEntryList(void)
 static void PrintEntryInfo(boot_entry_s* selectedEntry)
 {
     ST->ConOut->ClearScreen(ST->ConOut);
-    PrintBootloaderVersion();
+    PrintBootManagerVersion();
 
     printf("Entry %d\n\n", bmcfg.selectedEntryIndex + 1);
     printf("Name: %s\n"
@@ -333,7 +333,7 @@ static void FailMenu(const char_t* errorMsg)
     {
         ST->ConOut->ClearScreen(ST->ConOut);
 
-        PrintBootloaderVersion();
+        PrintBootManagerVersion();
         printf("%s\n\n", errorMsg);
         printf("1) Open shell\n"
                "2) Show log\n"
