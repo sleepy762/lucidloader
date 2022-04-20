@@ -14,12 +14,12 @@ Available keys:
 - `name` - The name of the entry which will be shown in the boot menu.
 - `path` - The absolute path to the binary which the boot manager is going to load. **Incompatible with `kerneldir`.**
 - `kerneldir` - The absolute path to a directory with a (Linux) kernel (whose name begins with `vmlinuz`). The boot manager will automatically detect the kernel file and the kernel version. It will also replace the characters `%v` in the args with the kernel version string. As a result, the user won't have to edit the config with every kernel update. Highly recommended for Linux systems whose kernel file name can change. Make sure there is only ONE kernel in the specified directory. **Incompatible with `path`.**
-- `args` - (Optional) Arguments which will be passed to the binary. When `kerneldir` is defined and the boot manager detects the kernel version, it will substitute the characters `%v` with the kernel version string. It's possible to have multiple lines with this key, they will be concatenated into the full arguments string.
-- `initrd` - (Optional) The absolute path to an initrd file(initramfs file and/or microcode file) which is used when booting Linux kernels. The boot manager will substitute the characters `%v` with the kernel version string here too. It's possible to have multiple lines with this key, they will be concatenated into the full arguments string.
+- `args` - (Optional) Arguments which will be passed to the binary. When `kerneldir` is defined and the boot manager detects the kernel version, it will substitute the characters `%v` with the kernel version string. It's possible to have multiple lines with this key, they will be concatenated into the full arguments string in order.
+- `initrd` - (Optional) The absolute path to an initrd file(initramfs file and/or microcode file) which is used when booting Linux kernels. The boot manager will substitute the characters `%v` with the kernel version string here too. It's possible to have multiple lines with this key, they will be concatenated into the full arguments string in order. If a microcode is present, make sure its loaded before the initramfs.
 
 Writing key and value pairs is in the following format: `key:value`. The config is flexible with spaces and you can add as many spaces as you want before and after the delimiter, the key, and the value. Only leading and trailing spaces will be trimmed.
 
-Let's see an example.
+The following is an example of a configuration file:
 
 ```
 # Runtime settings (see below)
