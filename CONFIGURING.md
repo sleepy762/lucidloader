@@ -14,35 +14,42 @@ Available keys:
 - `name` - The name of the entry which will be shown in the boot menu.
 - `path` - The absolute path to the binary which the boot manager is going to load. **Incompatible with `kerneldir`.**
 - `kerneldir` - The absolute path to a directory with a (Linux) kernel (whose name begins with `vmlinuz`). The boot manager will automatically detect the kernel file and the kernel version. It will also replace the characters `%v` in the args with the kernel version string. As a result, the user won't have to edit the config with every kernel update. Highly recommended for Linux systems whose kernel file name can change. Make sure there is only ONE kernel in the specified directory. **Incompatible with `path`.**
-- `args` - (Optional) Arguments which will be passed to the binary. When `kerneldir` is defined and the boot manager detects the kernel version, it will substitute the characters `%v` with the kernel version string.
+- `args` - (Optional) Arguments which will be passed to the binary. When `kerneldir` is defined and the boot manager detects the kernel version, it will substitute the characters `%v` with the kernel version string. It's possible to have multiple lines with this key, they will be concatenated into the full arguments string.
+- `initrd` - (Optional) The absolute path to an initrd file(initramfs file and/or microcode file) which is used when booting Linux kernels. The boot manager will substitute the characters `%v` with the kernel version string here too. It's possible to have multiple lines with this key, they will be concatenated into the full arguments string.
 
-Writing key and value pairs is in the following format: `key=value`. Note that there are NO SPACES to the right and to the left of the `=` character. 
+Writing key and value pairs is in the following format: `key:value`. The config is flexible with spaces and you can add as many spaces as you want before and after the delimiter, the key, and the value. Only leading and trailing spaces will be trimmed.
 
 Let's see an example.
 
 ```
 # Runtime settings (see below)
-timeout=5
+timeout: 5
 
 # Example of a basic entry
-name=Arch Linux
-path=EFI\Arch\vmlinuz-linux
-args=root=UUID=4ec51638-9069-4a28-9b85-6f2352991ee5 initrd=EFI\Arch\initramfs-linux.img rw loglevel=3
+name:   Arch Linux
+path:   EFI\Arch\vmlinuz-linux
+initrd: EFI\Arch\initramfs-linux.img
+initrd: EFI\Arch\intel-ucode.img
+args:   root=UUID=4ec51638-9069-4a28-9b85-6f2352991ee5 rw loglevel=3
 
 # Example usage of kerneldir
 # the kernel name is 'vmlinuz-5.15.7-gentoo', and the initramfs is 'initramfs-5.15.7-gentoo.img'
-name=Gentoo
-kerneldir=EFI\Gentoo
-args=root=UUID=cf2aba83-e914-4613-89fd-9667bb734779 initrd=EFI\Gentoo\initramfs-%v-gentoo.img rw loglevel=3
+name:       Gentoo
+kerneldir:  EFI\Gentoo
+initrd:     EFI\Gentoo\initramfs-%v-gentoo.img
+initrd:     EFI\Gentoo\intel-uc.img
+args:       root=UUID=cf2aba83-e914-4613-89fd-9667bb734779 rw loglevel=3
 
 # This path is the same on every system with Windows 10, so you can copy this path and use it to boot Windows
-name=Windows
-path=EFI\Microsoft\Boot\bootmgfw.efi
+name: Windows
+path: EFI\Microsoft\Boot\bootmgfw.efi
 
 # The boot manager can also load any UEFI app and not just operating systems
-name=Some UEFI App
-path=\path\to\UEFI\app
-args=args to pass to the app
+name: Some UEFI App
+path: \path\to\UEFI\app
+args: arg1
+args: arg2
+args: arg3 arg4 arg5....
 ```
 
 Here we can see 4 entries, each entry is separated by an empty line, and each has the keys `name` and `path`, or `name` and `kerneldir`.
@@ -64,11 +71,9 @@ First, we have to specify the UUID of the root filesystem. You can find what par
 
 ```root=UUID=4ec51638-9069-4a28-9b85-6f2352991ee5```
 
-Second, if you have an initramfs file, it must also be specified in the args. The argument format is `initrd=path to initramfs file`. The path must have backslashes, and not forward slashes.
+Second, if you have an initramfs file, it should be specified with the `initrd` key, or added with `args`. The argument format is `initrd=path to initramfs file` (if using `args`). The path must have backslashes, and not forward slashes.
 
-```initrd=EFI\Gentoo\initramfs-%v-gentoo.img```
-
-To load a microcode, add another `initrd` arg and pass a path to the microcode file.
+To load a microcode, add another `initrd` key and pass a path to the microcode file.
 
 It's also recommended to add the arguments `rw` and `loglevel=3`.
 

@@ -1,3 +1,9 @@
+Version 1.3.0 - 20/04/2022
+- Changed configuration key value delimiter. (from '=' to ':')
+- Added new config key - `initrd`. Refer to CONFIGURING.md to get more info.
+- The configuration file is now flexible to whitespaces.
+- It's possible to have multiple lines of `args:` instead of just one line now. All the args will be concatenated with spaces between each argument.
+
 Version 1.2.3 - 19/04/2022
 - Fixed 'failed to handle fs_proto' when loading linux kernels on some firmwares.
 
