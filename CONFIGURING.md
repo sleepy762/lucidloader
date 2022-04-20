@@ -1,20 +1,20 @@
-# Configuring the bootloader
+# Configuring the boot manager
 
 ## Bootable entries
 
-The configuration file is named `config.cfg` and it is saved in the directory of the bootloader `ESP/EFI/lucidloader` (ESP is the EFI System Partition, which is usually mounted as `/boot` or `/boot/efi`). 
+The configuration file is named `config.cfg` and it is saved in the directory of the boot manager `ESP/EFI/lucidloader` (ESP is the EFI System Partition, which is usually mounted as `/boot` or `/boot/efi`). 
 
 Every entry in the config file will be a section of text that must contain the `name` and `path` keys OR `name` and `kerneldir` keys. Each entry is separated by an empty line. In addition, the first entry is considered as the default entry.
 
-The path specified in `path`, begins at the mount point of the EFI System Partition(ESP). For instance, if it is mounted at `/boot`, then `/boot` is the root directory for the bootloader. You can find out where the ESP is mounted using `lsblk`. It is also worth noting that the delimiter between directories in UEFI is `\` and not `/`. Spaces are also allowed and don't need to be escaped. So an example path will look like this: `\EFI\Arch Linux\vmlinuz-linux`. 
+The path specified in `path`, begins at the mount point of the EFI System Partition(ESP). For instance, if it is mounted at `/boot`, then `/boot` is the root directory for the boot manager. You can find out where the ESP is mounted using `lsblk`. It is also worth noting that the delimiter between directories in UEFI is `\` and not `/`. Spaces are also allowed and don't need to be escaped. So an example path will look like this: `\EFI\Arch Linux\vmlinuz-linux`. 
 
 Lines that start with `#` are treated as comments and will be ignored by the config parser.
 
 Available keys:
 - `name` - The name of the entry which will be shown in the boot menu.
-- `path` - The absolute path to the binary which the bootloader is going to load. **Incompatible with `kerneldir`.**
-- `kerneldir` - The absolute path to a directory with a (Linux) kernel (whose name begins with `vmlinuz`). The bootloader will automatically detect the kernel file and the kernel version. It will also replace the characters `%v` in the args with the kernel version string. As a result, the user won't have to edit the config with every kernel update. Highly recommended for Linux systems whose kernel file name can change. Make sure there is only ONE kernel in the specified directory. **Incompatible with `path`.**
-- `args` - (Optional) Arguments which will be passed to the binary. When `kerneldir` is defined and the bootloader detects the kernel version, it will substitute the characters `%v` with the kernel version string.
+- `path` - The absolute path to the binary which the boot manager is going to load. **Incompatible with `kerneldir`.**
+- `kerneldir` - The absolute path to a directory with a (Linux) kernel (whose name begins with `vmlinuz`). The boot manager will automatically detect the kernel file and the kernel version. It will also replace the characters `%v` in the args with the kernel version string. As a result, the user won't have to edit the config with every kernel update. Highly recommended for Linux systems whose kernel file name can change. Make sure there is only ONE kernel in the specified directory. **Incompatible with `path`.**
+- `args` - (Optional) Arguments which will be passed to the binary. When `kerneldir` is defined and the boot manager detects the kernel version, it will substitute the characters `%v` with the kernel version string.
 
 Writing key and value pairs is in the following format: `key=value`. Note that there are NO SPACES to the right and to the left of the `=` character. 
 
@@ -39,7 +39,7 @@ args=root=UUID=cf2aba83-e914-4613-89fd-9667bb734779 initrd=EFI\Gentoo\initramfs-
 name=Windows
 path=EFI\Microsoft\Boot\bootmgfw.efi
 
-# The bootloader can also load any UEFI app and not just operating systems
+# The boot manager can also load any UEFI app and not just operating systems
 name=Some UEFI App
 path=\path\to\UEFI\app
 args=args to pass to the app
@@ -49,16 +49,16 @@ Here we can see 4 entries, each entry is separated by an empty line, and each ha
 
 ## Global runtime configuration
 
-These are special keys that you can put anywhere in the config file and they will change runtime configuration in the bootloader.
+These are special keys that you can put anywhere in the config file and they will change runtime configuration in the boot manager.
 
 Available keys:
-- `timeout` - Controls the amount of time the bootloader waits before automatically booting the FIRST entry, if no keys are pressed during the count down. Setting the value to `0` will boot the first entry immediately. Setting the value to `-1` will disable the timeout.
+- `timeout` - Controls the amount of time the boot manager waits before automatically booting the FIRST entry, if no keys are pressed during the count down. Setting the value to `0` will boot the first entry immediately. Setting the value to `-1` will disable the timeout.
 
 ## Linux Kernel Args
 
-This is not a comprehensive explanation about Linux kernel parameters, it's here to help configure the bootloader to be able to boot a Linux kernel.
+This is not a comprehensive explanation about Linux kernel parameters, it's here to help configure the boot manager to be able to boot a Linux kernel.
 
-In order to boot a Linux kernel, there are some arguments that it must get. Note that each kernel argument must be separated with a space. Refer to the example config above to see how to pass args to the kernel with the bootloader.
+In order to boot a Linux kernel, there are some arguments that it must get. Note that each kernel argument must be separated with a space. Refer to the example config above to see how to pass args to the kernel with the boot manager.
 
 First, we have to specify the UUID of the root filesystem. You can find what partition the root directory is mounted at with `lsblk`, and then get the UUID of that partition with `blkid`. The argument format is `root=UUID=uuid here`, for example:
 

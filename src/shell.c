@@ -38,7 +38,7 @@ int8_t StartShell(void)
     Log(LL_INFO, 0, "Starting the shell.");
     ST->ConOut->ClearScreen(ST->ConOut);
     ST->ConOut->EnableCursor(ST->ConOut, TRUE);
-    printf("Welcome to the bootloader shell!\n"
+    printf("Welcome to the shell!\n"
            "Type `help` to get a list of commands.\n"
            "Type `help cmd` for info on a command.\n\n");
 

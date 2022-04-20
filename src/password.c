@@ -27,7 +27,7 @@ boolean_t ShellLoginWithPassword()
 
     ST->ConOut->ClearScreen(ST->ConOut);
 
-    PrintBootloaderVersion();
+    PrintBootManagerVersion();
     printf("The shell is protected with a password.\n"
            "Enter the shell password: ");
 

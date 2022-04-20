@@ -14,7 +14,7 @@ typedef struct boot_menu_cfg_s
 
 extern boot_menu_cfg_s bmcfg;
 
-void StartBootloader(void);
+void StartBootManager(void);
 
-void PrintBootloaderVersion(void);
+void PrintBootManagerVersion(void);
 void ShowLogFile(void);

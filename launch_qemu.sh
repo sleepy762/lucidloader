@@ -12,7 +12,7 @@ mmd -i fat.img ::/EFI
 mmd -i fat.img ::/EFI/BOOT
 mmd -i fat.img ::/EFI/lucidloader
 # Copy the files
-cp lucidloader_x64.efi bootx64.efi # This is done in order to boot directly into the bootloader
+cp lucidloader_x64.efi bootx64.efi # This is done in order to start the boot manager automatically
 mcopy -i fat.img bootx64.efi ::/EFI/BOOT
 mcopy -i fat.img add-to-image/* ::/EFI/lucidloader
 

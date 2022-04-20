@@ -264,7 +264,7 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
     return TRUE;
 }
 
-// Special keys that control the settings of the bootloader during runtime
+// Special keys that control the settings of the boot manager during runtime
 static boolean_t EditRuntimeConfig(const char_t* key, char_t* value)
 {
     if (strcmp(key, "timeout") == 0)

@@ -9,7 +9,7 @@ Version 1.2.2 - 14/04/2022
 
 Version 1.2.1 - 13/04/2022
 - Fixed example config in CONFIGURING.md and added a short explanation about Linux kernel args.
-- Added note about secure boot. (The bootloader doesn't work with secure boot enabled, for now at least)
+- Added note about secure boot. (The boot manager doesn't work with secure boot enabled, for now at least)
 - Fixed bugs in the installer script.
 - Removed flicker from the main menu.
 - Removed flicker from the editor.
@@ -24,15 +24,15 @@ Version 1.2.1 - 13/04/2022
 Version 1.2.0 - 01/04/2022
 - Added new configuration key - `kerneldir`. Refer to CONFIGURING.md to get more info.
 - Added license in editor.
-- The bootloader will show a message on screen while the config is being parsed.
+- The boot manager will show a message on screen while the config is being parsed.
 - Fixed memory leaks.
 - Removed redundant rm in uefi/Makefile (clean).
 - Updated POSIX-UEFI.
 - The config will now only be reparsed when the user presses F5 in the menu.
 - Added command that prints firmware vendor + revision and EFI revision (about).
 - Added timer to the menu which will automatically boot the 1st entry when it times out.
-- Added license for the bootloader.
-- Changed the name of the bootloader.
+- Added license for the boot manager.
+- Changed the name of the boot manager.
 - Changed the config name to "config.cfg" and log name to "log.txt". I promise it's the last time.
 - Fixed bug in installer.sh where it didn't work on systems with boot partitions mounted on NVMe drives.
 
@@ -49,7 +49,7 @@ Version 1.1 - 17/03/2022
 - Removed the `make` command from `launch_qemu.sh`.
 - Added a way to get info about a highlighted entry in the menu (by pressing 'i').
 - Changed all calls to AllocatePool and FreePool into malloc and free respectively.
-- The bootloader now performs cold reboots instead of warm reboots.
+- The boot manager now performs cold reboots instead of warm reboots.
 - Fixed some memory leaks.
 
 Version 1.0 - 01/03/2022

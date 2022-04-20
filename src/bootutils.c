@@ -88,7 +88,7 @@ efi_handle_t GetFileDeviceHandle(char_t* path)
 
         // This is a way to check that we are accessing the right FAT volume
         // It is not perfect since if a file with the same name exists on 2 different FAT volumes
-        // The bootloader will load the first instance
+        // The boot manager will load the first instance
 
         // Open the root volume
         status = sfsProt->OpenVolume(sfsProt, &rootDir);
