@@ -217,6 +217,13 @@ static void AppendToArgs(boot_entry_s* entry, char_t* value)
 // TRUE means that value is in use and should not be freed
 static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry)
 {
+    // Ignore empty values
+    if (value[0] == CHAR_NULL)
+    {
+        Log(LL_WARNING, 0, "Ignoring empty value given to key '%s'.", key);
+        return FALSE;
+    }
+
     if (strcmp(key, "name") == 0)
     {
         if (entry->name != NULL)
@@ -332,6 +339,11 @@ boolean_t ParseKeyValuePair(char_t* token, const char_t delimiter, char_t** key,
 
     size_t tokenLen = strlen(token);
     size_t valueLength = tokenLen - valueOffset;
+    // Ignore empty lines or pairs with no value
+    if (tokenLen == 0 || valueLength == 0)
+    {
+        return FALSE;
+    }
 
     *key = malloc(valueOffset);
     if (*key == NULL)
