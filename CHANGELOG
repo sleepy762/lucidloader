@@ -1,5 +1,5 @@
 Version 1.2.3 - 19/04/2022
-- Fixed 'failed to handle fs_proto' when loading linux kernels.
+- Fixed 'failed to handle fs_proto' when loading linux kernels on some firmwares.
 
 Version 1.2.2 - 14/04/2022
 - Added fallback method to redrawing the screen if the console size is unknown.
