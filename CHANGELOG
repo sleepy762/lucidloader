@@ -4,6 +4,7 @@ Version 1.3.0 - 20/04/2022
 - The configuration file is now flexible to whitespaces.
 - It's possible to have multiple lines of `args:` instead of just one line now. All the args will be concatenated with spaces between each argument.
 - Fixed possible memory corruption when there's a key with an empty value in the config.
+- Added error message when opening files that are too large in the editor.
 
 Version 1.2.3 - 19/04/2022
 - Fixed 'failed to handle fs_proto' when loading linux kernels on some firmwares.

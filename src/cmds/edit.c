@@ -23,9 +23,9 @@ boolean_t EditCmd(cmd_args_s** args, char_t** currPathPtr)
     }
 
     int8_t res = StartEditor(filePath);
-    if (res == -1)
+    if (res != 0)
     {
-        PrintCommandError(cmdArg->argString, arg->argString, CMD_EFI_FAIL);
+        PrintCommandError(cmdArg->argString, arg->argString, res);
         return FALSE;
     }
 
