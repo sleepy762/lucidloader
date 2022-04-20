@@ -181,12 +181,12 @@ char_t* MakeFullPath(char_t* pathArg, char_t* currPathPtr, boolean_t* isDynamicM
     return fullPath;
 }
 
-boolean_t IsPrintableChar(char_t c)
+boolean_t IsPrintableChar(const char_t c)
 {
     return (c  >= ' ' && c <= '~');
 }
 
-boolean_t IsSpace(char_t c)
+boolean_t IsSpace(const char_t c)
 {
     return (c == ' ' || c == CHAR_TAB);
 }
