@@ -10,7 +10,7 @@
 
 #define CFG_LINE_DELIMITER      ("\n")
 #define CFG_ENTRY_DELIMITER     ("\n\n")
-#define CFG_KEY_VALUE_DELIMITER ('=')
+#define CFG_KEY_VALUE_DELIMITER (':')
 #define CFG_COMMENT_CHAR        ('#')
 
 #define MAX_ENTRY_NAME_LEN (70)
@@ -28,7 +28,7 @@ static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry);
 static boolean_t EditRuntimeConfig(const char_t* key, char_t* value);
 
 /* Functions related to the "kerneldir" key in the config */
-static void ParseKernelDirEntry(boot_entry_s* entry);
+static void PrepareKernelDirEntry(boot_entry_s* entry);
 static char_t* GetPathToKernel(const char_t* directoryPath);
 static char_t* GetKernelVersionString(const char_t* fullKernelFileName);
 
@@ -110,9 +110,10 @@ boot_entry_array_s ParseConfig(void)
             {
                 continue;
             }
+
+            // Get the key and value pair in this line
             char_t* key = NULL;
             char_t* value = NULL;
-
             if (ParseKeyValuePair(line, CFG_KEY_VALUE_DELIMITER, &key, &value) == FALSE)
             {
                 free(key);
@@ -120,22 +121,25 @@ boot_entry_array_s ParseConfig(void)
                 continue;
             }
 
-            if (!AssignValueToEntry(key, value, &entry))
+            // Trim all the spaces before passing into AssignValueToEntry
+            const char_t* trimmedKey = TrimSpaces(key);
+            char_t* trimmedValue = TrimSpaces(value);
+            if (!AssignValueToEntry(trimmedKey, trimmedValue, &entry))
             {
                 // Free the value if it wasn't assigned to the entry
                 free(value);
             }
-
-            free(key);
+            free(key); // Keys are not needed in the end
         }
-
         free(strippedEntry);
 
+        // Fill the necessary data like kernel path, kernel version and args
         if (entry.isDirectoryToKernel)
         {
-            ParseKernelDirEntry(&entry);
+            PrepareKernelDirEntry(&entry);
         }
 
+        // Make sure the entry is valid, if it is, then append it to the array of entries
         if (ValidateEntry(&entry))
         {
             AppendEntry(&bootEntryArr, &entry);
@@ -144,7 +148,6 @@ boot_entry_array_s ParseConfig(void)
         {
             FreeConfigEntry(&entry);
         }
-
         filePtr += ptrIncrement; // Move the pointer to the next entry block
     }
 
@@ -342,7 +345,7 @@ static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry)
 }
 
 // Called when entry->isDirectoryToKernel is TRUE to fill in the rest of the entry data
-static void ParseKernelDirEntry(boot_entry_s* entry)
+static void PrepareKernelDirEntry(boot_entry_s* entry)
 {
     kernel_scan_info_s* scanInfo = entry->kernelScanInfo;
 
