@@ -154,8 +154,7 @@ static char_t* GetCommandFromBuffer(char_t buffer[])
     }
 
     char_t* cmd = malloc(cmdLen);
-    memcpy(cmd, buffer, cmdLen);
-    cmd[cmdLen - 1] = CHAR_NULL;
+    strncpy(cmd, buffer, cmdLen - 1);
 
     return cmd;
 }
@@ -262,8 +261,7 @@ static int8_t SplitArgsString(char_t buffer[], cmd_args_s** outputArgs)
         Log(LL_ERROR, 0, "Failed to allocate memory for the argument string pointer.");
         return CMD_OUT_OF_MEMORY;
     }
-    memcpy(node->argString, buffer, bufferLen);
-    node->argString[bufferLen] = CHAR_NULL;
+    strncpy(node->argString, buffer, bufferLen);
 
     // Append to the linked list or set the node as the head if it hasn't been initialized yet
     if (*outputArgs == NULL)
