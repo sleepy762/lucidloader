@@ -28,16 +28,16 @@ timeout: 5
 # Example of a basic entry
 name:   Arch Linux
 path:   EFI\Arch\vmlinuz-linux
-initrd: EFI\Arch\initramfs-linux.img
 initrd: EFI\Arch\intel-ucode.img
+initrd: EFI\Arch\initramfs-linux.img
 args:   root=UUID=4ec51638-9069-4a28-9b85-6f2352991ee5 rw loglevel=3
 
 # Example usage of kerneldir
 # the kernel name is 'vmlinuz-5.15.7-gentoo', and the initramfs is 'initramfs-5.15.7-gentoo.img'
 name:       Gentoo
 kerneldir:  EFI\Gentoo
-initrd:     EFI\Gentoo\initramfs-%v-gentoo.img
 initrd:     EFI\Gentoo\intel-uc.img
+initrd:     EFI\Gentoo\initramfs-%v-gentoo.img
 args:       root=UUID=cf2aba83-e914-4613-89fd-9667bb734779 rw loglevel=3
 
 # This path is the same on every system with Windows 10, so you can copy this path and use it to boot Windows
@@ -52,7 +52,7 @@ args: arg2
 args: arg3 arg4 arg5....
 ```
 
-Here we can see 4 entries, each entry is separated by an empty line, and each has the keys `name` and `path`, or `name` and `kerneldir`.
+There are 4 entries in this configuration, each entry is separated by an empty line, and each entry has the keys `name` and `path`, or `name` and `kerneldir`.
 
 ## Global runtime configuration
 
@@ -73,7 +73,7 @@ First, we have to specify the UUID of the root filesystem. You can find what par
 
 Second, if you have an initramfs file, it should be specified with the `initrd` key, or added with `args`. The argument format is `initrd=path to initramfs file` (if using `args`). The path must have backslashes, and not forward slashes.
 
-To load a microcode, add another `initrd` key and pass a path to the microcode file.
+To load a microcode, add another `initrd` key before the initramfs one, and pass a path to the microcode file. **Make sure the microcode initrd line is placed before the initramfs initrd line, the order matters.**
 
 It's also recommended to add the arguments `rw` and `loglevel=3`.
 
