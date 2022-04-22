@@ -40,6 +40,6 @@ See [EMULATING.md](EMULATING.md) for instructions on how to run the boot manager
 
 To install the boot manager, simply run the installer script (installer.sh) as root. A new boot entry will be created with efibootmgr and the boot manager will be run the next time the device is started.
 
-To update the boot manager, it is as simple as running the installer script again. The configuration file will stay unchanged.
+To update the boot manager, run `make distclean && make` and then run the installer script again. The configuration file will stay unchanged.
 
 See [CONFIGURING.md](CONFIGURING.md) to see how to write the config file.
