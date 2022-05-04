@@ -350,5 +350,54 @@ struct boot_params {
 
 void LinuxLoad(char* kernelpath, char* args)
 {
+	FILE* kernelFile = fopen(kernelpath, "r");
+	if (kernelFile == NULL)
+	{
+		printf("linux: Failed to open kernel file `%s`.\n", kernelpath);
+		return;
+	}
 
+	uint32_t hdrS = 0;
+	fseek(kernelFile, 0x202, SEEK_SET);
+	fread(&hdrS, sizeof(uint32_t), 1, kernelFile);
+	if (hdrS != 0x53726448)
+	{
+		printf("linux: Old boot protocol version.\n");
+		goto cleanup;
+	}
+
+	size_t setupCodeSize = 0;
+	size_t realModeCodeSize = 0;
+	fseek(kernelFile, 0x1f1, SEEK_SET);
+	fread(&setupCodeSize, 1, 1, kernelFile);
+	if (setupCodeSize == 0)
+	{
+		setupCodeSize = 4;
+	}
+	setupCodeSize *= 512;
+	realModeCodeSize = 512 + setupCodeSize;
+
+	struct boot_params* bootParams = calloc(1, sizeof(struct boot_params));
+	if (bootParams == NULL)
+	{
+		printf("linux: Failed to allocate memory for bootParams.\n");
+		goto cleanup;
+	}
+	struct setup_header* setupHeader = &bootParams->hdr;
+
+	size_t setupHeaderEnd = 0;
+	{
+		uint8_t temp = 0;
+		fseek(kernelFile, 0x201, SEEK_SET);
+		fread(&temp, 1, 1, kernelFile);
+		setupHeaderEnd = temp + 0x202;
+	}
+
+	fseek(kernelFile, 0x1f1, SEEK_SET);
+	fread(setupHeader, 1, setupHeaderEnd - 0x1f1, kernelFile);
+
+	printf("linux: Boot protocol: %d.%d\n", setupHeader->version >> 8, setupHeader->version & 0xFF);
+
+cleanup:
+	fclose(kernelFile);
 }

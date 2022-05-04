@@ -7,8 +7,8 @@
 #include "editor.h"
 #include "shellutils.h"
 #include "screen.h"
-#include "protocols.h"
 #include "protocols/efilaunch.h"
+#include "protocols/linux.h"
 
 #define F5_KEY_SCANCODE (0x0F) // Used to refresh the menu (reparse config)
 
@@ -285,7 +285,7 @@ static void PrintEntryInfo(boot_entry_s* selectedEntry)
            "Args: %s\n"
            "Protocol: %s\n",
            selectedEntry->name, selectedEntry->imgToLoad, selectedEntry->imgArgs,
-           ProtocolToString(selectedEntry->bootProtocol));
+           selectedEntry->bootProtocolStr);
     
     if (selectedEntry->isDirectoryToKernel)
     {
@@ -319,7 +319,7 @@ static void BootEntry(boot_entry_s* selectedEntry)
             "- args: `%s`\n"
             "- protocol: `%s`\n\n",
             selectedEntry->name, selectedEntry->imgToLoad, selectedEntry->imgArgs, 
-            ProtocolToString(selectedEntry->bootProtocol));
+            selectedEntry->bootProtocolStr);
 
     switch (selectedEntry->bootProtocol)
     {
@@ -327,6 +327,10 @@ static void BootEntry(boot_entry_s* selectedEntry)
             StartEFIImage(selectedEntry->imgToLoad, selectedEntry->imgArgs);
             break;
         
+        case BP_LINUX:
+            LinuxLoad(selectedEntry->imgToLoad, selectedEntry->imgArgs);
+            break;
+
         default:
             Log(LL_ERROR, 0, "Unknown boot protocol. (%d)", selectedEntry->bootProtocol);
             break;

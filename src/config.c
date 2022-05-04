@@ -15,7 +15,7 @@
 
 #define MAX_ENTRY_NAME_LEN (70)
 
-#define BOOT_ENTRY_INIT { NULL, NULL, NULL, 0, FALSE, NULL }
+#define BOOT_ENTRY_INIT { NULL, NULL, NULL, 0, "efilaunch", FALSE, NULL }
 #define BOOT_ENTRY_ARR_INIT { NULL, 0 }
 
 #define LINUX_KERNEL_IDENTIFIER_STR ("vmlinuz")
@@ -299,17 +299,22 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
     // Set a boot protocol
     else if (strcmp(key, "protocol") == 0)
     {
+        // multiboot2, stivale2, linux TBD
         // This protocol is used by default and doesn't have to be explicitly stated
         if (strcmp(value, "efilaunch") == 0)
         {
             entry->bootProtocol = BP_EFI_LAUNCH;
         }
+        else if (strcmp(value, "linux") == 0)
+        {
+            entry->bootProtocol = BP_LINUX;
+        }
         else
         {
             Log(LL_WARNING, 0, "Unknown boot protocol `%s`.", value);
+            return FALSE;
         }
-        // multiboot2, stivale2, linux TBD
-        return FALSE;
+        entry->bootProtocolStr = value;
     }
     else // Check if it's a runtime key
     {
@@ -397,6 +402,7 @@ static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry)
     newEntry->imgToLoad = entry->imgToLoad;
     newEntry->imgArgs = entry->imgArgs;
     newEntry->bootProtocol = entry->bootProtocol;
+    newEntry->bootProtocolStr = entry->bootProtocolStr;
     newEntry->isDirectoryToKernel = entry->isDirectoryToKernel;
 
     if (newEntry->isDirectoryToKernel)
