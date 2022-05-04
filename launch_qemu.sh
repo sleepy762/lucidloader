@@ -5,7 +5,7 @@
 [ -d iso ] || mkdir iso
 
 # Create a FAT type image
-dd if=/dev/zero of=fat.img bs=1k count=14400
+dd if=/dev/zero of=fat.img bs=1k count=34400
 mformat -i fat.img -s 64 -t 225 -h 16 ::
 # Create the necessary directories
 mmd -i fat.img ::/EFI

@@ -1,6 +1,10 @@
 #include "protocols/linux.h"
 #include <uefi.h>
 
+// The implementation of this Linux loader code was taken from the Limine
+// bootloader with modifications and adaptations for this boot manager
+// https://github.com/limine-bootloader/limine
+
 // The following definitions were copied from the Linux kernel
 // licensed under GPL-2.0 WITH Linux-syscall-note 
 
@@ -395,8 +399,22 @@ void LinuxLoad(char* kernelpath, char* args)
 
 	fseek(kernelFile, 0x1f1, SEEK_SET);
 	fread(setupHeader, 1, setupHeaderEnd - 0x1f1, kernelFile);
+	if (setupHeader->version < 0x203)
+	{
+		printf("linux: Boot protocols of versions older than 2.03 are not supported.\n");
+		goto cleanup;
+	}
 
-	printf("linux: Boot protocol: %d.%d\n", setupHeader->version >> 8, setupHeader->version & 0xFF);
+	if (!(setupHeader->loadflags & (1 << 0)))
+	{
+		printf("linux: Kernels that load at 0x10000 are not supported.\n");
+		goto cleanup;
+	}
+
+	setupHeader->cmd_line_ptr = (uint32_t)(uintptr_t)args;
+	setupHeader->vid_mode = 0xFFFF; // "normal" mode
+	setupHeader->type_of_loader = 0xFF;
+	setupHeader->loadflags &= ~(1 << 5); // Print early messages
 
 cleanup:
 	fclose(kernelFile);
