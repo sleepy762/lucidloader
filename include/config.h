@@ -1,5 +1,6 @@
 #pragma once
 #include <uefi.h>
+#include "protocols.h"
 
 typedef struct kernel_scan_info_s
 {
@@ -12,6 +13,7 @@ typedef struct boot_entry_s
     char_t* name; // Name in the menu
     char_t* imgToLoad; // Holds a path to the file to load
     char_t* imgArgs; // Used if the image needs args
+    boot_protocol_t bootProtocol;
 
     // The purpose is to have the boot manager automatically detect the version string of
     // the (linux, for now) kernel and substitute it wherever needed in the args, in order to

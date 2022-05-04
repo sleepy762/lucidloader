@@ -1,15 +1,15 @@
-#include "chainloader.h"
+#include "protocols/efilaunch.h"
 #include "logger.h"
 #include "bootutils.h"
 
-void ChainloadImage(char_t* path, char_t* args)
+void StartEFIImage(char_t* path, char_t* args)
 {
     // Device handle must be passed to the loaded image protocol because of
     // the way we call LoadImage()
     efi_handle_t devHandle = GetFileDeviceHandle(path);
     if (devHandle == NULL)
     {
-        Log(LL_ERROR, 0, "Failed to file device handle for chainloading '%s'.", path);
+        Log(LL_ERROR, 0, "Failed to get file device handle for '%s'.", path);
         return;
     }
 
@@ -27,7 +27,7 @@ void ChainloadImage(char_t* path, char_t* args)
     char_t* imgData = GetFileContent(path, &imgFileSize);
     if (imgData == NULL)
     {
-        Log(LL_ERROR, 0, "Failed to read file '%s' for chainloading.", path);
+        Log(LL_ERROR, 0, "Failed to read file '%s'.", path);
         return;
     }
 
@@ -36,7 +36,7 @@ void ChainloadImage(char_t* path, char_t* args)
     status = BS->LoadImage(FALSE, IM, devPath, imgData, imgFileSize, &imgHandle);
     if (EFI_ERROR(status))
     {
-        Log(LL_ERROR, status, "Failed to load the image for chainloading '%s'.", path);
+        Log(LL_ERROR, status, "Failed to load EFI image '%s'.", path);
         goto cleanup;
     }
 
@@ -63,7 +63,7 @@ void ChainloadImage(char_t* path, char_t* args)
         imgProtocol->DeviceHandle = devHandle;
     }
 
-    Log(LL_INFO, 0, "Chainloading image '%s'...", path);
+    Log(LL_INFO, 0, "Starting EFI image '%s'...", path);
     status = BS->StartImage(imgHandle, NULL, NULL);
     if (EFI_ERROR(status))
     {
@@ -71,7 +71,7 @@ void ChainloadImage(char_t* path, char_t* args)
     }
 
 cleanup:
-    // We shouldn't reach this, but in case the chainload fails we don't want memory leaks
+    // We shouldn't reach this, but in case starting fails we don't want memory leaks
     if (args != NULL)
     {
         free(imgProtocol->LoadOptions);

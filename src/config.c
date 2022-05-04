@@ -15,7 +15,7 @@
 
 #define MAX_ENTRY_NAME_LEN (70)
 
-#define BOOT_ENTRY_INIT { NULL, NULL, NULL, FALSE, NULL }
+#define BOOT_ENTRY_INIT { NULL, NULL, NULL, 0, FALSE, NULL }
 #define BOOT_ENTRY_ARR_INIT { NULL, 0 }
 
 #define LINUX_KERNEL_IDENTIFIER_STR ("vmlinuz")
@@ -213,7 +213,7 @@ static void AppendToArgs(boot_entry_s* entry, char_t* value)
     strncpy(entry->imgArgs + argsLen, value, valueLen);
 }
 
-// FALSE means the value wasn't assigned and should be freed
+// FALSE means the value wasn't assigned and should be freed (not necessarily failed)
 // TRUE means that value is in use and should not be freed
 static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry_s* entry)
 {
@@ -224,6 +224,7 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
         return FALSE;
     }
 
+    // Name of the entry in the menu
     if (strcmp(key, "name") == 0)
     {
         if (entry->name != NULL)
@@ -239,6 +240,7 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
         }
         entry->name = value;
     }
+    // Absolute path to a specific file to load
     else if (strcmp(key, "path") == 0) 
     {
         if (entry->isDirectoryToKernel)
@@ -254,6 +256,7 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
         }
         entry->imgToLoad = value;
     }
+    // Absolute path to a directory with a Linux kernel
     else if (strcmp(key, "kerneldir") == 0)
     {
         if (entry->imgToLoad != NULL)
@@ -276,8 +279,9 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
     else if (strcmp(key, "args") == 0)
     {
         AppendToArgs(entry, value);
+        return FALSE;
     }
-    // This key simplifies the configuration but it just takes the value and adds it to the args
+    // This key simplifies the configuration but it just takes the value and adds it to the args (for now)
     else if (strcmp(key, "initrd") == 0)
     {
         size_t initrdLen = strlen(INITRD_ARG_STR);
@@ -290,8 +294,24 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
         strncpy(argStr + initrdLen, value, valueLen);
 
         AppendToArgs(entry, argStr);
+        return FALSE;
     }
-    else
+    // Set a boot protocol
+    else if (strcmp(key, "protocol") == 0)
+    {
+        // This protocol is used by default and doesn't have to be explicitly stated
+        if (strcmp(value, "efilaunch") == 0)
+        {
+            entry->bootProtocol = BP_EFI_LAUNCH;
+        }
+        else
+        {
+            Log(LL_WARNING, 0, "Unknown boot protocol `%s`.", value);
+        }
+        // multiboot2, stivale2, linux TBD
+        return FALSE;
+    }
+    else // Check if it's a runtime key
     {
         boolean_t isRuntimeCfgKey = EditRuntimeConfig(key, value);
         if (!isRuntimeCfgKey)
@@ -376,6 +396,7 @@ static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry)
     newEntry->name = entry->name;
     newEntry->imgToLoad = entry->imgToLoad;
     newEntry->imgArgs = entry->imgArgs;
+    newEntry->bootProtocol = entry->bootProtocol;
     newEntry->isDirectoryToKernel = entry->isDirectoryToKernel;
 
     if (newEntry->isDirectoryToKernel)

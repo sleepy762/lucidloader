@@ -1,13 +1,14 @@
 #include "bootmenu.h"
 #include "shell.h"
 #include "config.h"
-#include "chainloader.h"
 #include "logger.h"
 #include "version.h"
 #include "bootutils.h"
 #include "editor.h"
 #include "shellutils.h"
 #include "screen.h"
+#include "protocols.h"
+#include "protocols/efilaunch.h"
 
 #define F5_KEY_SCANCODE (0x0F) // Used to refresh the menu (reparse config)
 
@@ -281,8 +282,10 @@ static void PrintEntryInfo(boot_entry_s* selectedEntry)
     printf("Entry %d\n\n", bmcfg.selectedEntryIndex + 1);
     printf("Name: %s\n"
            "Path: %s\n"
-           "Args: %s\n",
-           selectedEntry->name, selectedEntry->imgToLoad, selectedEntry->imgArgs);
+           "Args: %s\n"
+           "Protocol: %s\n",
+           selectedEntry->name, selectedEntry->imgToLoad, selectedEntry->imgArgs,
+           ProtocolToString(selectedEntry->bootProtocol));
     
     if (selectedEntry->isDirectoryToKernel)
     {
@@ -313,10 +316,21 @@ static void BootEntry(boot_entry_s* selectedEntry)
     ST->ConOut->ClearScreen(ST->ConOut);
     printf("Booting `%s`...\n"
             "- path: `%s`\n"
-            "- args: `%s`\n\n",
-            selectedEntry->name, selectedEntry->imgToLoad, selectedEntry->imgArgs);
+            "- args: `%s`\n"
+            "- protocol: `%s`\n\n",
+            selectedEntry->name, selectedEntry->imgToLoad, selectedEntry->imgArgs, 
+            ProtocolToString(selectedEntry->bootProtocol));
 
-    ChainloadImage(selectedEntry->imgToLoad, selectedEntry->imgArgs);
+    switch (selectedEntry->bootProtocol)
+    {
+        case BP_EFI_LAUNCH:
+            StartEFIImage(selectedEntry->imgToLoad, selectedEntry->imgArgs);
+            break;
+        
+        default:
+            Log(LL_ERROR, 0, "Unknown boot protocol. (%d)", selectedEntry->bootProtocol);
+            break;
+    }
 
     // Block the flow because there may be errors written on screen
     printf("\nFailed to boot.\n"
