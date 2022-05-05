@@ -1,4 +1,5 @@
 #include "protocols/linux.h"
+#include "shellerr.h"
 
 // The implementation of this Linux loader code was taken from the Limine
 // bootloader with modifications and adaptations for this boot manager
@@ -363,6 +364,7 @@ struct boot_params {
 } __attribute__((packed));
 /* asm/bootparam.h */
 
+
 void LinuxLoad(boot_entry_s* entry)
 {
 	FILE* kernelFile = fopen(entry->imgToLoad, "r");
@@ -378,7 +380,7 @@ void LinuxLoad(boot_entry_s* entry)
 	if (hdrS != 0x53726448)
 	{
 		printf("linux: Old boot protocol version.\n");
-		goto cleanup;
+		goto cleanup_early;
 	}
 
 	size_t setupCodeSize = 0;
@@ -396,7 +398,7 @@ void LinuxLoad(boot_entry_s* entry)
 	if (bootParams == NULL)
 	{
 		printf("linux: Failed to allocate memory for bootParams.\n");
-		goto cleanup;
+		goto cleanup_early;
 	}
 	struct setup_header* setupHeader = &bootParams->hdr;
 
@@ -413,13 +415,13 @@ void LinuxLoad(boot_entry_s* entry)
 	if (setupHeader->version < 0x203)
 	{
 		printf("linux: Boot protocols of versions older than 2.03 are not supported.\n");
-		goto cleanup;
+		goto cleanup_early;
 	}
 
 	if (!(setupHeader->loadflags & (1 << 0)))
 	{
 		printf("linux: Kernels that load at 0x10000 are not supported.\n");
-		goto cleanup;
+		goto cleanup_early;
 	}
 
 	setupHeader->cmd_line_ptr = (uint32_t)(uintptr_t)entry->imgArgs;
@@ -429,9 +431,11 @@ void LinuxLoad(boot_entry_s* entry)
 
 	fseek(kernelFile, 0, SEEK_END);
 	size_t kernelFileSize = ftell(kernelFile);
-	uint64_t kernelSizeInPages = AlignUp(kernelFileSize, 4096) / 4096;
+	uintn_t kernelSizeInPages = AlignUp(kernelFileSize, 4096) / 4096;
 
-	// Loading the kernel
+	/*
+	*	Loading the kernel
+	*/
 	uintptr_t kernelLoadAddr = 0x100000;
 	while (1)
 	{
@@ -444,14 +448,92 @@ void LinuxLoad(boot_entry_s* entry)
 		}
 		kernelLoadAddr += 0x100000;
 	}
+	// Load the kernel into memory
 	fseek(kernelFile, realModeCodeSize, SEEK_SET);
 	fread((void*)kernelLoadAddr, 1, kernelFileSize - realModeCodeSize, kernelFile);
 
 	fclose(kernelFile);
 	kernelFile = NULL;
 
-	// Loading initrds
+	/*
+	*	Loading the initrds
+	*/
+	uint32_t initrdBaseAddr = setupHeader->initrd_addr_max;
+	if (initrdBaseAddr == 0)
+	{
+		initrdBaseAddr = 0x38000000;
+	}
+	size_t sizeOfAllInitrds = 0;
+	
+	// Get the total size of all initrds
+	for (uint32_t i = 0; i < entry->initrdAmount; i++)
+	{
+		FILE* initrdFP = fopen(entry->initrdPaths[i], "r");
+		if (initrdFP == NULL)
+		{
+			printf("linux: Failed to open initrd `%s`: %s\n", entry->initrdPaths[i], 
+				GetCommandErrorInfo(errno));
+			goto cleanup_kernel;
+		}
+		
+		fseek(initrdFP, 0, SEEK_END);
+		sizeOfAllInitrds += ftell(initrdFP);
 
-cleanup:
+		fclose(initrdFP);
+	}
+
+	initrdBaseAddr -= sizeOfAllInitrds;
+	initrdBaseAddr = AlignDown(initrdBaseAddr, 4096);
+	uintn_t initrdSizeInPages = AlignUp(sizeOfAllInitrds, 4096) / 4096;
+
+	while (1)
+	{
+		// Casting initrdBaseAddr does not work so we store it in a temporary 64bit var
+		uint64_t initrdBaseAddr64Bit = initrdBaseAddr;
+		// Attempt to allocate memory for the initrds, if that fails, decrease the base pointer
+		efi_status_t status = BS->AllocatePages(AllocateAddress, EfiLoaderData, 
+			initrdSizeInPages, (efi_physical_address_t*)&initrdBaseAddr64Bit);
+		if (!EFI_ERROR(status))
+		{
+			break;
+		}
+		initrdBaseAddr -= 4096;
+	}
+
+	size_t _tempInitrdBaseAddr = initrdBaseAddr;
+	for (uint32_t i = 0; i < entry->initrdAmount; i++)
+	{
+		FILE* initrdFP = fopen(entry->initrdPaths[i], "r");
+		if (initrdFP == NULL)
+		{
+			printf("linux: Failed to open initrd `%s`: %s\n", entry->initrdPaths[i], 
+				GetCommandErrorInfo(errno));
+			goto cleanup_initrds;
+		}
+
+		// Get the size of the initrd
+		fseek(initrdFP, 0, SEEK_END);
+		size_t initrdSize = ftell(initrdFP);
+		fseek(initrdFP, 0, SEEK_SET);
+
+		// Read the data of the initrd into memory
+		fread((void*)_tempInitrdBaseAddr, 1, initrdSize, initrdFP);
+		_tempInitrdBaseAddr += initrdSize;
+
+		fclose(initrdFP);
+	}
+
+	if (sizeOfAllInitrds != 0)
+	{
+		setupHeader->ramdisk_image = (uint32_t)initrdBaseAddr;
+		setupHeader->ramdisk_size = (uint32_t)sizeOfAllInitrds;
+	}
+
+// Cleanup in stages
+cleanup_initrds:
+	BS->FreePages((efi_physical_address_t)initrdBaseAddr, initrdSizeInPages);
+cleanup_kernel:
+	BS->FreePages((efi_physical_address_t)kernelLoadAddr, kernelSizeInPages);
+cleanup_early:
 	fclose(kernelFile);
 }
