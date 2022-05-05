@@ -1,16 +1,19 @@
 # LucidLoader
 
-An interactive UEFI boot manager that aims to be light and easy to use.
+A simple interactive UEFI boot manager.
 
 This boot manager is being developed using the [POSIX-UEFI](https://gitlab.com/bztsrc/posix-uefi) wrapper library.
 
 ## Features
-- Very lightweight.
 - Simple and easy to use configuration.
 - Shell environment with useful commands.
 - Text editor.
 - Able to boot operating systems and UEFI apps.
 - Can automatically detect a Linux kernel along with its version.
+
+## Supported Boot Protocols (so far)
+- EFI Launch
+- Linux
 
 ## Dependencies
 
