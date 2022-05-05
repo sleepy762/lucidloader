@@ -1,10 +1,12 @@
 #include "protocols/efilaunch.h"
-#include <uefi.h>
 #include "logger.h"
 #include "bootutils.h"
 
-void StartEFIImage(char* path, char* args)
+void StartEFIImage(boot_entry_s* entry)
 {
+    char_t* path = entry->imgToLoad;
+    char_t* args = entry->imgArgs;
+
     // Device handle must be passed to the loaded image protocol because of
     // the way we call LoadImage()
     efi_handle_t devHandle = GetFileDeviceHandle(path);

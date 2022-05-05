@@ -18,8 +18,13 @@ typedef struct boot_entry_s
     char_t* name; // Name in the menu
     char_t* imgToLoad; // Holds a path to the file to load
     char_t* imgArgs; // Used if the image needs args
+
+    // Used for booting Linux kernels
+    char_t** initrdPaths;
+    uint32_t initrdAmount;
+
     boot_protocol_t bootProtocol;
-    const char_t* bootProtocolStr;
+    char_t* bootProtocolStr;
 
     // The purpose is to have the boot manager automatically detect the version string of
     // the (linux, for now) kernel and substitute it wherever needed in the args, in order to
@@ -37,3 +42,4 @@ typedef struct boot_entry_array_s
 boot_entry_array_s ParseConfig(void);
 boolean_t ParseKeyValuePair(char_t* token, const char_t delimiter, char_t** key, char_t** value);
 void FreeConfigEntries(boot_entry_array_s* entryArr);
+void AppendToArgs(boot_entry_s* entry, char_t* value);

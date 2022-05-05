@@ -25,6 +25,7 @@ static void FailMenu(const char_t* errorMsg);
 /* Wrappers */
 static inline void BootHighlightedEntry(boot_entry_array_s* entryArr);
 static inline void PrintHighlightedEntryInfo(boot_entry_array_s* entryArr);
+static void PrintInitrds(boot_entry_s* entry);
 
 /* Etc */
 static void InitBootMenuConfig(void);
@@ -286,7 +287,14 @@ static void PrintEntryInfo(boot_entry_s* selectedEntry)
            "Protocol: %s\n",
            selectedEntry->name, selectedEntry->imgToLoad, selectedEntry->imgArgs,
            selectedEntry->bootProtocolStr);
-    
+
+    // Print the initrd paths if the Linux protocol is used
+    if (selectedEntry->bootProtocol == BP_LINUX)
+    {
+        printf("\nInitrds: ");
+        PrintInitrds(selectedEntry);
+    }
+
     if (selectedEntry->isDirectoryToKernel)
     {
         printf("\nKernel directory: %s\n", selectedEntry->kernelScanInfo->kernelDirectory);
@@ -310,6 +318,21 @@ static inline void BootHighlightedEntry(boot_entry_array_s* entryArr)
     FailMenu(FAILED_BOOT_ERR_MSG);
 }
 
+// Prints all the initrd paths in a line separated by commas and adds a
+// new line at the end
+static void PrintInitrds(boot_entry_s* entry)
+{
+    for (uint32_t i = 0; i < entry->initrdAmount; i++)
+    {
+        printf("%s", entry->initrdPaths[i]);
+        if (i + 1 != entry->initrdAmount)
+        {
+            printf(", ");
+        }
+    }
+    putchar('\n');
+}
+
 static void BootEntry(boot_entry_s* selectedEntry)
 {
     // Printing info before booting
@@ -317,18 +340,21 @@ static void BootEntry(boot_entry_s* selectedEntry)
     printf("Booting `%s`...\n"
             "- path: `%s`\n"
             "- args: `%s`\n"
-            "- protocol: `%s`\n\n",
+            "- protocol: `%s`\n",
             selectedEntry->name, selectedEntry->imgToLoad, selectedEntry->imgArgs, 
             selectedEntry->bootProtocolStr);
 
     switch (selectedEntry->bootProtocol)
     {
         case BP_EFI_LAUNCH:
-            StartEFIImage(selectedEntry->imgToLoad, selectedEntry->imgArgs);
+            putchar('\n');
+            StartEFIImage(selectedEntry);
             break;
         
         case BP_LINUX:
-            LinuxLoad(selectedEntry->imgToLoad, selectedEntry->imgArgs);
+            printf("- initrds: ");
+            PrintInitrds(selectedEntry);
+            LinuxLoad(selectedEntry);
             break;
 
         default:

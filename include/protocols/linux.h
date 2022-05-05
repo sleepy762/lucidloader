@@ -1,3 +1,4 @@
 #pragma once
+#include "config.h"
 
-void LinuxLoad(char* kernelpath, char* args);
+void LinuxLoad(boot_entry_s* entry);

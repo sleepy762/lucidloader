@@ -1,5 +1,4 @@
 #include "protocols/linux.h"
-#include <uefi.h>
 
 // The implementation of this Linux loader code was taken from the Limine
 // bootloader with modifications and adaptations for this boot manager
@@ -364,12 +363,12 @@ struct boot_params {
 } __attribute__((packed));
 /* asm/bootparam.h */
 
-void LinuxLoad(char* kernelpath, char* args)
+void LinuxLoad(boot_entry_s* entry)
 {
-	FILE* kernelFile = fopen(kernelpath, "r");
+	FILE* kernelFile = fopen(entry->imgToLoad, "r");
 	if (kernelFile == NULL)
 	{
-		printf("linux: Failed to open kernel file `%s`.\n", kernelpath);
+		printf("linux: Failed to open kernel file `%s`.\n", entry->imgToLoad);
 		return;
 	}
 
@@ -423,7 +422,7 @@ void LinuxLoad(char* kernelpath, char* args)
 		goto cleanup;
 	}
 
-	setupHeader->cmd_line_ptr = (uint32_t)(uintptr_t)args;
+	setupHeader->cmd_line_ptr = (uint32_t)(uintptr_t)entry->imgArgs;
 	setupHeader->vid_mode = 0xFFFF; // "normal" mode
 	setupHeader->type_of_loader = 0xFF;
 	setupHeader->loadflags &= ~(1 << 5); // Print early messages

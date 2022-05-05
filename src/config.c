@@ -15,7 +15,6 @@
 
 #define MAX_ENTRY_NAME_LEN (70)
 
-#define BOOT_ENTRY_INIT { NULL, NULL, NULL, 0, "efilaunch", FALSE, NULL }
 #define BOOT_ENTRY_ARR_INIT { NULL, 0 }
 
 #define LINUX_KERNEL_IDENTIFIER_STR ("vmlinuz")
@@ -28,18 +27,39 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
 static boolean_t ValidateEntry(boot_entry_s* newEntry);
 static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry);
 static boolean_t EditRuntimeConfig(const char_t* key, char_t* value);
+static void AppendInitrdPaths(boot_entry_s* entry);
 
 /* Functions related to the "kerneldir" key in the config */
 static void PrepareKernelDirEntry(boot_entry_s* entry);
 static char_t* GetPathToKernel(const char_t* directoryPath);
 static char_t* GetKernelVersionString(const char_t* fullKernelFileName);
 
+static boot_entry_s InitConfigEntry(void);
 static void FreeConfigEntry(boot_entry_s* entry);
 static inline void LogKeyRedefinition(const char_t* key, const char_t* curr, const char_t* ignored);
 
-static void AppendToArgs(boot_entry_s* entry, char_t* value);
-
 static boolean_t ignoreEntryWarnings;
+
+
+static boot_entry_s InitConfigEntry(void)
+{
+    boot_entry_s entry;
+    entry.name = NULL;
+    entry.imgToLoad = NULL;
+    entry.imgArgs = NULL;
+
+    entry.initrdPaths = NULL;
+    entry.initrdAmount = 0;
+
+    // Default value
+    entry.bootProtocol = BP_EFI_LAUNCH;
+    entry.bootProtocolStr = malloc(10); // "efilaunch"
+    memcpy(entry.bootProtocolStr, "efilaunch", 10);
+
+    entry.isDirectoryToKernel = FALSE;
+    entry.kernelScanInfo = NULL;
+    return entry;
+}
 
 // Returns a pointer to the head of a linked list of boot entries
 // Every pointer in the linked list was allocated dynamically
@@ -64,7 +84,7 @@ boot_entry_array_s ParseConfig(void)
     // Once (filePtr >= configData + fileSize) it means that we have finished reading the entire file
     while (filePtr < configData + fileSize)
     {
-        boot_entry_s entry = BOOT_ENTRY_INIT;
+        boot_entry_s entry = InitConfigEntry();
         ignoreEntryWarnings = FALSE;
 
         // Gets a pointer to the end of an entry text block
@@ -135,6 +155,7 @@ boot_entry_array_s ParseConfig(void)
         }
         free(strippedEntry);
 
+        AppendInitrdPaths(&entry);
         // Fill the necessary data like kernel path, kernel version and args
         if (entry.isDirectoryToKernel)
         {
@@ -189,7 +210,7 @@ static boolean_t ValidateEntry(boot_entry_s* newEntry)
 }
 
 // Adds a string to the entry args. A space is appended if args aren't NULL
-static void AppendToArgs(boot_entry_s* entry, char_t* value)
+void AppendToArgs(boot_entry_s* entry, char_t* value)
 {
     size_t argsLen = strlen(entry->imgArgs);
     size_t valueLen = strlen(value);
@@ -281,20 +302,12 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
         AppendToArgs(entry, value);
         return FALSE;
     }
-    // This key simplifies the configuration but it just takes the value and adds it to the args (for now)
+    // Store the initrd path in an array of initrd paths
     else if (strcmp(key, "initrd") == 0)
     {
-        size_t initrdLen = strlen(INITRD_ARG_STR);
-        size_t valueLen = strlen(value);
-        size_t totalLen = initrdLen + valueLen + 1;
-
-        // Create the full arg string 'initrd=<value>'
-        char_t argStr[totalLen];
-        strncpy(argStr, INITRD_ARG_STR, initrdLen);
-        strncpy(argStr + initrdLen, value, valueLen);
-
-        AppendToArgs(entry, argStr);
-        return FALSE;
+        entry->initrdAmount++;
+        entry->initrdPaths = realloc(entry->initrdPaths, entry->initrdAmount * sizeof(char_t*));
+        entry->initrdPaths[entry->initrdAmount - 1] = value;
     }
     // Set a boot protocol
     else if (strcmp(key, "protocol") == 0)
@@ -388,31 +401,39 @@ boolean_t ParseKeyValuePair(char_t* token, const char_t delimiter, char_t** key,
     return TRUE;
 }
 
+// Appends the initrd paths to the args in the entry, if the protocol is EFI_LAUNCH
+static void AppendInitrdPaths(boot_entry_s* entry)
+{
+    // Append the initrd paths to the args only if we boot using the EFISTUB
+    if (entry->bootProtocol != BP_EFI_LAUNCH)
+    {
+        return;
+    }
+    // Append all the initrd arguments
+    for (uint32_t i = 0; i < entry->initrdAmount; i++)
+    {
+        size_t initrdLen = strlen(INITRD_ARG_STR);
+        size_t pathLen = strlen(entry->initrdPaths[i]);
+        size_t totalLen = initrdLen + pathLen + 1;
+
+        // Create the full arg string 'initrd=<value>'
+        char_t argStr[totalLen];
+        strncpy(argStr, INITRD_ARG_STR, initrdLen);
+        strncpy(argStr + initrdLen, entry->initrdPaths[i], pathLen);
+
+        AppendToArgs(entry, argStr);
+    }
+}
+
 // Adds an entry to the end of the entries array
 static void AppendEntry(boot_entry_array_s* bootEntryArr, boot_entry_s* entry)
 {
     bootEntryArr->entries = realloc(bootEntryArr->entries, 
         sizeof(boot_entry_s) * (bootEntryArr->numOfEntries + 1));
 
-    int32_t at = bootEntryArr->numOfEntries;
-    boot_entry_s* newEntry = bootEntryArr->entries + at; // The appended entry in the array
-
-    // Copying the values from the static entry to the entry in the array
-    newEntry->name = entry->name;
-    newEntry->imgToLoad = entry->imgToLoad;
-    newEntry->imgArgs = entry->imgArgs;
-    newEntry->bootProtocol = entry->bootProtocol;
-    newEntry->bootProtocolStr = entry->bootProtocolStr;
-    newEntry->isDirectoryToKernel = entry->isDirectoryToKernel;
-
-    if (newEntry->isDirectoryToKernel)
-    {
-        newEntry->kernelScanInfo = entry->kernelScanInfo;
-    }
-    else
-    {
-        newEntry->kernelScanInfo = NULL;
-    }
+    // The appended entry in the array
+    boot_entry_s* newEntry = bootEntryArr->entries + bootEntryArr->numOfEntries;
+    memcpy(newEntry, entry, sizeof(boot_entry_s));
 
     bootEntryArr->numOfEntries++;
 }
@@ -435,6 +456,23 @@ static void PrepareKernelDirEntry(boot_entry_s* entry)
         {
             free(entry->imgArgs);
             entry->imgArgs = newArgs;
+        }
+
+        // Substitute the kernel version into the initrds only if the protocol is not EFI_LAUNCH
+        // this is because with EFI_LAUNCH, the initrds are already in the args
+        if (entry->bootProtocol != BP_EFI_LAUNCH)
+        {
+            for (uint32_t i = 0; i < entry->initrdAmount; i++)
+            {
+                char_t* newInitrdPath = StringReplace(entry->initrdPaths[i],
+                    STR_TO_SUBSTITUTE_WITH_VERSION, scanInfo->kernelVersionString);
+                // Replace the old initrd path
+                if (newInitrdPath != NULL)
+                {
+                    free(entry->initrdPaths[i]);
+                    entry->initrdPaths[i] = newInitrdPath;
+                }
+            }
         }
     }
     else
@@ -528,6 +566,13 @@ static void FreeConfigEntry(boot_entry_s* entry)
     free(entry->name);
     free(entry->imgToLoad);
     free(entry->imgArgs);
+
+    for (uint32_t i = 0; i < entry->initrdAmount; i++)
+    {
+        free(entry->initrdPaths[i]);
+    }
+
+    free(entry->bootProtocolStr);
 
     if (entry->isDirectoryToKernel)
     {

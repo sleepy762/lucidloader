@@ -1,3 +1,4 @@
 #pragma once
+#include "config.h"
 
-void StartEFIImage(char* path, char* args);
+void StartEFIImage(boot_entry_s* entry);
