@@ -16,6 +16,7 @@ Available keys:
 - `kerneldir` - The absolute path to a directory with a (Linux) kernel (whose name begins with `vmlinuz`). The boot manager will automatically detect the kernel file and the kernel version. It will also replace the characters `%v` in the args with the kernel version string. As a result, the user won't have to edit the config with every kernel update. Highly recommended for Linux systems whose kernel file name can change. Make sure there is only ONE kernel in the specified directory. **Incompatible with `path`.**
 - `args` - (Optional) Arguments which will be passed to the binary. When `kerneldir` is defined and the boot manager detects the kernel version, it will substitute the characters `%v` with the kernel version string. It's possible to have multiple lines with this key, they will be concatenated into the full arguments string in order.
 - `initrd` - (Optional) The absolute path to an initrd file(initramfs file and/or microcode file) which is used when booting Linux kernels. The boot manager will substitute the characters `%v` with the kernel version string here too. It's possible to have multiple lines with this key, they will be concatenated into the full arguments string in order. If a microcode is present, make sure its loaded before the initramfs.
+- `protocol` - (Optional) Sets the boot protocol for the entry. Available boot protocols: `efilaunch`(default), `linux`.
 
 Writing key and value pairs is in the following format: `key:value`. The config is flexible with spaces and you can add as many spaces as you want before and after the delimiter, the key, and the value. Only leading and trailing spaces will be trimmed.
 
@@ -31,6 +32,7 @@ path:   EFI\Arch\vmlinuz-linux
 initrd: EFI\Arch\intel-ucode.img
 initrd: EFI\Arch\initramfs-linux.img
 args:   root=UUID=4ec51638-9069-4a28-9b85-6f2352991ee5 rw loglevel=3
+# efilaunch protocol is implicitly used here since it's the default
 
 # Example usage of kerneldir
 # the kernel name is 'vmlinuz-5.15.7-gentoo', and the initramfs is 'initramfs-5.15.7-gentoo.img'
@@ -39,6 +41,8 @@ kerneldir:  EFI\Gentoo
 initrd:     EFI\Gentoo\intel-uc.img
 initrd:     EFI\Gentoo\initramfs-%v-gentoo.img
 args:       root=UUID=cf2aba83-e914-4613-89fd-9667bb734779 rw loglevel=3
+# Will work with efilaunch protocol, if the kernel was compiled with EFISTUB
+protocol:   linux
 
 # This path is the same on every system with Windows 10, so you can copy this path and use it to boot Windows
 name: Windows
