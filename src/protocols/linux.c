@@ -5,6 +5,18 @@
 // bootloader with modifications and adaptations for this boot manager
 // https://github.com/limine-bootloader/limine
 
+#define DIV_ROUNDUP(a, b) (((a) + ((b) - 1)) / (b))
+
+inline uint64_t AlignUp(uint64_t value, uint64_t align)
+{
+	return DIV_ROUNDUP(value, align) * align;
+}
+
+inline uint64_t AlignDown(uint64_t value, uint64_t align)
+{
+	return (value / align) * align;
+}
+
 // The following definitions were copied from the Linux kernel
 // licensed under GPL-2.0 WITH Linux-syscall-note 
 
@@ -415,6 +427,31 @@ void LinuxLoad(char* kernelpath, char* args)
 	setupHeader->vid_mode = 0xFFFF; // "normal" mode
 	setupHeader->type_of_loader = 0xFF;
 	setupHeader->loadflags &= ~(1 << 5); // Print early messages
+
+	fseek(kernelFile, 0, SEEK_END);
+	size_t kernelFileSize = ftell(kernelFile);
+	uint64_t kernelSizeInPages = AlignUp(kernelFileSize, 4096) / 4096;
+
+	// Loading the kernel
+	uintptr_t kernelLoadAddr = 0x100000;
+	while (1)
+	{
+		// Attempt to allocate memory at 0x100000, if that fails, increase the base pointer
+		efi_status_t status = BS->AllocatePages(AllocateAddress, EfiLoaderData, 
+			kernelSizeInPages, (efi_physical_address_t*)&kernelLoadAddr);
+		if (!EFI_ERROR(status))
+		{
+			break;
+		}
+		kernelLoadAddr += 0x100000;
+	}
+	fseek(kernelFile, realModeCodeSize, SEEK_SET);
+	fread((void*)kernelLoadAddr, 1, kernelFileSize - realModeCodeSize, kernelFile);
+
+	fclose(kernelFile);
+	kernelFile = NULL;
+
+	// Loading initrds
 
 cleanup:
 	fclose(kernelFile);
