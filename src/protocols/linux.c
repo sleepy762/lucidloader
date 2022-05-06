@@ -1,6 +1,7 @@
 #include "protocols/linux.h"
 #include "shellerr.h"
 #include "screen.h"
+#include "edid.h"
 
 // The implementation of this Linux loader code was taken from the Limine
 // bootloader with modifications and adaptations for this boot manager
@@ -560,6 +561,15 @@ void LinuxLoad(boot_entry_s* entry)
 
 	/*
 	*	EDID
+	*/
+	efi_edid_active_protocol_t* edid = GetEdidActiveProtocol();
+	if (edid != NULL)
+	{
+		memcpy(&bootParams->edid_info, edid->Edid, sizeof(struct edid_info));
+	}
+	
+	/*
+	*	RSDP
 	*/
 
 // Cleanup in stages
