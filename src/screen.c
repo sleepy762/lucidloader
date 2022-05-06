@@ -2,6 +2,10 @@
 #include "logger.h"
 #include "bootutils.h"
 
+static void linear_mask_to_mask_shift(uint8_t *mask, uint8_t *shift, uint32_t linear_mask);
+static uint16_t linear_masks_to_bpp(uint32_t red_mask, uint32_t green_mask,
+                                    uint32_t blue_mask, uint32_t alpha_mask);
+
 uintn_t screenRows = DEFAULT_CONSOLE_ROWS;
 uintn_t screenCols = DEFAULT_CONSOLE_COLUMNS;
 boolean_t screenModeSet = FALSE;
@@ -78,4 +82,116 @@ void PrepareScreenForRedraw(void)
     {
         ST->ConOut->ClearScreen(ST->ConOut);
     }
+}
+
+// Taken from Limine
+// https://github.com/limine-bootloader/limine/blob/trunk/common/drivers/gop.c
+static uint16_t linear_masks_to_bpp(uint32_t red_mask, uint32_t green_mask,
+                                    uint32_t blue_mask, uint32_t alpha_mask) 
+{
+    uint32_t compound_mask = red_mask | green_mask | blue_mask | alpha_mask;
+    uint16_t ret = 32;
+    while ((compound_mask & (1 << 31)) == 0) 
+    {
+        ret--;
+        compound_mask <<= 1;
+    }
+    return ret;
+}
+
+static void linear_mask_to_mask_shift(uint8_t *mask, uint8_t *shift, uint32_t linear_mask) 
+{
+    *shift = 0;
+    while ((linear_mask & 1) == 0) 
+    {
+        (*shift)++;
+        linear_mask >>= 1;
+    }
+    *mask = 0;
+    while ((linear_mask & 1) == 1) 
+    {
+        (*mask)++;
+        linear_mask >>= 1;
+    }
+}
+
+framebuffer_t* GetFrameBufferInfo(void)
+{
+    efi_guid_t gopGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+    efi_gop_t* gop = NULL;
+
+    efi_status_t status = BS->LocateProtocol(&gopGuid, NULL, (void**)&gop);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to locate the GOP protocol.");
+        return NULL;
+    }
+
+    efi_gop_mode_info_t* gopModeInfo = NULL;
+    uintn_t gopModeInfoSize = 0;
+
+    status = gop->QueryMode(gop, gop->Mode->Mode, &gopModeInfoSize, &gopModeInfo);
+    if (EFI_ERROR(status))
+    {
+        Log(LL_ERROR, status, "Failed to query current GOP mode.");
+        return NULL;
+    }
+
+    framebuffer_t* fb = malloc(sizeof(framebuffer_t));
+    if (fb == NULL)
+    {
+        Log(LL_ERROR, 0, "Failed to allocate memory for the frame buffer.");
+        return NULL;
+    }
+
+    switch (gopModeInfo->PixelFormat)
+    {
+    case PixelBlueGreenRedReserved8BitPerColor:
+        fb->framebuffer_bpp = 32;
+        fb->red_mask_size = 8;
+        fb->red_mask_shift = 16;
+        fb->green_mask_size = 8;
+        fb->green_mask_shift = 8;
+        fb->blue_mask_size = 8;
+        fb->blue_mask_shift = 0;
+        break;
+
+    case PixelRedGreenBlueReserved8BitPerColor:
+        fb->framebuffer_bpp = 32;
+        fb->red_mask_size = 8;
+        fb->red_mask_shift = 0;
+        fb->green_mask_size = 8;
+        fb->green_mask_shift = 8;
+        fb->blue_mask_size = 8;
+        fb->blue_mask_shift = 16;
+        break;
+    
+    case PixelBitMask:
+        fb->framebuffer_bpp = linear_masks_to_bpp(
+                                gopModeInfo->PixelInformation.RedMask,
+                                gopModeInfo->PixelInformation.GreenMask,
+                                gopModeInfo->PixelInformation.RedMask,
+                                gopModeInfo->PixelInformation.ReservedMask);
+        linear_mask_to_mask_shift(&fb->red_mask_size,
+                                  &fb->red_mask_shift,
+                                  gopModeInfo->PixelInformation.RedMask);
+        linear_mask_to_mask_shift(&fb->green_mask_size,
+                                  &fb->green_mask_shift,
+                                  gopModeInfo->PixelInformation.GreenMask);
+        linear_mask_to_mask_shift(&fb->blue_mask_size,
+                                  &fb->blue_mask_shift,
+                                  gopModeInfo->PixelInformation.BlueMask);
+        break;
+
+    default:
+        Log(LL_ERROR, 0, "Invalid GOP PixelFormat. (%d)", gopModeInfo->PixelFormat);
+        return NULL;
+    }
+    fb->framebuffer_addr = gop->Mode->FrameBufferBase;
+    fb->framebuffer_pitch = gop->Mode->Information->PixelsPerScanLine * (fb->framebuffer_bpp / 8);
+    fb->framebuffer_width = gop->Mode->Information->HorizontalResolution;
+    fb->framebuffer_height = gop->Mode->Information->VerticalResolution;
+    // clear fb
+
+    return fb;
 }

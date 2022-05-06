@@ -1,5 +1,6 @@
 #include "protocols/linux.h"
 #include "shellerr.h"
+#include "screen.h"
 
 // The implementation of this Linux loader code was taken from the Limine
 // bootloader with modifications and adaptations for this boot manager
@@ -528,6 +529,38 @@ void LinuxLoad(boot_entry_s* entry)
 		setupHeader->ramdisk_image = (uint32_t)initrdBaseAddr;
 		setupHeader->ramdisk_size = (uint32_t)sizeOfAllInitrds;
 	}
+
+	/*
+	*	Video
+	*/
+	struct screen_info* screenInfo = &bootParams->screen_info;
+	framebuffer_t* fb = GetFrameBufferInfo();
+	if (fb == NULL)
+	{
+		printf("linux: Failed to get framebuffer info.\n");
+		goto cleanup_initrds;
+	}
+	screenInfo->capabilities		= VIDEO_CAPABILITY_64BIT_BASE | VIDEO_CAPABILITY_SKIP_QUIRKS;
+	screenInfo->flags				= VIDEO_FLAGS_NOCURSOR;
+	screenInfo->lfb_base			= (uint32_t)fb->framebuffer_addr;
+	screenInfo->ext_lfb_base		= (uint32_t)(fb->framebuffer_addr >> 32);
+	screenInfo->lfb_size			= fb->framebuffer_pitch * fb->framebuffer_height;
+	screenInfo->lfb_width			= fb->framebuffer_width;
+	screenInfo->lfb_height			= fb->framebuffer_height;
+	screenInfo->lfb_depth			= fb->framebuffer_bpp;
+	screenInfo->lfb_linelength		= fb->framebuffer_pitch;
+	screenInfo->red_size			= fb->red_mask_size;
+	screenInfo->red_pos				= fb->red_mask_shift;
+	screenInfo->green_size			= fb->green_mask_size;
+	screenInfo->green_pos			= fb->green_mask_shift;
+	screenInfo->blue_size			= fb->blue_mask_size;
+	screenInfo->blue_pos			= fb->blue_mask_shift;
+	screenInfo->orig_video_isVGA	= VIDEO_TYPE_EFI;
+	free(fb);
+
+	/*
+	*	EDID
+	*/
 
 // Cleanup in stages
 cleanup_initrds:
