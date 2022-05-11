@@ -2,6 +2,7 @@
 #include "shellerr.h"
 #include "screen.h"
 #include "lib/edid.h"
+#include "lib/acpi.h"
 
 // The implementation of this Linux loader code was taken from the Limine
 // bootloader with modifications and adaptations for this boot manager
@@ -571,8 +572,48 @@ void LinuxLoad(boot_entry_s* entry)
 	/*
 	*	RSDP
 	*/
+	bootParams->acpi_rsdp_addr = (uint64_t)GetRSDP();
+
+	/*
+	*	UEFI
+	*/
+	uintn_t mmapSize = 0;
+	efi_memory_descriptor_t* efimmap = NULL;
+	uintn_t mmapDescSize = 0;
+	uint32_t mmapDescVer = 0;
+	uintn_t mmapKey = 0;
+	efi_status_t status = BS->GetMemoryMap(&mmapSize, efimmap, &mmapKey, &mmapDescSize, &mmapDescVer);
+	if (status != EFI_BUFFER_TOO_SMALL)
+	{
+		printf("linux: Failed to get the memory map size. (error %d)", status ^ EFI_ERROR_MASK);
+		goto cleanup_initrds;
+	}
+	efimmap = malloc(mmapSize);
+	if (efimmap == NULL)
+	{
+		printf("linux: Failed to allocate memory for the memory map.\n");
+		goto cleanup_initrds;
+	}
+	status = BS->GetMemoryMap(&mmapSize, efimmap, &mmapKey, &mmapDescSize, &mmapDescVer);
+	if (EFI_ERROR(status))
+	{
+		printf("linux: Failed to get the memory map. (error %d)", status ^ EFI_ERROR_MASK);
+		goto cleanup_memmap;
+	}
+
+	memcpy(&bootParams->efi_info.efi_loader_signature, "EL64", 4);
+	bootParams->efi_info.efi_systab    = (uint32_t)(uint64_t)(uintptr_t)ST;
+	bootParams->efi_info.efi_systab_hi = (uint32_t)((uint64_t)(uintptr_t)ST >> 32);
+	bootParams->efi_info.efi_memmap    = (uint32_t)(uint64_t)(uintptr_t)efimmap;
+	bootParams->efi_info.efi_memmap_hi = (uint32_t)((uint64_t)(uintptr_t)efimmap >> 32);
+	bootParams->efi_info.efi_memmap_size     = mmapSize;
+	bootParams->efi_info.efi_memdesc_size    = mmapDescSize;
+	bootParams->efi_info.efi_memdesc_version = mmapDescVer;
+	exit_bs();
 
 // Cleanup in stages
+cleanup_memmap:
+	free(efimmap);
 cleanup_initrds:
 	BS->FreePages((efi_physical_address_t)initrdBaseAddr, initrdSizeInPages);
 cleanup_kernel:
