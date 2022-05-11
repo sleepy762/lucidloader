@@ -3,6 +3,28 @@
 #include "screen.h"
 #include "lib/edid.h"
 #include "lib/acpi.h"
+#include "lib/e820.h"
+
+// Initial GDT layout for Linux startup. Taken from ELILO
+uint16_t initGDT[] = {
+	/* gdt[0]: dummy */
+	0, 0, 0, 0, 
+	
+	/* gdt[1]: unused */
+	0, 0, 0, 0,
+
+	/* gdt[2]: code */
+	0xFFFF,		/* 4Gb - (0x100000*0x1000 = 4Gb) */
+	0x0000,		/* base address=0 */
+	0x9A00,		/* code read/exec */
+	0x00CF,		/* granularity=4096, 386 (+5th nibble of limit) */
+
+	/* gdt[3]: data */
+	0xFFFF,		/* 4Gb - (0x100000*0x1000 = 4Gb) */
+	0x0000,		/* base address=0 */
+	0x9200,		/* data read/write */
+	0x00CF,		/* granularity=4096, 386 (+5th nibble of limit) */
+};
 
 // The implementation of this Linux loader code was taken from the Limine
 // bootloader with modifications and adaptations for this boot manager
@@ -434,7 +456,7 @@ void LinuxLoad(boot_entry_s* entry)
 
 	fseek(kernelFile, 0, SEEK_END);
 	size_t kernelFileSize = ftell(kernelFile);
-	uintn_t kernelSizeInPages = AlignUp(kernelFileSize, 4096) / 4096;
+	uintn_t kernelSizeInPages = AlignUp(kernelFileSize, EFI_PAGE_SIZE) / EFI_PAGE_SIZE;
 
 	/*
 	*	Loading the kernel
@@ -486,8 +508,8 @@ void LinuxLoad(boot_entry_s* entry)
 	}
 
 	initrdBaseAddr -= sizeOfAllInitrds;
-	initrdBaseAddr = AlignDown(initrdBaseAddr, 4096);
-	uintn_t initrdSizeInPages = AlignUp(sizeOfAllInitrds, 4096) / 4096;
+	initrdBaseAddr = AlignDown(initrdBaseAddr, EFI_PAGE_SIZE);
+	uintn_t initrdSizeInPages = AlignUp(sizeOfAllInitrds, EFI_PAGE_SIZE) / EFI_PAGE_SIZE;
 
 	while (1)
 	{
@@ -500,7 +522,7 @@ void LinuxLoad(boot_entry_s* entry)
 		{
 			break;
 		}
-		initrdBaseAddr -= 4096;
+		initrdBaseAddr -= EFI_PAGE_SIZE;
 	}
 
 	size_t _tempInitrdBaseAddr = initrdBaseAddr;
@@ -588,7 +610,9 @@ void LinuxLoad(boot_entry_s* entry)
 		printf("linux: Failed to get the memory map size. (error %d)", status ^ EFI_ERROR_MASK);
 		goto cleanup_initrds;
 	}
-	efimmap = malloc(mmapSize);
+	// Add the size of 2 memory descriptors because allocating memory for the memory map
+	// can increase the size of the memory map
+	efimmap = malloc(mmapSize + sizeof(efi_memory_descriptor_t) * 2);
 	if (efimmap == NULL)
 	{
 		printf("linux: Failed to allocate memory for the memory map.\n");
@@ -609,7 +633,41 @@ void LinuxLoad(boot_entry_s* entry)
 	bootParams->efi_info.efi_memmap_size     = mmapSize;
 	bootParams->efi_info.efi_memdesc_size    = mmapDescSize;
 	bootParams->efi_info.efi_memdesc_version = mmapDescVer;
+
+	/*
+	*	e820
+	*/
+	struct boot_e820_entry* e820Table = bootParams->e820_table;
+
+	uintn_t mmapCount = mmapSize / mmapDescSize;
+	for (uintn_t i = 0; i < mmapCount; i++)
+	{
+		// Cast to uint8_t* because we want to increase the pointer by single bytes
+		efi_memory_descriptor_t* entry = (efi_memory_descriptor_t*)((uint8_t*)efimmap + i * mmapDescSize);
+		e820Table[i].addr = entry->PhysicalStart;
+		e820Table[i].size = entry->NumberOfPages * EFI_PAGE_SIZE;
+		e820Table[i].type = EfiMemoryTypeToE820Type(entry->Type);
+	}
 	exit_bs();
+
+	/*
+	*	Starting Linux (but it doesn't work)
+	*/
+	__asm__ __volatile__ ("cli"); // Disable interrupts
+	__asm__ __volatile__ ("lgdt %0" :: "m"(initGDT));
+
+	// Setting boot values
+	__asm__ __volatile__ ("mov $0x10, %rax");
+	__asm__ __volatile__ ("mov %rax, %cs");
+	__asm__ __volatile__ ("mov $0x18, %rax");
+	__asm__ __volatile__ ("mov %rax, %ds");
+	__asm__ __volatile__ ("mov %rax, %es");
+	__asm__ __volatile__ ("mov %rax, %ss");
+
+	__asm__ __volatile__ ("mov %0, %%rsi" :: "m"(bootParams));
+	__asm__ __volatile__ ("mov %0, %%rcx" :: "m"(kernelLoadAddr));
+	__asm__ __volatile__ ("jmp *%rcx");
+
 
 // Cleanup in stages
 cleanup_memmap:
