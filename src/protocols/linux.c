@@ -1,7 +1,7 @@
 #include "protocols/linux.h"
 #include "shellerr.h"
 #include "screen.h"
-#include "edid.h"
+#include "lib/edid.h"
 
 // The implementation of this Linux loader code was taken from the Limine
 // bootloader with modifications and adaptations for this boot manager

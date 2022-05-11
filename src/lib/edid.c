@@ -1,4 +1,4 @@
-#include "edid.h"
+#include "lib/edid.h"
 #include "logger.h"
 
 #define EFI_EDID_ACTIVE_PROTOCOL_GUID \
