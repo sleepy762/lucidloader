@@ -632,6 +632,7 @@ void LinuxLoad(boot_entry_s* entry)
 		e820Table[i].size = entry->NumberOfPages * EFI_PAGE_SIZE;
 		e820Table[i].type = EfiMemoryTypeToE820Type(entry->Type);
 	}
+	bootParams->e820_entries = mmapCount;
 	exit_bs();
 
 	/*
