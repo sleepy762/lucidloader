@@ -786,7 +786,7 @@ int getchar_ifany (void)
 {
     efi_input_key_t key = { 0 };
     efi_status_t status = ST->ConIn->ReadKeyStroke(ST->ConIn, &key);
-    return EFI_ERROR(status) ? -1 : key.UnicodeChar;
+    return EFI_ERROR(status) ? 0 : key.UnicodeChar;
 }
 
 int getchar (void)
