@@ -5,27 +5,6 @@
 #include "lib/acpi.h"
 #include "lib/e820.h"
 
-// Initial GDT layout for Linux startup. Taken from ELILO
-uint16_t initGDT[] = {
-	/* gdt[0]: dummy */
-	0, 0, 0, 0, 
-	
-	/* gdt[1]: unused */
-	0, 0, 0, 0,
-
-	/* gdt[2]: code */
-	0xFFFF,		/* 4Gb - (0x100000*0x1000 = 4Gb) */
-	0x0000,		/* base address=0 */
-	0x9A00,		/* code read/exec */
-	0x00CF,		/* granularity=4096, 386 (+5th nibble of limit) */
-
-	/* gdt[3]: data */
-	0xFFFF,		/* 4Gb - (0x100000*0x1000 = 4Gb) */
-	0x0000,		/* base address=0 */
-	0x9200,		/* data read/write */
-	0x00CF,		/* granularity=4096, 386 (+5th nibble of limit) */
-};
-
 // The implementation of this Linux loader code was taken from the Limine
 // bootloader with modifications and adaptations for this boot manager
 // https://github.com/limine-bootloader/limine
@@ -389,6 +368,11 @@ struct boot_params {
 } __attribute__((packed));
 /* asm/bootparam.h */
 
+typedef struct {
+	uint16_t limit;
+	uint64_t *base;
+} __attribute__((packed)) dt_addr_t;
+
 
 void LinuxLoad(boot_entry_s* entry)
 {
@@ -651,10 +635,34 @@ void LinuxLoad(boot_entry_s* entry)
 	exit_bs();
 
 	/*
+	*	GDT & IDT
+	*/
+	dt_addr_t gdt = { 0x800, (uint64_t*)0 };
+	dt_addr_t idt = { 0, 0 };
+	gdt.base = calloc(1, gdt.limit);
+
+	/*
+	 * 4Gb - (0x100000*0x1000 = 4Gb)
+	 * base address=0
+	 * code read/exec
+	 * granularity=4096, 386 (+5th nibble of limit)
+	 */
+	gdt.base[2] = 0x00cf9a000000ffff;
+
+	/*
+	 * 4Gb - (0x100000*0x1000 = 4Gb)
+	 * base address=0
+	 * data read/write
+	 * granularity=4096, 386 (+5th nibble of limit)
+	 */
+	gdt.base[3] = 0x00cf92000000ffff;
+
+	/*
 	*	Starting Linux (but it doesn't work)
 	*/
 	__asm__ __volatile__ ("cli"); // Disable interrupts
-	__asm__ __volatile__ ("lgdt %0" :: "m"(initGDT));
+	__asm__ __volatile__ ("lidt %0" :: "m"(idt));
+	__asm__ __volatile__ ("lgdt %0" :: "m"(gdt));
 
 	// Setting boot values
 	__asm__ __volatile__ ("mov $0x10, %rax");
