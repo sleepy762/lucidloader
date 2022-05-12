@@ -439,8 +439,8 @@ void LinuxLoad(boot_entry_s* entry)
 	setupHeader->loadflags &= ~(1 << 5); // Print early messages
 
 	fseek(kernelFile, 0, SEEK_END);
-	size_t kernelFileSize = ftell(kernelFile);
-	uintn_t kernelSizeInPages = AlignUp(kernelFileSize, EFI_PAGE_SIZE) / EFI_PAGE_SIZE;
+	size_t kernelSize = ftell(kernelFile) - realModeCodeSize;
+	uintn_t kernelSizeInPages = AlignUp(kernelSize, EFI_PAGE_SIZE) / EFI_PAGE_SIZE;
 
 	/*
 	*	Loading the kernel
@@ -459,7 +459,7 @@ void LinuxLoad(boot_entry_s* entry)
 	}
 	// Load the kernel into memory
 	fseek(kernelFile, realModeCodeSize, SEEK_SET);
-	fread((void*)kernelLoadAddr, 1, kernelFileSize - realModeCodeSize, kernelFile);
+	fread((void*)kernelLoadAddr, 1, kernelSize, kernelFile);
 
 	fclose(kernelFile);
 	kernelFile = NULL;
@@ -633,7 +633,6 @@ void LinuxLoad(boot_entry_s* entry)
 		e820Table[i].type = EfiMemoryTypeToE820Type(entry->Type);
 	}
 	bootParams->e820_entries = mmapCount;
-	exit_bs();
 
 	/*
 	*	GDT & IDT
@@ -661,23 +660,14 @@ void LinuxLoad(boot_entry_s* entry)
 	/*
 	*	Starting Linux (but it doesn't work)
 	*/
-	kernelLoadAddr += 0x200; // for 64 bit kernels
-	__asm__ __volatile__ ("cli" ::: "memory"); // Disable interrupts
+	exit_bs();
 	__asm__ __volatile__ ("lidt %0" :: "m"(idt));
 	__asm__ __volatile__ ("lgdt %0" :: "m"(gdt));
+	__asm__ __volatile__ ("cli" ::: "memory");
 
-	// Setting boot values
-	__asm__ __volatile__ ("mov $0x10, %rax");
-	__asm__ __volatile__ ("mov %rax, %cs");
-	__asm__ __volatile__ ("mov $0x18, %rax");
-	__asm__ __volatile__ ("mov %rax, %ds");
-	__asm__ __volatile__ ("mov %rax, %es");
-	__asm__ __volatile__ ("mov %rax, %ss");
-
-	__asm__ __volatile__ ("mov %0, %%rsi" :: "m"(bootParams));
-	__asm__ __volatile__ ("mov %0, %%rcx" :: "m"(kernelLoadAddr));
-	__asm__ __volatile__ ("jmp *%rcx");
-
+	void (*kernel_func)(void*, struct boot_params*);
+	kernel_func = kernelLoadAddr + 0x200;
+	kernel_func(NULL, bootParams);
 
 // Cleanup in stages
 cleanup_memmap:
