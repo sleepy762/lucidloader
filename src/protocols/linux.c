@@ -661,7 +661,8 @@ void LinuxLoad(boot_entry_s* entry)
 	/*
 	*	Starting Linux (but it doesn't work)
 	*/
-	__asm__ __volatile__ ("cli"); // Disable interrupts
+	kernelLoadAddr += 0x200; // for 64 bit kernels
+	__asm__ __volatile__ ("cli" ::: "memory"); // Disable interrupts
 	__asm__ __volatile__ ("lidt %0" :: "m"(idt));
 	__asm__ __volatile__ ("lgdt %0" :: "m"(gdt));
 
