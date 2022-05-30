@@ -376,6 +376,9 @@ typedef struct {
 
 void LinuxLoad(boot_entry_s* entry)
 {
+	/*
+	*	Initialization
+	*/
 	FILE* kernelFile = fopen(entry->imgToLoad, "r");
 	if (kernelFile == NULL)
 	{
@@ -581,6 +584,29 @@ void LinuxLoad(boot_entry_s* entry)
 	bootParams->acpi_rsdp_addr = (uint64_t)GetRSDP();
 
 	/*
+	*	GDT & IDT
+	*/
+	dt_addr_t gdt = { 0x800, (uint64_t*)0 };
+	dt_addr_t idt = { 0, 0 };
+	gdt.base = calloc(1, gdt.limit);
+
+	/*
+	 * 4Gb - (0x100000*0x1000 = 4Gb)
+	 * base address=0
+	 * code read/exec
+	 * granularity=4096, 386 (+5th nibble of limit)
+	 */
+	gdt.base[2] = 0x00cf9a000000ffff;
+
+	/*
+	 * 4Gb - (0x100000*0x1000 = 4Gb)
+	 * base address=0
+	 * data read/write
+	 * granularity=4096, 386 (+5th nibble of limit)
+	 */
+	gdt.base[3] = 0x00cf92000000ffff;
+
+	/*
 	*	UEFI
 	*/
 	uintn_t mmapSize = 0;
@@ -608,6 +634,7 @@ void LinuxLoad(boot_entry_s* entry)
 		printf("linux: Failed to get the memory map. (error %d)", status ^ EFI_ERROR_MASK);
 		goto cleanup_memmap;
 	}
+	exit_bs();
 
 	memcpy(&bootParams->efi_info.efi_loader_signature, "EL64", 4);
 	bootParams->efi_info.efi_systab    = (uint32_t)(uint64_t)(uintptr_t)ST;
@@ -635,32 +662,8 @@ void LinuxLoad(boot_entry_s* entry)
 	bootParams->e820_entries = mmapCount;
 
 	/*
-	*	GDT & IDT
-	*/
-	dt_addr_t gdt = { 0x800, (uint64_t*)0 };
-	dt_addr_t idt = { 0, 0 };
-	gdt.base = calloc(1, gdt.limit);
-
-	/*
-	 * 4Gb - (0x100000*0x1000 = 4Gb)
-	 * base address=0
-	 * code read/exec
-	 * granularity=4096, 386 (+5th nibble of limit)
-	 */
-	gdt.base[2] = 0x00cf9a000000ffff;
-
-	/*
-	 * 4Gb - (0x100000*0x1000 = 4Gb)
-	 * base address=0
-	 * data read/write
-	 * granularity=4096, 386 (+5th nibble of limit)
-	 */
-	gdt.base[3] = 0x00cf92000000ffff;
-
-	/*
 	*	Starting Linux (but it doesn't work)
 	*/
-	exit_bs();
 	__asm__ __volatile__ ("lidt %0" :: "m"(idt));
 	__asm__ __volatile__ ("lgdt %0" :: "m"(gdt));
 	__asm__ __volatile__ ("cli" ::: "memory");
@@ -674,6 +677,7 @@ cleanup_memmap:
 	free(efimmap);
 cleanup_initrds:
 	BS->FreePages((efi_physical_address_t)initrdBaseAddr, initrdSizeInPages);
+	free(gdt.base);
 cleanup_kernel:
 	BS->FreePages((efi_physical_address_t)kernelLoadAddr, kernelSizeInPages);
 cleanup_early:
