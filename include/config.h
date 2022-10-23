@@ -3,8 +3,8 @@
 
 typedef enum boot_protocol_t
 {
-    BP_EFI_LAUNCH,
-    BP_LINUX
+    BP_EFI_LAUNCH
+    // BP_LINUX
 } boot_protocol_t;
 
 typedef struct kernel_scan_info_s

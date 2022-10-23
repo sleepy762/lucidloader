@@ -318,10 +318,10 @@ static boolean_t AssignValueToEntry(const char_t* key, char_t* value, boot_entry
         {
             entry->bootProtocol = BP_EFI_LAUNCH;
         }
-        else if (strcmp(value, "linux") == 0)
-        {
-            entry->bootProtocol = BP_LINUX;
-        }
+        // else if (strcmp(value, "linux") == 0)
+        // {
+        //     entry->bootProtocol = BP_LINUX;
+        // }
         else
         {
             Log(LL_WARNING, 0, "Unknown boot protocol `%s`.", value);
