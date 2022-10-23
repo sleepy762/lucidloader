@@ -7,7 +7,9 @@
 #include "editor.h"
 #include "shellutils.h"
 #include "screen.h"
+
 #include "protocols/efilaunch.h"
+#include "protocols/linux.h"
 
 #define F5_KEY_SCANCODE (0x0F) // Used to refresh the menu (reparse config)
 
